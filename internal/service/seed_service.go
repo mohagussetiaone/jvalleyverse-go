@@ -13,8 +13,7 @@ import (
 
 // SeedInitialData populates the database with initial data for all tables.
 // Uses FirstOrCreate to make seeding idempotent (safe to run multiple times).
-func SeedInitialData() error {
-	db := getDB()
+func SeedInitialData(db *gorm.DB) error {
 	if db == nil {
 		return fmt.Errorf("database connection not initialized")
 	}
@@ -99,7 +98,7 @@ func SeedInitialData() error {
 
 func getDB() *gorm.DB {
 	// Access the DB via a new repository that exposes it
-	repo := newSeedRepository()
+	repo := newSeedRepository(getDB())
 	return repo.db
 }
 
@@ -107,10 +106,8 @@ type seedRepository struct {
 	db *gorm.DB
 }
 
-func newSeedRepository() *seedRepository {
-	// We access the DB through the repository package's global var
-	// Since InitServices has been called, repositories have the DB
-	return &seedRepository{db: getSeedDB()}
+func newSeedRepository(db *gorm.DB) *seedRepository {
+    return &seedRepository{db: db}
 }
 
 // ============================================================================
