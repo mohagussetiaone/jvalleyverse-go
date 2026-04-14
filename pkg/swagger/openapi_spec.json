@@ -1,1 +1,602 @@
-{"openapi":"3.0.0","info":{"title":"JValleyVerse API","description":"Community-driven learning platform with gamification, certification, and showcase features","version":"1.0.0","contact":{"name":"JValleyVerse Team"},"license":{"name":"MIT"}},"servers":[{"url":"http://localhost:3000","description":"Local development"},{"url":"https://api.jvalleyverse.com","description":"Production"}],"paths":{"/api/auth/register":{"post":{"tags":["Authentication"],"summary":"Register new user","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["email","password","name"],"properties":{"email":{"type":"string","format":"email"},"password":{"type":"string","minLength":6},"name":{"type":"string"}}}}}},"responses":{"201":{"description":"User created successfully","content":{"application/json":{"schema":{"$ref":"#/components/schemas/User"}}}},"400":{"description":"Invalid input"},"409":{"description":"Email already exists"}}}},"/api/auth/login":{"post":{"tags":["Authentication"],"summary":"Login user","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["email","password"],"properties":{"email":{"type":"string","format":"email"},"password":{"type":"string"}}}}}},"responses":{"200":{"description":"Login successful","content":{"application/json":{"schema":{"type":"object","properties":{"access_token":{"type":"string"},"refresh_token":{"type":"string"},"user":{"$ref":"#/components/schemas/User"}}}}}},"401":{"description":"Invalid credentials"}}}},"/api/users/me":{"get":{"tags":["Users"],"summary":"Get current user profile","security":[{"BearerAuth":[]}],"responses":{"200":{"description":"User profile","content":{"application/json":{"schema":{"$ref":"#/components/schemas/User"}}}},"401":{"description":"Unauthorized"}}},"put":{"tags":["Users"],"summary":"Update user profile","security":[{"BearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"name":{"type":"string"},"bio":{"type":"string"},"avatar":{"type":"string","format":"url"}}}}}},"responses":{"200":{"description":"Profile updated","content":{"application/json":{"schema":{"$ref":"#/components/schemas/User"}}}},"401":{"description":"Unauthorized"}}}},"/api/users/{id}":{"get":{"tags":["Users"],"summary":"Get public user profile","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"User profile","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserPublic"}}}},"404":{"description":"User not found"}}}},"/api/leaderboard":{"get":{"tags":["Gamification"],"summary":"Get top users by points","parameters":[{"name":"page","in":"query","schema":{"type":"integer","default":1}},{"name":"limit","in":"query","schema":{"type":"integer","default":50}}],"responses":{"200":{"description":"Leaderboard","content":{"application/json":{"schema":{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/LeaderboardEntry"}},"pagination":{"$ref":"#/components/schemas/Pagination"}}}}}}}}},"/api/admin/projects":{"post":{"tags":["Admin - Projects"],"summary":"Create project (Admin only)","security":[{"BearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["title","category_id"],"properties":{"title":{"type":"string"},"description":{"type":"string"},"thumbnail":{"type":"string","format":"url"},"category_id":{"type":"integer"},"visibility":{"type":"string","enum":["public","private"]}}}}}},"responses":{"201":{"description":"Project created","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Project"}}}},"403":{"description":"Forbidden - Admin only"}}},"get":{"tags":["Admin - Projects"],"summary":"List all projects (Admin view)","security":[{"BearerAuth":[]}],"parameters":[{"name":"page","in":"query","schema":{"type":"integer"}},{"name":"limit","in":"query","schema":{"type":"integer"}}],"responses":{"200":{"description":"Projects list","content":{"application/json":{"schema":{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Project"}},"pagination":{"$ref":"#/components/schemas/Pagination"}}}}}},"403":{"description":"Forbidden"}}}},"/api/admin/projects/{id}":{"put":{"tags":["Admin - Projects"],"summary":"Update project","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"visibility":{"type":"string","enum":["public","private"]}}}}}},"responses":{"200":{"description":"Project updated"},"403":{"description":"Forbidden"},"404":{"description":"Project not found"}}},"delete":{"tags":["Admin - Projects"],"summary":"Delete project","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Project deleted"},"403":{"description":"Forbidden"},"404":{"description":"Project not found"}}}},"/api/admin/classes":{"post":{"tags":["Admin - Classes"],"summary":"Create class","security":[{"BearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["title","project_id","category_id"],"properties":{"title":{"type":"string"},"description":{"type":"string"},"content":{"type":"string"},"thumbnail":{"type":"string","format":"url"},"project_id":{"type":"integer"},"category_id":{"type":"integer"},"difficulty":{"type":"string","enum":["beginner","intermediate","advanced"]},"duration":{"type":"integer"}}}}}},"responses":{"201":{"description":"Class created"},"403":{"description":"Forbidden"}}}},"/api/classes/{id}":{"get":{"tags":["Classes"],"summary":"Get class details","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Class details"},"404":{"description":"Class not found"}}}},"/api/certificates":{"get":{"tags":["Certificates"],"summary":"Get user certificates","security":[{"BearerAuth":[]}],"responses":{"200":{"description":"User certificates"},"401":{"description":"Unauthorized"}}}},"/api/certificates/{code}":{"get":{"tags":["Certificates"],"summary":"View certificate (Private - Owner only)","security":[{"BearerAuth":[]}],"parameters":[{"name":"code","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Certificate details"},"403":{"description":"Forbidden - Not your certificate"},"404":{"description":"Certificate not found"}}}},"/api/discussions":{"post":{"tags":["Discussions"],"summary":"Create discussion","security":[{"BearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["title","content"],"properties":{"title":{"type":"string"},"content":{"type":"string"},"class_id":{"type":"integer"},"category_id":{"type":"integer"}}}}}},"responses":{"201":{"description":"Discussion created"},"401":{"description":"Unauthorized"}}},"get":{"tags":["Discussions"],"summary":"List discussions","parameters":[{"name":"page","in":"query","schema":{"type":"integer"}},{"name":"class_id","in":"query","schema":{"type":"integer"}},{"name":"category_id","in":"query","schema":{"type":"integer"}}],"responses":{"200":{"description":"Discussions list"}}}},"/api/discussions/{id}":{"get":{"tags":["Discussions"],"summary":"Get discussion with threaded replies","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Discussion details with replies"},"404":{"description":"Discussion not found"}}},"put":{"tags":["Discussions"],"summary":"Update discussion","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string"},"content":{"type":"string"}}}}}},"responses":{"200":{"description":"Discussion updated"},"403":{"description":"Forbidden"},"404":{"description":"Not found"}}},"delete":{"tags":["Discussions"],"summary":"Delete discussion","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Discussion deleted"},"403":{"description":"Forbidden"}}}},"/api/discussions/{id}/replies":{"post":{"tags":["Replies"],"summary":"Reply to discussion","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["content"],"properties":{"content":{"type":"string"}}}}}},"responses":{"201":{"description":"Reply created"},"401":{"description":"Unauthorized"}}},"get":{"tags":["Replies"],"summary":"Get discussion replies","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Replies list"}}}},"/api/replies/{id}/replies":{"post":{"tags":["Replies"],"summary":"Reply to a reply (nested)","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["content"],"properties":{"content":{"type":"string"}}}}}},"responses":{"201":{"description":"Nested reply created"},"401":{"description":"Unauthorized"}}}},"/api/showcases":{"post":{"tags":["Showcases"],"summary":"Create showcase","security":[{"BearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["title","category_id"],"properties":{"title":{"type":"string"},"description":{"type":"string"},"media_urls":{"type":"array","items":{"type":"string","format":"url"}},"category_id":{"type":"integer"},"visibility":{"type":"string","enum":["public","private","friends_only"]}}}}}},"responses":{"201":{"description":"Showcase created"},"401":{"description":"Unauthorized"}}},"get":{"tags":["Showcases"],"summary":"List showcases","parameters":[{"name":"page","in":"query","schema":{"type":"integer"}},{"name":"category_id","in":"query","schema":{"type":"integer"}},{"name":"sort","in":"query","schema":{"type":"string","enum":["newest","trending","most_liked"]}}],"responses":{"200":{"description":"Showcases list"}}}},"/api/showcases/{id}":{"get":{"tags":["Showcases"],"summary":"Get showcase details","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Showcase details"},"404":{"description":"Showcase not found"}}},"put":{"tags":["Showcases"],"summary":"Update showcase (Owner only)","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"visibility":{"type":"string"}}}}}},"responses":{"200":{"description":"Showcase updated"},"403":{"description":"Forbidden"}}},"delete":{"tags":["Showcases"],"summary":"Delete showcase","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Showcase deleted"},"403":{"description":"Forbidden"}}}},"/api/showcases/{id}/like":{"post":{"tags":["Showcases"],"summary":"Like showcase","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Showcase liked"},"401":{"description":"Unauthorized"}}},"delete":{"tags":["Showcases"],"summary":"Unlike showcase","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Like removed"},"401":{"description":"Unauthorized"}}}},"/api/users/{id}/points":{"get":{"tags":["Gamification"],"summary":"Get user points and level","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"User points info"}}}},"/api/users/me/activity":{"get":{"tags":["Gamification"],"summary":"Get user activity log","security":[{"BearerAuth":[]}],"parameters":[{"name":"page","in":"query","schema":{"type":"integer"}},{"name":"limit","in":"query","schema":{"type":"integer"}}],"responses":{"200":{"description":"Activity log"}}}},"/api/levels":{"get":{"tags":["Gamification"],"summary":"Get level progression info","responses":{"200":{"description":"Level information"}}}},"/api/replies/{id}":{"put":{"tags":["Replies"],"summary":"Update reply","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["content"],"properties":{"content":{"type":"string"}}}}}},"responses":{"200":{"description":"Reply updated"},"401":{"description":"Unauthorized"},"403":{"description":"Forbidden"},"404":{"description":"Reply not found"}}},"delete":{"tags":["Replies"],"summary":"Delete reply","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Reply deleted"},"401":{"description":"Unauthorized"},"403":{"description":"Forbidden"},"404":{"description":"Reply not found"}}}},"/api/classes/{id}/complete":{"post":{"tags":["Classes"],"summary":"Mark class as completed","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"200":{"description":"Class marked as completed"},"401":{"description":"Unauthorized"},"404":{"description":"Class not found"}}}},"/api/admin/classes/{id}":{"put":{"tags":["Admin - Classes"],"summary":"Update class","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"content":{"type":"string"},"difficulty":{"type":"string","enum":["beginner","intermediate","advanced"]},"duration":{"type":"integer"}}}}}},"responses":{"200":{"description":"Class updated"},"403":{"description":"Forbidden - Admin only"},"404":{"description":"Class not found"}}},"delete":{"tags":["Admin - Classes"],"summary":"Delete class","security":[{"BearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}],"responses":{"204":{"description":"Class deleted"},"403":{"description":"Forbidden - Admin only"},"404":{"description":"Class not found"}}}},"/api/projects/{id}/classes":{"get":{"tags":["Classes"],"summary":"List classes in a project","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer"}},{"name":"page","in":"query","schema":{"type":"integer","default":1}},{"name":"limit","in":"query","schema":{"type":"integer","default":20}}],"responses":{"200":{"description":"Classes list","content":{"application/json":{"schema":{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/components/schemas/Class"}},"pagination":{"$ref":"#/components/schemas/Pagination"}}}}}},"404":{"description":"Project not found"}}}},"/api/health":{"get":{"tags":["Health"],"summary":"Health check endpoint","responses":{"200":{"description":"Server is healthy","content":{"application/json":{"schema":{"type":"object","properties":{"status":{"type":"string","example":"ok"}}}}}}}}},"/api/admin/dashboard":{"get":{"tags":["Admin"],"summary":"Admin dashboard","security":[{"BearerAuth":[]}],"responses":{"200":{"description":"Welcome to admin dashboard"},"403":{"description":"Forbidden - Admin only"}}}}},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"integer"},"email":{"type":"string","format":"email"},"name":{"type":"string"},"avatar":{"type":"string","format":"url"},"bio":{"type":"string"},"role":{"type":"string","enum":["admin","user"]},"is_active":{"type":"boolean"},"points":{"type":"integer"},"total_points":{"type":"integer"},"level":{"type":"integer"},"created_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"}}},"UserPublic":{"type":"object","properties":{"id":{"type":"integer"},"name":{"type":"string"},"avatar":{"type":"string","format":"url"},"bio":{"type":"string"},"level":{"type":"integer"},"points":{"type":"integer"},"showcase_count":{"type":"integer"},"certificate_count":{"type":"integer"}}},"Project":{"type":"object","properties":{"id":{"type":"integer"},"title":{"type":"string"},"description":{"type":"string"},"thumbnail":{"type":"string","format":"url"},"category_id":{"type":"integer"},"admin_id":{"type":"integer"},"visibility":{"type":"string","enum":["public","private"]},"created_at":{"type":"string","format":"date-time"}}},"LeaderboardEntry":{"type":"object","properties":{"rank":{"type":"integer"},"user_id":{"type":"integer"},"name":{"type":"string"},"points":{"type":"integer"},"level":{"type":"integer"},"badge":{"type":"string"}}},"Pagination":{"type":"object","properties":{"page":{"type":"integer"},"limit":{"type":"integer"},"total":{"type":"integer"}}},"Class":{"type":"object","properties":{"id":{"type":"integer"},"title":{"type":"string"},"description":{"type":"string"},"content":{"type":"string"},"thumbnail":{"type":"string","format":"url"},"project_id":{"type":"integer"},"category_id":{"type":"integer"},"difficulty":{"type":"string","enum":["beginner","intermediate","advanced"]},"duration":{"type":"integer"},"is_completed":{"type":"boolean"},"created_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"}}},"Certificate":{"type":"object","properties":{"id":{"type":"integer"},"code":{"type":"string"},"user_id":{"type":"integer"},"class_id":{"type":"integer"},"issued_at":{"type":"string","format":"date-time"},"valid_until":{"type":"string","format":"date-time"}}},"Discussion":{"type":"object","properties":{"id":{"type":"integer"},"title":{"type":"string"},"content":{"type":"string"},"user_id":{"type":"integer"},"user_name":{"type":"string"},"class_id":{"type":"integer"},"category_id":{"type":"integer"},"replies_count":{"type":"integer"},"created_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"}}},"Reply":{"type":"object","properties":{"id":{"type":"integer"},"content":{"type":"string"},"user_id":{"type":"integer"},"user_name":{"type":"string"},"discussion_id":{"type":"integer"},"parent_reply_id":{"type":"integer","nullable":true},"created_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"}}},"Showcase":{"type":"object","properties":{"id":{"type":"integer"},"title":{"type":"string"},"description":{"type":"string"},"user_id":{"type":"integer"},"user_name":{"type":"string"},"category_id":{"type":"integer"},"media_urls":{"type":"array","items":{"type":"string"}},"visibility":{"type":"string","enum":["public","private","friends_only"]},"likes_count":{"type":"integer"},"is_liked":{"type":"boolean"},"created_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"}}}},"securitySchemes":{"BearerAuth":{"type":"http","scheme":"bearer","bearerFormat":"JWT"}}},"tags":[{"name":"Authentication","description":"User authentication endpoints"},{"name":"Users","description":"User profile management"},{"name":"Admin","description":"Admin dashboard and management"},{"name":"Admin - Projects","description":"Admin project management"},{"name":"Admin - Classes","description":"Admin class management"},{"name":"Classes","description":"Public class access"},{"name":"Certificates","description":"Certificate endpoints (private access)"},{"name":"Discussions","description":"Discussion management"},{"name":"Replies","description":"Discussion replies (nested)"},{"name":"Showcases","description":"User portfolio items"},{"name":"Gamification","description":"Points, levels, leaderboard"},{"name":"Health","description":"Server health check"}]}
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JValleyVerse API",
+    "description": "Community-driven learning platform with gamification, certification, and showcase features",
+    "version": "1.0.0",
+    "contact": { "name": "JValleyVerse Team" },
+    "license": { "name": "MIT" }
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local development" },
+    { "url": "https://jvalleyverse.mohagussetiaone.my.id", "description": "Production" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email", "password", "name"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string", "minLength": 6 }, "name": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "description": "Invalid input" },
+          "409": { "description": "Email already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "access_token": { "type": "string" }, "refresh_token": { "type": "string" }, "user": { "$ref": "#/components/schemas/User" } } } } }
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get current user profile",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "User profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } }, "401": { "description": "Unauthorized" } }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user profile",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "bio": { "type": "string" }, "avatar": { "type": "string", "format": "url" } } } } }
+        },
+        "responses": { "200": { "description": "Profile updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } }, "401": { "description": "Unauthorized" } }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get public user profile",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "User profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserPublic" } } } }, "404": { "description": "User not found" } }
+      }
+    },
+    "/api/leaderboard": {
+      "get": {
+        "tags": ["Gamification"],
+        "summary": "Get top users by points",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leaderboard",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/LeaderboardEntry" } }, "pagination": { "$ref": "#/components/schemas/Pagination" } } } }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/projects": {
+      "post": {
+        "tags": ["Admin - Projects"],
+        "summary": "Create project (Admin only)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "category_id"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "thumbnail": { "type": "string", "format": "url" },
+                  "category_id": { "type": "integer" },
+                  "visibility": { "type": "string", "enum": ["public", "private"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Project created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } }, "403": { "description": "Forbidden - Admin only" } }
+      },
+      "get": {
+        "tags": ["Admin - Projects"],
+        "summary": "List all projects (Admin view)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projects list",
+            "content": {
+              "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } }, "pagination": { "$ref": "#/components/schemas/Pagination" } } } }
+            }
+          },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/projects/{id}": {
+      "put": {
+        "tags": ["Admin - Projects"],
+        "summary": "Update project",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "title": { "type": "string" }, "description": { "type": "string" }, "visibility": { "type": "string", "enum": ["public", "private"] } } } } }
+        },
+        "responses": { "200": { "description": "Project updated" }, "403": { "description": "Forbidden" }, "404": { "description": "Project not found" } }
+      },
+      "delete": {
+        "tags": ["Admin - Projects"],
+        "summary": "Delete project",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Project deleted" }, "403": { "description": "Forbidden" }, "404": { "description": "Project not found" } }
+      }
+    },
+    "/api/admin/classes": {
+      "post": {
+        "tags": ["Admin - Classes"],
+        "summary": "Create class",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "project_id", "category_id"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "content": { "type": "string" },
+                  "thumbnail": { "type": "string", "format": "url" },
+                  "project_id": { "type": "integer" },
+                  "category_id": { "type": "integer" },
+                  "difficulty": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+                  "duration": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Class created" }, "403": { "description": "Forbidden" } }
+      }
+    },
+    "/api/classes/{id}": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "Get class details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Class details" }, "404": { "description": "Class not found" } }
+      }
+    },
+    "/api/certificates": {
+      "get": { "tags": ["Certificates"], "summary": "Get user certificates", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "User certificates" }, "401": { "description": "Unauthorized" } } }
+    },
+    "/api/certificates/{code}": {
+      "get": {
+        "tags": ["Certificates"],
+        "summary": "View certificate (Private - Owner only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Certificate details" }, "403": { "description": "Forbidden - Not your certificate" }, "404": { "description": "Certificate not found" } }
+      }
+    },
+    "/api/discussions": {
+      "post": {
+        "tags": ["Discussions"],
+        "summary": "Create discussion",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["title", "content"], "properties": { "title": { "type": "string" }, "content": { "type": "string" }, "class_id": { "type": "integer" }, "category_id": { "type": "integer" } } }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Discussion created" }, "401": { "description": "Unauthorized" } }
+      },
+      "get": {
+        "tags": ["Discussions"],
+        "summary": "List discussions",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "class_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Discussions list" } }
+      }
+    },
+    "/api/discussions/{id}": {
+      "get": {
+        "tags": ["Discussions"],
+        "summary": "Get discussion with threaded replies",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Discussion details with replies" }, "404": { "description": "Discussion not found" } }
+      },
+      "put": {
+        "tags": ["Discussions"],
+        "summary": "Update discussion",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "title": { "type": "string" }, "content": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Discussion updated" }, "403": { "description": "Forbidden" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "tags": ["Discussions"],
+        "summary": "Delete discussion",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Discussion deleted" }, "403": { "description": "Forbidden" } }
+      }
+    },
+    "/api/discussions/{id}/replies": {
+      "post": {
+        "tags": ["Replies"],
+        "summary": "Reply to discussion",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["content"], "properties": { "content": { "type": "string" } } } } } },
+        "responses": { "201": { "description": "Reply created" }, "401": { "description": "Unauthorized" } }
+      },
+      "get": { "tags": ["Replies"], "summary": "Get discussion replies", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "Replies list" } } }
+    },
+    "/api/replies/{id}/replies": {
+      "post": {
+        "tags": ["Replies"],
+        "summary": "Reply to a reply (nested)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["content"], "properties": { "content": { "type": "string" } } } } } },
+        "responses": { "201": { "description": "Nested reply created" }, "401": { "description": "Unauthorized" } }
+      }
+    },
+    "/api/showcases": {
+      "post": {
+        "tags": ["Showcases"],
+        "summary": "Create showcase",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "category_id"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "media_urls": { "type": "array", "items": { "type": "string", "format": "url" } },
+                  "category_id": { "type": "integer" },
+                  "visibility": { "type": "string", "enum": ["public", "private", "friends_only"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Showcase created" }, "401": { "description": "Unauthorized" } }
+      },
+      "get": {
+        "tags": ["Showcases"],
+        "summary": "List showcases",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["newest", "trending", "most_liked"] } }
+        ],
+        "responses": { "200": { "description": "Showcases list" } }
+      }
+    },
+    "/api/showcases/{id}": {
+      "get": {
+        "tags": ["Showcases"],
+        "summary": "Get showcase details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Showcase details" }, "404": { "description": "Showcase not found" } }
+      },
+      "put": {
+        "tags": ["Showcases"],
+        "summary": "Update showcase (Owner only)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "title": { "type": "string" }, "description": { "type": "string" }, "visibility": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Showcase updated" }, "403": { "description": "Forbidden" } }
+      },
+      "delete": {
+        "tags": ["Showcases"],
+        "summary": "Delete showcase",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Showcase deleted" }, "403": { "description": "Forbidden" } }
+      }
+    },
+    "/api/showcases/{id}/like": {
+      "post": {
+        "tags": ["Showcases"],
+        "summary": "Like showcase",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Showcase liked" }, "401": { "description": "Unauthorized" } }
+      },
+      "delete": {
+        "tags": ["Showcases"],
+        "summary": "Unlike showcase",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Like removed" }, "401": { "description": "Unauthorized" } }
+      }
+    },
+    "/api/users/{id}/points": {
+      "get": {
+        "tags": ["Gamification"],
+        "summary": "Get user points and level",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "User points info" } }
+      }
+    },
+    "/api/users/me/activity": {
+      "get": {
+        "tags": ["Gamification"],
+        "summary": "Get user activity log",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Activity log" } }
+      }
+    },
+    "/api/levels": { "get": { "tags": ["Gamification"], "summary": "Get level progression info", "responses": { "200": { "description": "Level information" } } } },
+    "/api/replies/{id}": {
+      "put": {
+        "tags": ["Replies"],
+        "summary": "Update reply",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["content"], "properties": { "content": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Reply updated" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" }, "404": { "description": "Reply not found" } }
+      },
+      "delete": {
+        "tags": ["Replies"],
+        "summary": "Delete reply",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Reply deleted" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" }, "404": { "description": "Reply not found" } }
+      }
+    },
+    "/api/classes/{id}/complete": {
+      "post": {
+        "tags": ["Classes"],
+        "summary": "Mark class as completed",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Class marked as completed" }, "401": { "description": "Unauthorized" }, "404": { "description": "Class not found" } }
+      }
+    },
+    "/api/admin/classes/{id}": {
+      "put": {
+        "tags": ["Admin - Classes"],
+        "summary": "Update class",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "content": { "type": "string" },
+                  "difficulty": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+                  "duration": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Class updated" }, "403": { "description": "Forbidden - Admin only" }, "404": { "description": "Class not found" } }
+      },
+      "delete": {
+        "tags": ["Admin - Classes"],
+        "summary": "Delete class",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "204": { "description": "Class deleted" }, "403": { "description": "Forbidden - Admin only" }, "404": { "description": "Class not found" } }
+      }
+    },
+    "/api/projects/{id}/classes": {
+      "get": {
+        "tags": ["Classes"],
+        "summary": "List classes in a project",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classes list",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Class" } }, "pagination": { "$ref": "#/components/schemas/Pagination" } } } } }
+          },
+          "404": { "description": "Project not found" }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check endpoint",
+        "responses": { "200": { "description": "Server is healthy", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" } } } } } } }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": { "tags": ["Admin"], "summary": "Admin dashboard", "security": [{ "BearerAuth": [] }], "responses": { "200": { "description": "Welcome to admin dashboard" }, "403": { "description": "Forbidden - Admin only" } } }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string" },
+          "avatar": { "type": "string", "format": "url" },
+          "bio": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "user"] },
+          "is_active": { "type": "boolean" },
+          "points": { "type": "integer" },
+          "total_points": { "type": "integer" },
+          "level": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserPublic": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "avatar": { "type": "string", "format": "url" },
+          "bio": { "type": "string" },
+          "level": { "type": "integer" },
+          "points": { "type": "integer" },
+          "showcase_count": { "type": "integer" },
+          "certificate_count": { "type": "integer" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "thumbnail": { "type": "string", "format": "url" },
+          "category_id": { "type": "integer" },
+          "admin_id": { "type": "integer" },
+          "visibility": { "type": "string", "enum": ["public", "private"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LeaderboardEntry": {
+        "type": "object",
+        "properties": { "rank": { "type": "integer" }, "user_id": { "type": "integer" }, "name": { "type": "string" }, "points": { "type": "integer" }, "level": { "type": "integer" }, "badge": { "type": "string" } }
+      },
+      "Pagination": { "type": "object", "properties": { "page": { "type": "integer" }, "limit": { "type": "integer" }, "total": { "type": "integer" } } },
+      "Class": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "content": { "type": "string" },
+          "thumbnail": { "type": "string", "format": "url" },
+          "project_id": { "type": "integer" },
+          "category_id": { "type": "integer" },
+          "difficulty": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+          "duration": { "type": "integer" },
+          "is_completed": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "code": { "type": "string" },
+          "user_id": { "type": "integer" },
+          "class_id": { "type": "integer" },
+          "issued_at": { "type": "string", "format": "date-time" },
+          "valid_until": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Discussion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "user_id": { "type": "integer" },
+          "user_name": { "type": "string" },
+          "class_id": { "type": "integer" },
+          "category_id": { "type": "integer" },
+          "replies_count": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Reply": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "content": { "type": "string" },
+          "user_id": { "type": "integer" },
+          "user_name": { "type": "string" },
+          "discussion_id": { "type": "integer" },
+          "parent_reply_id": { "type": "integer", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Showcase": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "user_id": { "type": "integer" },
+          "user_name": { "type": "string" },
+          "category_id": { "type": "integer" },
+          "media_urls": { "type": "array", "items": { "type": "string" } },
+          "visibility": { "type": "string", "enum": ["public", "private", "friends_only"] },
+          "likes_count": { "type": "integer" },
+          "is_liked": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "securitySchemes": { "BearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" } }
+  },
+  "tags": [
+    { "name": "Authentication", "description": "User authentication endpoints" },
+    { "name": "Users", "description": "User profile management" },
+    { "name": "Admin", "description": "Admin dashboard and management" },
+    { "name": "Admin - Projects", "description": "Admin project management" },
+    { "name": "Admin - Classes", "description": "Admin class management" },
+    { "name": "Classes", "description": "Public class access" },
+    { "name": "Certificates", "description": "Certificate endpoints (private access)" },
+    { "name": "Discussions", "description": "Discussion management" },
+    { "name": "Replies", "description": "Discussion replies (nested)" },
+    { "name": "Showcases", "description": "User portfolio items" },
+    { "name": "Gamification", "description": "Points, levels, leaderboard" },
+    { "name": "Health", "description": "Server health check" }
+  ]
+}

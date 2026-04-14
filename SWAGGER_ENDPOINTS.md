@@ -158,7 +158,7 @@ File dokumentasi: `openapi.json`
 UI Swagger dapat diakses dari endpoint Swagger Docs:
 
 - Local: `http://localhost:3000/api/docs`
-- Production: `https://api.jvalleyverse.com/api/docs`
+- Production: `https://jvalleyverse.mohagussetiaone.my.id/api/docs`
 
 ---
 
