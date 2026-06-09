@@ -65,8 +65,8 @@ func JWTAuth() fiber.Handler {
 			})
 		}
 
-		// ===== SAFE CAST =====
-		userIDFloat, ok := claims["user_id"].(float64)
+		// ===== SAFE CAST - user_id should be string for CUID =====
+		userIDStr, ok := claims["user_id"].(string)
 		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid user_id in token",
@@ -84,10 +84,10 @@ func JWTAuth() fiber.Handler {
 		roleStr = strings.ToLower(strings.TrimSpace(roleStr))
 
 		// ===== DEBUG LOG =====
-		log.Println("USER ID:", userIDFloat)
+		log.Println("USER ID:", userIDStr)
 		log.Println("ROLE:", roleStr)
 
-		c.Locals("userID", uint(userIDFloat))
+		c.Locals("userID", userIDStr)
 		c.Locals("role", roleStr)
 
 		return c.Next()

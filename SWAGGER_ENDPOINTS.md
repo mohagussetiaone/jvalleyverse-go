@@ -84,6 +84,10 @@ Dokumentasi Swagger telah dilengkapi dengan **semua endpoint** dari aplikasi. To
 
 - `GET /admin/dashboard` - Admin dashboard
 
+### User Management (Admin)
+
+- `GET /admin/users` - List semua users dengan pagination
+
 ### Projects (Admin)
 
 - `POST /admin/projects` - Buat project baru

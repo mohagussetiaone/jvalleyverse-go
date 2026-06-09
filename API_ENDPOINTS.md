@@ -6,11 +6,14 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    COMPLETE API MAP                         │
 ├─────────────────────────────────────────────────────────────┤
-│ AUTH              │ USER              │ PROJECTS (ADMIN)    │
-│ POST /login       │ GET /me           │ POST /admin/projects│
-│ POST /register    │ PUT /me           │ GET /admin/projects │
-│ POST /refresh     │ GET /leaderboard  │ PUT /admin/:id      │
-│ POST /logout      │ GET /users/:id    │ DELETE /admin/:id   │
+│ AUTH              │ USER              │ USERS (ADMIN)       │
+│ POST /login       │ GET /me           │ GET /admin/users    │
+│ POST /register    │ PUT /me           │                     │
+│ POST /refresh     │ GET /leaderboard  │ PROJECTS (ADMIN)    │
+│ POST /logout      │ GET /users/:id    │ POST /admin/projects│
+│                   │                   │ GET /admin/projects │
+│                   │                   │ PUT /admin/:id      │
+│                   │                   │ DELETE /admin/:id   │
 ├─────────────────────────────────────────────────────────────┤
 │ CLASSES           │ CERTIFICATES      │ DISCUSSIONS         │
 │ GET /classes      │ POST /generate    │ POST /discussions   │
@@ -191,7 +194,63 @@ Get public user profile
 
 ---
 
-## 📌 Project Endpoints (Admin Only)
+## �‍💼 User Management Endpoints (Admin Only)
+
+### GET /api/users
+
+List all users with pagination (Admin only)
+
+**Headers:** `Authorization: Bearer {admin_token}`
+
+**Query Parameters:**
+
+- `page=1` (default: 1)
+- `limit=20` (default: 20)
+
+**Response (200):**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "name": "Admin User",
+      "avatar": "https://...",
+      "role": "admin",
+      "level": 5,
+      "total_points": 5000,
+      "is_active": true,
+      "created_at": "2024-01-20T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "email": "user@example.com",
+      "name": "John Developer",
+      "avatar": "https://...",
+      "role": "user",
+      "level": 2,
+      "total_points": 450,
+      "is_active": true,
+      "created_at": "2024-01-21T14:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 156
+  }
+}
+```
+
+**Error Responses:**
+
+- `401 Unauthorized` - Missing or invalid token
+- `403 Forbidden` - User is not an admin
+
+---
+
+## �📌 Project Endpoints (Admin Only)
 
 ### POST /api/v1/admin/projects
 

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 
 	"gorm.io/gorm"
@@ -11,28 +12,29 @@ type ClassRepository struct {
 	db *gorm.DB
 }
 
-func NewClassRepository() *ClassRepository {
+func NewClassRepository(db *gorm.DB) *ClassRepository {
 	return &ClassRepository{db: db}
 }
 
 // Create creates new class
-func (r *ClassRepository) Create(class *domain.Class) error {
-	return r.db.Create(class).Error
+func (r *ClassRepository) Create(ctx context.Context, class *domain.Class) error {
+	return r.db.WithContext(ctx).Create(class).Error
 }
 
 // FindByID finds class with project, admin and details
-func (r *ClassRepository) FindByID(classID uint) (*domain.Class, error) {
+func (r *ClassRepository) FindByID(ctx context.Context, classID string) (*domain.Class, error) {
 	class := &domain.Class{}
-	if err := r.db.Preload("Project").Preload("Admin").Preload("Details").First(class, classID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", classID).
+		Preload("Project").Preload("Admin").Preload("Details").First(class).Error; err != nil {
 		return nil, err
 	}
 	return class, nil
 }
 
 // FindBySlug finds class by slug within a project
-func (r *ClassRepository) FindBySlug(projectID uint, slug string) (*domain.Class, error) {
+func (r *ClassRepository) FindBySlug(ctx context.Context, projectID string, slug string) (*domain.Class, error) {
 	class := &domain.Class{}
-	if err := r.db.Where("project_id = ? AND slug = ?", projectID, slug).
+	if err := r.db.WithContext(ctx).Where("project_id = ? AND slug = ?", projectID, slug).
 		Preload("Project").
 		Preload("Admin").
 		Preload("Details").
@@ -44,25 +46,25 @@ func (r *ClassRepository) FindBySlug(projectID uint, slug string) (*domain.Class
 }
 
 // FindNextClass finds the next class in sequence
-func (r *ClassRepository) FindNextClass(nextClassID uint) (*domain.Class, error) {
+func (r *ClassRepository) FindNextClass(ctx context.Context, nextClassID string) (*domain.Class, error) {
 	class := &domain.Class{}
-	if err := r.db.First(class, nextClassID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", nextClassID).First(class).Error; err != nil {
 		return nil, err
 	}
 	return class, nil
 }
 
 // ListByProjectID lists classes in a project
-func (r *ClassRepository) ListByProjectID(projectID uint, page, limit int) ([]domain.Class, int64, error) {
+func (r *ClassRepository) ListByProjectID(ctx context.Context, projectID string, page, limit int) ([]domain.Class, int64, error) {
 	var classes []domain.Class
 	var total int64
 
-	if err := r.db.Model(&domain.Class{}).Where("project_id = ?", projectID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Class{}).Where("project_id = ?", projectID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.Where("project_id = ?", projectID).Preload("Admin").Offset(offset).Limit(limit).Find(&classes).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Preload("Admin").Offset(offset).Limit(limit).Find(&classes).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -70,11 +72,11 @@ func (r *ClassRepository) ListByProjectID(projectID uint, page, limit int) ([]do
 }
 
 // ListAll lists all classes with pagination
-func (r *ClassRepository) ListAll(page, limit int, difficulty *string) ([]domain.Class, int64, error) {
+func (r *ClassRepository) ListAll(ctx context.Context, page, limit int, difficulty *string) ([]domain.Class, int64, error) {
 	var classes []domain.Class
 	var total int64
 
-	query := r.db
+	query := r.db.WithContext(ctx)
 	if difficulty != nil {
 		query = query.Where("difficulty = ?", *difficulty)
 	}
@@ -92,11 +94,11 @@ func (r *ClassRepository) ListAll(page, limit int, difficulty *string) ([]domain
 }
 
 // Update updates class
-func (r *ClassRepository) Update(class *domain.Class) error {
-	return r.db.Model(class).Updates(class).Error
+func (r *ClassRepository) Update(ctx context.Context, class *domain.Class) error {
+	return r.db.WithContext(ctx).Model(class).Updates(class).Error
 }
 
 // DeleteByID deletes class and cascade discussions/certificates
-func (r *ClassRepository) DeleteByID(classID uint) error {
-	return r.db.Delete(&domain.Class{}, classID).Error
+func (r *ClassRepository) DeleteByID(ctx context.Context, classID string) error {
+	return r.db.WithContext(ctx).Where("id = ?", classID).Delete(&domain.Class{}).Error
 }

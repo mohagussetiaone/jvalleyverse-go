@@ -1,9 +1,18 @@
 package service
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/repository"
 )
+
+// ICertificateService defines the business logic for managing certificates
+type ICertificateService interface {
+	IssueCertificate(ctx context.Context, userID, classID string, code string) (*domain.Certificate, error)
+	GetCertificate(ctx context.Context, certID string) (map[string]interface{}, error)
+	GetCertificateByCode(ctx context.Context, code string) (map[string]interface{}, error)
+	ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error)
+}
 
 type CertificateService struct {
 	certRepo  *repository.CertificateRepository
@@ -11,23 +20,27 @@ type CertificateService struct {
 	userRepo  *repository.UserRepository
 }
 
-func NewCertificateService() *CertificateService {
+func NewCertificateService(
+	certRepo *repository.CertificateRepository,
+	classRepo *repository.ClassRepository,
+	userRepo *repository.UserRepository,
+) *CertificateService {
 	return &CertificateService{
-		certRepo:  repository.NewCertificateRepository(),
-		classRepo: repository.NewClassRepository(),
-		userRepo:  repository.NewUserRepository(),
+		certRepo:  certRepo,
+		classRepo: classRepo,
+		userRepo:  userRepo,
 	}
 }
 
 // IssueCertificate issues new certificate for class completion
-func (s *CertificateService) IssueCertificate(userID, classID uint, code string) (*domain.Certificate, error) {
+func (s *CertificateService) IssueCertificate(ctx context.Context, userID, classID string, code string) (*domain.Certificate, error) {
 	cert := &domain.Certificate{
 		UserID:     userID,
 		ClassID:    classID,
 		UniqueCode: code,
 	}
 
-	if err := s.certRepo.Create(cert); err != nil {
+	if err := s.certRepo.Create(ctx, cert); err != nil {
 		return nil, err
 	}
 
@@ -35,8 +48,8 @@ func (s *CertificateService) IssueCertificate(userID, classID uint, code string)
 }
 
 // GetCertificate retrieves certificate details
-func (s *CertificateService) GetCertificate(certID uint) (map[string]interface{}, error) {
-	cert, err := s.certRepo.FindByID(certID)
+func (s *CertificateService) GetCertificate(ctx context.Context, certID string) (map[string]interface{}, error) {
+	cert, err := s.certRepo.FindByID(ctx, certID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +66,8 @@ func (s *CertificateService) GetCertificate(certID uint) (map[string]interface{}
 }
 
 // GetCertificateByCode retrieves certificate by unique code
-func (s *CertificateService) GetCertificateByCode(code string) (map[string]interface{}, error) {
-	cert, err := s.certRepo.FindByCode(code)
+func (s *CertificateService) GetCertificateByCode(ctx context.Context, code string) (map[string]interface{}, error) {
+	cert, err := s.certRepo.FindByCode(ctx, code)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +84,8 @@ func (s *CertificateService) GetCertificateByCode(code string) (map[string]inter
 }
 
 // ListUserCertificates returns certificates earned by user
-func (s *CertificateService) ListUserCertificates(userID uint, page, limit int) ([]map[string]interface{}, error) {
-	certs, _, err := s.certRepo.ListByUserID(userID, page, limit)
+func (s *CertificateService) ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error) {
+	certs, _, err := s.certRepo.ListByUserID(ctx, userID, page, limit)
 	if err != nil {
 		return nil, err
 	}

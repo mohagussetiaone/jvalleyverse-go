@@ -1,26 +1,40 @@
 package service
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/repository"
 )
 
+// IReplyService defines the business logic for managing replies within discussions
+type IReplyService interface {
+	CreateReply(ctx context.Context, userID, discussionID string, content string, parentID *string) (*domain.Reply, error)
+	UpdateReply(ctx context.Context, replyID, userID string, content string) error
+	DeleteReply(ctx context.Context, replyID, userID string, isAdmin bool) error
+	LikeReply(ctx context.Context, userID, replyID string) error
+	MarkBestReply(ctx context.Context, replyID, discussionID, userID string) error
+}
+
 type ReplyService struct {
 	replyRepo      *repository.ReplyRepository
 	discussionRepo *repository.DiscussionRepository
-	userService    *UserService
+	userService    IUserService
 }
 
-func NewReplyService() *ReplyService {
+func NewReplyService(
+	replyRepo *repository.ReplyRepository,
+	discussionRepo *repository.DiscussionRepository,
+	userService IUserService,
+) *ReplyService {
 	return &ReplyService{
-		replyRepo:      repository.NewReplyRepository(),
-		discussionRepo: repository.NewDiscussionRepository(),
-		userService:    NewUserService(),
+		replyRepo:      replyRepo,
+		discussionRepo: discussionRepo,
+		userService:    userService,
 	}
 }
 
 // CreateReply creates new reply (can be nested)
-func (s *ReplyService) CreateReply(userID, discussionID uint, content string, parentID *uint) (*domain.Reply, error) {
+func (s *ReplyService) CreateReply(ctx context.Context, userID, discussionID string, content string, parentID *string) (*domain.Reply, error) {
 	reply := &domain.Reply{
 		UserID:       userID,
 		DiscussionID: discussionID,
@@ -30,12 +44,12 @@ func (s *ReplyService) CreateReply(userID, discussionID uint, content string, pa
 		IsMarkedBest: false,
 	}
 
-	if err := s.replyRepo.Create(reply); err != nil {
+	if err := s.replyRepo.Create(ctx, reply); err != nil {
 		return nil, err
 	}
 
 	// Award points for replying
-	s.userService.AddPoints(userID, "create_reply", 5, map[string]interface{}{
+	s.userService.AddPoints(ctx, userID, "create_reply", 5, map[string]interface{}{
 		"discussion_id": discussionID,
 		"reply_id":      reply.ID,
 	})
@@ -44,52 +58,49 @@ func (s *ReplyService) CreateReply(userID, discussionID uint, content string, pa
 }
 
 // UpdateReply updates reply (owner only)
-func (s *ReplyService) UpdateReply(replyID, userID uint, content string) error {
-	reply, err := s.replyRepo.FindByID(replyID)
+func (s *ReplyService) UpdateReply(ctx context.Context, replyID, userID string, content string) error {
+	reply, err := s.replyRepo.FindByID(ctx, replyID)
 	if err != nil {
 		return err
 	}
 
-	// Only owner can update
 	if reply.UserID != userID {
-		return nil
+		return domain.ErrForbidden
 	}
 
 	reply.Content = content
-	return s.replyRepo.Update(reply)
+	return s.replyRepo.Update(ctx, reply)
 }
 
 // DeleteReply deletes reply and cascade nested replies (owner or admin)
-func (s *ReplyService) DeleteReply(replyID, userID uint, isAdmin bool) error {
-	reply, err := s.replyRepo.FindByID(replyID)
+func (s *ReplyService) DeleteReply(ctx context.Context, replyID, userID string, isAdmin bool) error {
+	reply, err := s.replyRepo.FindByID(ctx, replyID)
 	if err != nil {
 		return err
 	}
 
-	// Only owner or admin can delete
 	if reply.UserID != userID && !isAdmin {
-		return nil
+		return domain.ErrForbidden
 	}
 
-	return s.replyRepo.DeleteByID(replyID)
+	return s.replyRepo.DeleteByID(ctx, replyID)
 }
 
 // LikeReply adds like to reply and awards points to creator
-func (s *ReplyService) LikeReply(userID, replyID uint) error {
-	reply, err := s.replyRepo.FindByID(replyID)
+func (s *ReplyService) LikeReply(ctx context.Context, userID, replyID string) error {
+	reply, err := s.replyRepo.FindByID(ctx, replyID)
 	if err != nil {
 		return err
 	}
 
-	// Increment likes
-	if err := s.replyRepo.IncrementLikes(replyID); err != nil {
+	if err := s.replyRepo.IncrementLikes(ctx, replyID); err != nil {
 		return err
 	}
 
 	// Award points to reply creator if not self-like
 	if reply.UserID != userID {
-		s.userService.AddPoints(reply.UserID, "receive_reply_like", 3, map[string]interface{}{
-			"reply_id": replyID,
+		s.userService.AddPoints(ctx, reply.UserID, "receive_reply_like", 3, map[string]interface{}{
+			"reply_id":  replyID,
 			"from_user": userID,
 		})
 	}
@@ -98,31 +109,30 @@ func (s *ReplyService) LikeReply(userID, replyID uint) error {
 }
 
 // MarkBestReply marks reply as best answer (discussion owner only)
-func (s *ReplyService) MarkBestReply(replyID, discussionID, userID uint) error {
-	discussion, err := s.discussionRepo.FindByID(discussionID)
+func (s *ReplyService) MarkBestReply(ctx context.Context, replyID, discussionID, userID string) error {
+	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
 	if err != nil {
 		return err
 	}
 
-	// Only discussion owner can mark best
 	if discussion.UserID != userID {
-		return nil
+		return domain.ErrForbidden
 	}
 
-	reply, err := s.replyRepo.FindByID(replyID)
+	reply, err := s.replyRepo.FindByID(ctx, replyID)
 	if err != nil {
 		return err
 	}
 
 	reply.IsMarkedBest = true
-	if err := s.replyRepo.Update(reply); err != nil {
+	if err := s.replyRepo.Update(ctx, reply); err != nil {
 		return err
 	}
 
 	// Award points to reply creator
-	s.userService.AddPoints(reply.UserID, "best_answer", 25, map[string]interface{}{
-		"reply_id":       replyID,
-		"discussion_id":  discussionID,
+	s.userService.AddPoints(ctx, reply.UserID, "best_answer", 25, map[string]interface{}{
+		"reply_id":      replyID,
+		"discussion_id": discussionID,
 	})
 
 	return nil

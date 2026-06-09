@@ -7,39 +7,44 @@ import (
 )
 
 type ReplyHandler struct {
-	replySvc *service.ReplyService
+	replySvc service.IReplyService
 }
 
 func NewReplyHandler() *ReplyHandler {
-	return &ReplyHandler{replySvc: service.NewReplyService()}
+	return &ReplyHandler{replySvc: service.GetReplyService()}
 }
 
 // CreateReply creates reply to discussion
 func (h *ReplyHandler) CreateReply(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("userID").(string)
 	discussionID := c.Params("id")
+	if discussionID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid discussion ID"})
+	}
 
 	var input struct {
-		Content  string `json:"content"`
-		ParentID *uint  `json:"parent_id"`
+		Content  string  `json:"content"`
+		ParentID *string `json:"parent_id"`
 	}
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	// TODO: Call service
-	return c.Status(201).JSON(fiber.Map{
-		"message":        "Reply created",
-		"discussion_id":  discussionID,
-		"user_id":        userID,
-		"parent_id":      input.ParentID,
-	})
+	reply, err := h.replySvc.CreateReply(c.UserContext(), userID, discussionID, input.Content, input.ParentID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(201).JSON(reply)
 }
 
 // UpdateReply updates reply
 func (h *ReplyHandler) UpdateReply(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("userID").(string)
 	replyID := c.Params("id")
+	if replyID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid reply ID"})
+	}
 
 	var input struct {
 		Content string `json:"content"`
@@ -48,23 +53,27 @@ func (h *ReplyHandler) UpdateReply(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	// TODO: Verify ownership and call service
-	return c.JSON(fiber.Map{
-		"message": "Reply updated",
-		"id":      replyID,
-		"user_id": userID,
-	})
+	if err := h.replySvc.UpdateReply(c.UserContext(), replyID, userID, input.Content); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Reply updated"})
 }
 
 // DeleteReply deletes reply
 func (h *ReplyHandler) DeleteReply(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("userID").(string)
 	replyID := c.Params("id")
+	if replyID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid reply ID"})
+	}
 
-	// TODO: Verify ownership and call service
-	return c.JSON(fiber.Map{
-		"message": "Reply deleted",
-		"id":      replyID,
-		"user_id": userID,
-	})
+	role, _ := c.Locals("role").(string)
+	isAdmin := role == "admin"
+
+	if err := h.replySvc.DeleteReply(c.UserContext(), replyID, userID, isAdmin); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Reply deleted"})
 }

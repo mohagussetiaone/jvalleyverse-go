@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 
 	"gorm.io/gorm"
@@ -11,44 +12,44 @@ type CertificateRepository struct {
 	db *gorm.DB
 }
 
-func NewCertificateRepository() *CertificateRepository {
+func NewCertificateRepository(db *gorm.DB) *CertificateRepository {
 	return &CertificateRepository{db: db}
 }
 
 // Create creates new certificate
-func (r *CertificateRepository) Create(cert *domain.Certificate) error {
-	return r.db.Create(cert).Error
+func (r *CertificateRepository) Create(ctx context.Context, cert *domain.Certificate) error {
+	return r.db.WithContext(ctx).Create(cert).Error
 }
 
-// FindByID finds certificate by ID
-func (r *CertificateRepository) FindByID(certID uint) (*domain.Certificate, error) {
+// FindByID finds certificate by CUID
+func (r *CertificateRepository) FindByID(ctx context.Context, certID string) (*domain.Certificate, error) {
 	cert := &domain.Certificate{}
-	if err := r.db.Preload("User").Preload("Class").First(cert, certID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", certID).Preload("User").Preload("Class").First(cert).Error; err != nil {
 		return nil, err
 	}
 	return cert, nil
 }
 
 // FindByCode finds certificate by unique code
-func (r *CertificateRepository) FindByCode(code string) (*domain.Certificate, error) {
+func (r *CertificateRepository) FindByCode(ctx context.Context, code string) (*domain.Certificate, error) {
 	cert := &domain.Certificate{}
-	if err := r.db.Where("unique_code = ?", code).Preload("User").Preload("Class").First(cert).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("unique_code = ?", code).Preload("User").Preload("Class").First(cert).Error; err != nil {
 		return nil, err
 	}
 	return cert, nil
 }
 
 // ListByUserID lists all certificates of user
-func (r *CertificateRepository) ListByUserID(userID uint, page, limit int) ([]domain.Certificate, int64, error) {
+func (r *CertificateRepository) ListByUserID(ctx context.Context, userID string, page, limit int) ([]domain.Certificate, int64, error) {
 	var certs []domain.Certificate
 	var total int64
 
-	if err := r.db.Model(&domain.Certificate{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Certificate{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.Where("user_id = ?", userID).Preload("Class").Offset(offset).Limit(limit).Find(&certs).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Class").Offset(offset).Limit(limit).Find(&certs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -56,16 +57,16 @@ func (r *CertificateRepository) ListByUserID(userID uint, page, limit int) ([]do
 }
 
 // ListByClassID lists certificates for a class
-func (r *CertificateRepository) ListByClassID(classID uint, page, limit int) ([]domain.Certificate, int64, error) {
+func (r *CertificateRepository) ListByClassID(ctx context.Context, classID string, page, limit int) ([]domain.Certificate, int64, error) {
 	var certs []domain.Certificate
 	var total int64
 
-	if err := r.db.Model(&domain.Certificate{}).Where("class_id = ?", classID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Certificate{}).Where("class_id = ?", classID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.Where("class_id = ?", classID).Preload("User").Offset(offset).Limit(limit).Find(&certs).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("class_id = ?", classID).Preload("User").Offset(offset).Limit(limit).Find(&certs).Error; err != nil {
 		return nil, 0, err
 	}
 

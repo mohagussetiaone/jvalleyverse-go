@@ -7,28 +7,28 @@ import (
 )
 
 type ProjectHandler struct {
-	projectSvc *service.ProjectService
+	projectSvc service.IProjectService
 }
 
-func NewProjectHandler() *ProjectHandler {
-	return &ProjectHandler{projectSvc: service.NewProjectService()}
+func NewProjectHandler(projectSvc service.IProjectService) *ProjectHandler {
+	return &ProjectHandler{projectSvc: projectSvc}
 }
 
 // CreateProject creates new project (admin only)
 func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
+	userID := c.Locals("userID").(string)
 
 	var input struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Thumbnail   string `json:"thumbnail"`
-		CategoryID  uint   `json:"category_id"`
+		CategoryID  string `json:"category_id"`
 	}
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	project, err := h.projectSvc.CreateProject(userID, input.Title, input.Description, input.Thumbnail, input.CategoryID)
+	project, err := h.projectSvc.CreateProject(c.UserContext(), userID, input.Title, input.Description, input.Thumbnail, input.CategoryID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -38,11 +38,13 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 
 // ListProjects lists all projects (admin only)
 func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
-	page, _ := c.ParamsInt("page")
-	if page < 1 { page = 1 }
+	page := c.QueryInt("page", 1)
+	if page < 1 {
+		page = 1
+	}
 	limit := 20
 
-	projects, err := h.projectSvc.ListProjects(page, limit)
+	projects, err := h.projectSvc.ListProjects(c.UserContext(), page, limit)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -52,15 +54,18 @@ func (h *ProjectHandler) ListProjects(c *fiber.Ctx) error {
 		"pagination": fiber.Map{
 			"page":  page,
 			"limit": limit,
-			"total": len(projects), // Note: service should return total count for real pagination
+			"total": len(projects),
 		},
 	})
 }
 
 // UpdateProject updates project (admin only)
 func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
-	adminID := c.Locals("userID").(uint)
-	projectID, _ := c.ParamsInt("id")
+	adminID := c.Locals("userID").(string)
+	projectID := c.Params("id")
+	if projectID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid project ID"})
+	}
 
 	var input struct {
 		Title       string `json:"title"`
@@ -71,8 +76,7 @@ func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	err := h.projectSvc.UpdateProject(uint(projectID), adminID, input.Title, input.Description, input.Visibility)
-	if err != nil {
+	if err := h.projectSvc.UpdateProject(c.UserContext(), projectID, adminID, input.Title, input.Description, input.Visibility); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
@@ -81,11 +85,13 @@ func (h *ProjectHandler) UpdateProject(c *fiber.Ctx) error {
 
 // DeleteProject deletes project (admin only)
 func (h *ProjectHandler) DeleteProject(c *fiber.Ctx) error {
-	adminID := c.Locals("userID").(uint)
-	projectID, _ := c.ParamsInt("id")
+	adminID := c.Locals("userID").(string)
+	projectID := c.Params("id")
+	if projectID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid project ID"})
+	}
 
-	err := h.projectSvc.DeleteProject(uint(projectID), adminID)
-	if err != nil {
+	if err := h.projectSvc.DeleteProject(c.UserContext(), projectID, adminID); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 

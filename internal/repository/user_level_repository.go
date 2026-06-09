@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 
 	"gorm.io/gorm"
@@ -11,39 +12,32 @@ type UserLevelRepository struct {
 	db *gorm.DB
 }
 
-func NewUserLevelRepository() *UserLevelRepository {
+func NewUserLevelRepository(db *gorm.DB) *UserLevelRepository {
 	return &UserLevelRepository{db: db}
 }
 
 // Create creates new user level record
-func (r *UserLevelRepository) Create(level *domain.UserLevel) error {
-	return r.db.Create(level).Error
+func (r *UserLevelRepository) Create(ctx context.Context, level *domain.UserLevel) error {
+	return r.db.WithContext(ctx).Create(level).Error
 }
 
-// FindByID finds level by level number
-func (r *UserLevelRepository) FindByID(levelID uint) (*domain.UserLevel, error) {
+// FindByLevel finds level config by level number
+func (r *UserLevelRepository) FindByLevel(ctx context.Context, levelNum int) (*domain.UserLevel, error) {
 	level := &domain.UserLevel{}
-	if err := r.db.First(level, levelID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("level = ?", levelNum).First(level).Error; err != nil {
 		return nil, err
 	}
 	return level, nil
 }
 
-// FindByUserID finds current level of user
-func (r *UserLevelRepository) FindByUserID(userID uint) (*domain.UserLevel, error) {
-	// This doesn't exist in schema - UserLevel is configuration
-	// For user's current level, it's in User.Level field
-	return nil, nil
-}
-
-// ListAll lists level configuration
-func (r *UserLevelRepository) ListAll() ([]domain.UserLevel, error) {
+// ListAll lists all level configuration
+func (r *UserLevelRepository) ListAll(ctx context.Context) ([]domain.UserLevel, error) {
 	var levels []domain.UserLevel
-	err := r.db.Order("level ASC").Find(&levels).Error
+	err := r.db.WithContext(ctx).Order("level ASC").Find(&levels).Error
 	return levels, err
 }
 
 // Update updates level record
-func (r *UserLevelRepository) Update(level *domain.UserLevel) error {
-	return r.db.Model(level).Updates(level).Error
+func (r *UserLevelRepository) Update(ctx context.Context, level *domain.UserLevel) error {
+	return r.db.WithContext(ctx).Model(level).Updates(level).Error
 }

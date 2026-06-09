@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"jvalleyverse/internal/domain"
@@ -11,40 +12,62 @@ import (
 	"gorm.io/datatypes"
 )
 
+// IClassService defines the business logic for managing learning classes and progress
+type IClassService interface {
+	GetClassBySlug(ctx context.Context, projectID string, slug string, userID string) (map[string]interface{}, error)
+	StartClass(ctx context.Context, userID, classID string) (*domain.ClassProgress, error)
+	UpdateProgress(ctx context.Context, userID, classID string, percentage int, notes string) (*domain.ClassProgress, error)
+	CompleteClass(ctx context.Context, userID, classID string) (map[string]interface{}, error)
+	AdminCreateClass(ctx context.Context, adminID string, input domain.Class) (*domain.Class, error)
+	AdminUpdateClass(ctx context.Context, id string, input domain.Class) error
+	AdminDeleteClass(ctx context.Context, id string) error
+	AdminCreateClassDetail(ctx context.Context, classID string, about, rules string, tools, media, resources interface{}) (*domain.ClassDetail, error)
+}
+
 type ClassService struct {
 	classRepo    *repository.ClassRepository
 	detailRepo   *repository.ClassDetailRepository
 	progressRepo *repository.ClassProgressRepository
 	certRepo     *repository.CertificateRepository
-	userService  *UserService
+	userService  IUserService
 	projectRepo  *repository.ProjectRepository
 }
 
-func NewClassService() *ClassService {
+func NewClassService(
+	classRepo *repository.ClassRepository,
+	detailRepo *repository.ClassDetailRepository,
+	progressRepo *repository.ClassProgressRepository,
+	certRepo *repository.CertificateRepository,
+	userService IUserService,
+	projectRepo *repository.ProjectRepository,
+) *ClassService {
 	return &ClassService{
-		classRepo:    repository.NewClassRepository(),
-		detailRepo:   repository.NewClassDetailRepository(),
-		progressRepo: repository.NewClassProgressRepository(),
-		certRepo:     repository.NewCertificateRepository(),
-		userService:  NewUserService(),
-		projectRepo:  repository.NewProjectRepository(),
+		classRepo:    classRepo,
+		detailRepo:   detailRepo,
+		progressRepo: progressRepo,
+		certRepo:     certRepo,
+		userService:  userService,
+		projectRepo:  projectRepo,
 	}
 }
 
 // GetClassBySlug returns class with its details and user progress
-func (s *ClassService) GetClassBySlug(projectID uint, slug string, userID uint) (map[string]interface{}, error) {
-	class, err := s.classRepo.FindBySlug(projectID, slug)
+func (s *ClassService) GetClassBySlug(ctx context.Context, projectID string, slug string, userID string) (map[string]interface{}, error) {
+	class, err := s.classRepo.FindBySlug(ctx, projectID, slug)
 	if err != nil {
 		return nil, err
 	}
 
-	// Fetch user progress
-	progress, err := s.progressRepo.FindByUserAndClass(userID, class.ID)
-	if err != nil {
-		// Not started yet
-		progress = &domain.ClassProgress{
-			Status:             "not_started",
-			ProgressPercentage: 0,
+	// Fetch user progress (only when logged in)
+	var progress *domain.ClassProgress
+	if userID != "" {
+		progress, err = s.progressRepo.FindByUserAndClass(ctx, userID, class.ID)
+		if err != nil {
+			// Not started yet
+			progress = &domain.ClassProgress{
+				Status:             "not_started",
+				ProgressPercentage: 0,
+			}
 		}
 	}
 
@@ -57,15 +80,15 @@ func (s *ClassService) GetClassBySlug(projectID uint, slug string, userID uint) 
 }
 
 // StartClass initializes user progress for a class
-func (s *ClassService) StartClass(userID, classID uint) (*domain.ClassProgress, error) {
-	progress, err := s.progressRepo.FindByUserAndClass(userID, classID)
+func (s *ClassService) StartClass(ctx context.Context, userID, classID string) (*domain.ClassProgress, error) {
+	progress, err := s.progressRepo.FindByUserAndClass(ctx, userID, classID)
 	if err == nil {
 		// Already started or exists
 		if progress.Status == "not_started" {
 			progress.Status = "started"
 			now := time.Now()
 			progress.StartedAt = &now
-			err = s.progressRepo.Update(progress)
+			err = s.progressRepo.Update(ctx, progress)
 			return progress, err
 		}
 		return progress, nil
@@ -80,15 +103,15 @@ func (s *ClassService) StartClass(userID, classID uint) (*domain.ClassProgress, 
 		StartedAt:          &now,
 		ProgressPercentage: 0,
 	}
-	err = s.progressRepo.Create(progress)
+	err = s.progressRepo.Create(ctx, progress)
 	return progress, err
 }
 
 // UpdateProgress updates user progress percentage
-func (s *ClassService) UpdateProgress(userID, classID uint, percentage int, notes string) (*domain.ClassProgress, error) {
-	progress, err := s.progressRepo.FindByUserAndClass(userID, classID)
+func (s *ClassService) UpdateProgress(ctx context.Context, userID, classID string, percentage int, notes string) (*domain.ClassProgress, error) {
+	progress, err := s.progressRepo.FindByUserAndClass(ctx, userID, classID)
 	if err != nil {
-		return nil, errors.New("class not started")
+		return nil, domain.ErrNotFound
 	}
 
 	progress.ProgressPercentage = percentage
@@ -97,15 +120,15 @@ func (s *ClassService) UpdateProgress(userID, classID uint, percentage int, note
 		progress.Status = "in_progress"
 	}
 
-	err = s.progressRepo.Update(progress)
+	err = s.progressRepo.Update(ctx, progress)
 	return progress, err
 }
 
 // CompleteClass marks class as completed and issues certificate
-func (s *ClassService) CompleteClass(userID, classID uint) (map[string]interface{}, error) {
-	progress, err := s.progressRepo.FindByUserAndClass(userID, classID)
+func (s *ClassService) CompleteClass(ctx context.Context, userID, classID string) (map[string]interface{}, error) {
+	progress, err := s.progressRepo.FindByUserAndClass(ctx, userID, classID)
 	if err != nil {
-		return nil, errors.New("class not started")
+		return nil, domain.ErrNotFound
 	}
 
 	if progress.Status == "completed" {
@@ -117,7 +140,7 @@ func (s *ClassService) CompleteClass(userID, classID uint) (map[string]interface
 	progress.ProgressPercentage = 100
 	progress.CompletedAt = &now
 
-	if err := s.progressRepo.Update(progress); err != nil {
+	if err := s.progressRepo.Update(ctx, progress); err != nil {
 		return nil, err
 	}
 
@@ -129,18 +152,18 @@ func (s *ClassService) CompleteClass(userID, classID uint) (map[string]interface
 		UniqueCode: code,
 		IssuedAt:   now,
 	}
-	if err := s.certRepo.Create(cert); err != nil {
+	if err := s.certRepo.Create(ctx, cert); err != nil {
 		return nil, err
 	}
 
-	// Award points (50 for completion as per previous logic)
-	s.userService.AddPoints(userID, "complete_class", 50, map[string]interface{}{
+	// Award points (50 for completion)
+	s.userService.AddPoints(ctx, userID, "complete_class", 50, map[string]interface{}{
 		"class_id":  classID,
 		"cert_code": code,
 	})
 
 	// Get next class info
-	class, _ := s.classRepo.FindByID(classID)
+	class, _ := s.classRepo.FindByID(ctx, classID)
 
 	return map[string]interface{}{
 		"message":        "Class completed!",
@@ -158,20 +181,19 @@ func generateUniqueCertificateCode() string {
 
 // Admin Methods
 
-func (s *ClassService) AdminCreateClass(adminID uint, input domain.Class) (*domain.Class, error) {
+func (s *ClassService) AdminCreateClass(ctx context.Context, adminID string, input domain.Class) (*domain.Class, error) {
 	input.AdminID = adminID
-	if err := s.classRepo.Create(&input); err != nil {
+	if err := s.classRepo.Create(ctx, &input); err != nil {
 		return nil, err
 	}
 	return &input, nil
 }
 
-func (s *ClassService) AdminUpdateClass(id uint, input domain.Class) error {
-	class, err := s.classRepo.FindByID(id)
+func (s *ClassService) AdminUpdateClass(ctx context.Context, id string, input domain.Class) error {
+	class, err := s.classRepo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	// Update fields
 	class.Title = input.Title
 	class.Description = input.Description
 	class.Slug = input.Slug
@@ -181,14 +203,14 @@ func (s *ClassService) AdminUpdateClass(id uint, input domain.Class) error {
 	class.SequenceNum = input.SequenceNum
 	class.NextClassID = input.NextClassID
 
-	return s.classRepo.Update(class)
+	return s.classRepo.Update(ctx, class)
 }
 
-func (s *ClassService) AdminDeleteClass(id uint) error {
-	return s.classRepo.DeleteByID(id)
+func (s *ClassService) AdminDeleteClass(ctx context.Context, id string) error {
+	return s.classRepo.DeleteByID(ctx, id)
 }
 
-func (s *ClassService) AdminCreateClassDetail(classID uint, about, rules string, tools, media, resources interface{}) (*domain.ClassDetail, error) {
+func (s *ClassService) AdminCreateClassDetail(ctx context.Context, classID string, about, rules string, tools, media, resources interface{}) (*domain.ClassDetail, error) {
 	toolsJSON, _ := json.Marshal(tools)
 	mediaJSON, _ := json.Marshal(media)
 	resourcesJSON, _ := json.Marshal(resources)
@@ -202,7 +224,7 @@ func (s *ClassService) AdminCreateClassDetail(classID uint, about, rules string,
 		Resources:     datatypes.JSON(resourcesJSON),
 	}
 
-	if err := s.detailRepo.Create(detail); err != nil {
+	if err := s.detailRepo.Create(ctx, detail); err != nil {
 		return nil, err
 	}
 	return detail, nil

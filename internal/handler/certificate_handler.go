@@ -7,41 +7,45 @@ import (
 )
 
 type CertificateHandler struct {
-	certificateSvc *service.CertificateService
+	certificateSvc service.ICertificateService
 }
 
 func NewCertificateHandler() *CertificateHandler {
-	return &CertificateHandler{certificateSvc: service.NewCertificateService()}
+	return &CertificateHandler{certificateSvc: service.GetCertificateService()}
 }
 
 // ListCertificates returns user's certificates
 func (h *CertificateHandler) ListCertificates(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
-	_ = userID // TODO: Query certificates from service
+	userID := c.Locals("userID").(string)
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 20)
+
+	certs, err := h.certificateSvc.ListUserCertificates(c.UserContext(), userID, page, limit)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
 
 	return c.JSON(fiber.Map{
-		"data": []fiber.Map{},
+		"data": certs,
 		"pagination": fiber.Map{
-			"page":  1,
-			"limit": 20,
-			"total": 0,
+			"page":  page,
+			"limit": limit,
+			"total": len(certs),
 		},
 	})
 }
 
-// GetCertificate returns specific certificate
+// GetCertificate returns specific certificate by unique code
 func (h *CertificateHandler) GetCertificate(c *fiber.Ctx) error {
 	code := c.Params("code")
-	userID := c.Locals("userID").(uint)
-	_ = userID // TODO: Verify certificate owner
+	if code == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid certificate code"})
+	}
 
-	return c.JSON(fiber.Map{
-		"id":           0,
-		"unique_code":  code,
-		"user_id":      userID,
-		"class_id":     0,
-		"badge_url":    "",
-		"issued_at":    "",
-		"issued_to":    "",
-	})
+	cert, err := h.certificateSvc.GetCertificateByCode(c.UserContext(), code)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Certificate not found"})
+	}
+
+	return c.JSON(cert)
 }

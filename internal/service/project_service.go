@@ -1,9 +1,19 @@
 package service
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/repository"
 )
+
+// IProjectService defines the business logic for managing learning projects
+type IProjectService interface {
+	CreateProject(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string) (*domain.Project, error)
+	ListProjects(ctx context.Context, page, limit int) ([]map[string]interface{}, error)
+	GetProject(ctx context.Context, projectID string) (map[string]interface{}, error)
+	UpdateProject(ctx context.Context, projectID, adminID string, title, description string, visibility string) error
+	DeleteProject(ctx context.Context, projectID, adminID string) error
+}
 
 type ProjectService struct {
 	projectRepo *repository.ProjectRepository
@@ -11,16 +21,20 @@ type ProjectService struct {
 	userRepo    *repository.UserRepository
 }
 
-func NewProjectService() *ProjectService {
+func NewProjectService(
+	projectRepo *repository.ProjectRepository,
+	classRepo *repository.ClassRepository,
+	userRepo *repository.UserRepository,
+) *ProjectService {
 	return &ProjectService{
-		projectRepo: repository.NewProjectRepository(),
-		classRepo:   repository.NewClassRepository(),
-		userRepo:    repository.NewUserRepository(),
+		projectRepo: projectRepo,
+		classRepo:   classRepo,
+		userRepo:    userRepo,
 	}
 }
 
 // CreateProject creates new learning project (admin only)
-func (s *ProjectService) CreateProject(adminID uint, title, description, thumbnail string, categoryID uint) (*domain.Project, error) {
+func (s *ProjectService) CreateProject(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string) (*domain.Project, error) {
 	project := &domain.Project{
 		Title:       title,
 		Description: description,
@@ -30,7 +44,7 @@ func (s *ProjectService) CreateProject(adminID uint, title, description, thumbna
 		Visibility:  "public",
 	}
 
-	if err := s.projectRepo.Create(project); err != nil {
+	if err := s.projectRepo.Create(ctx, project); err != nil {
 		return nil, err
 	}
 
@@ -38,8 +52,8 @@ func (s *ProjectService) CreateProject(adminID uint, title, description, thumbna
 }
 
 // ListProjects returns all projects with pagination
-func (s *ProjectService) ListProjects(page, limit int) ([]map[string]interface{}, error) {
-	projects, _, err := s.projectRepo.ListAll(page, limit)
+func (s *ProjectService) ListProjects(ctx context.Context, page, limit int) ([]map[string]interface{}, error) {
+	projects, _, err := s.projectRepo.ListAll(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -62,14 +76,14 @@ func (s *ProjectService) ListProjects(page, limit int) ([]map[string]interface{}
 }
 
 // GetProject returns specific project with classes
-func (s *ProjectService) GetProject(projectID uint) (map[string]interface{}, error) {
-	project, err := s.projectRepo.FindByID(projectID)
+func (s *ProjectService) GetProject(ctx context.Context, projectID string) (map[string]interface{}, error) {
+	project, err := s.projectRepo.FindByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get classes in project
-	classes, _, err := s.classRepo.ListByProjectID(projectID, 1, 100)
+	classes, _, err := s.classRepo.ListByProjectID(ctx, projectID, 1, 100)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +91,8 @@ func (s *ProjectService) GetProject(projectID uint) (map[string]interface{}, err
 	classData := make([]map[string]interface{}, len(classes))
 	for i, c := range classes {
 		classData[i] = map[string]interface{}{
-			"id":        c.ID,
-			"title":     c.Title,
+			"id":         c.ID,
+			"title":      c.Title,
 			"difficulty": c.Difficulty,
 		}
 	}
@@ -97,35 +111,35 @@ func (s *ProjectService) GetProject(projectID uint) (map[string]interface{}, err
 }
 
 // UpdateProject updates project details (admin only)
-func (s *ProjectService) UpdateProject(projectID, adminID uint, title, description string, visibility string) error {
-	project, err := s.projectRepo.FindByID(projectID)
+func (s *ProjectService) UpdateProject(ctx context.Context, projectID, adminID string, title, description string, visibility string) error {
+	project, err := s.projectRepo.FindByID(ctx, projectID)
 	if err != nil {
 		return err
 	}
 
 	// Only admin owner can update
 	if project.AdminID != adminID {
-		return nil
+		return domain.ErrForbidden
 	}
 
 	project.Title = title
 	project.Description = description
 	project.Visibility = visibility
 
-	return s.projectRepo.Update(project)
+	return s.projectRepo.Update(ctx, project)
 }
 
 // DeleteProject deletes project and cascade delete classes (admin only)
-func (s *ProjectService) DeleteProject(projectID, adminID uint) error {
-	project, err := s.projectRepo.FindByID(projectID)
+func (s *ProjectService) DeleteProject(ctx context.Context, projectID, adminID string) error {
+	project, err := s.projectRepo.FindByID(ctx, projectID)
 	if err != nil {
 		return err
 	}
 
 	// Only admin owner can delete
 	if project.AdminID != adminID {
-		return nil
+		return domain.ErrForbidden
 	}
 
-	return s.projectRepo.DeleteByID(projectID)
+	return s.projectRepo.DeleteByID(ctx, projectID)
 }

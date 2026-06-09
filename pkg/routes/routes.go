@@ -2,6 +2,7 @@ package routes
 
 import (
 	"jvalleyverse/internal/handler"
+	"jvalleyverse/internal/service"
 	"jvalleyverse/pkg/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,7 +12,7 @@ import (
 func SetupRoutes(app *fiber.App) {
 	// ==================== PUBLIC ROUTES ====================
 	// Auth endpoints
-	authHandler := handler.NewAuthHandler()
+	authHandler := handler.NewAuthHandler(service.GetUserService())
 	app.Post("/api/auth/register", authHandler.Register)
 	app.Post("/api/auth/login", authHandler.Login)
 	// For backward compatibility
@@ -19,28 +20,41 @@ func SetupRoutes(app *fiber.App) {
 	app.Post("/auth/login", authHandler.Login)
 
 	// List public content
-	showcaseHandler := handler.NewShowcaseHandler()
-	app.Get("/api/leaderboard", showcaseHandler.GetLeaderboard)
+	showcaseHandler := handler.NewShowcaseHandler(service.GetShowcaseService())
+	app.Get("/api/leaderboard", handler.NewGamificationHandler().GetLeaderboard)
 	app.Get("/api/showcases", showcaseHandler.ListShowcases)
 	app.Get("/api/showcases/:id", showcaseHandler.GetShowcase)
 
 	// ==================== PUBLIC ROUTES (no auth) ====================
-	// Publicly accessible user profile and class details
-	publicUserHandler := handler.NewUserHandler()
-	app.Get("/api/users/:id", publicUserHandler.GetPublicProfile)
-	publicClassHandler := handler.NewClassHandler()
+	// Publicly accessible class details
+	publicClassHandler := handler.NewClassHandler(service.GetClassService())
 	app.Get("/api/projects/:project_id/classes/:slug", publicClassHandler.GetClassBySlug)
+
+	// Health check (public, no auth required)
+	healthHandler := handler.NewHealthHandler()
+	app.Get("/api/health", healthHandler.Health)
+	app.Get("/api/health/detailed", healthHandler.HealthDetailed)
+
+	// Public Category endpoints (no auth required)
+	categoryHandler := handler.NewCategoryHandler(service.GetCategoryService())
+	app.Get("/api/categories", categoryHandler.ListCategories)
+	app.Get("/api/categories/:slug", categoryHandler.GetCategoryBySlug)
+	app.Get("/api/categories/:category_id/projects", categoryHandler.ListProjectsByCategory)
+
+	// ==================== PROTECTED ROUTES ====================
+
+	// User endpoints (MUST be before /api/users/:id to avoid route conflicts)
+	userHandler := handler.NewUserHandler(service.GetUserService())
+	app.Get("/api/users/me", middleware.JWTAuth(), userHandler.GetProfile)
+	app.Put("/api/users/me", middleware.JWTAuth(), userHandler.UpdateProfile)
+	app.Get("/api/users/me/activity", middleware.JWTAuth(), userHandler.GetActivityLog)
+
+	// Public user profile (no auth required, placed before protected group to bypass JWTAuth)
+	app.Get("/api/users/:id", userHandler.GetPublicProfile)
 
 	// ==================== PROTECTED ROUTES ====================
 
 	api := app.Group("/api", middleware.JWTAuth())
-
-	// User endpoints
-	userHandler := handler.NewUserHandler()
-	api.Get("/users/me", userHandler.GetProfile)
-	api.Put("/users/me", userHandler.UpdateProfile)
-	api.Get("/users/:id", userHandler.GetPublicProfile)
-	api.Get("/users/me/activity", userHandler.GetActivityLog)
 
 	// Showcase endpoints
 	api.Post("/showcases", showcaseHandler.Create)
@@ -73,7 +87,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/users/:id/points", gamificationHandler.GetUserPoints)
 
 	// Class endpoints
-	classHandler := handler.NewClassHandler()
+	classHandler := handler.NewClassHandler(service.GetClassService())
 	api.Get("/projects/:project_id/classes/:slug", classHandler.GetClassBySlug)
 	api.Post("/classes/:id/start", classHandler.StartClass)
 	api.Put("/classes/:id/progress", classHandler.UpdateProgress)
@@ -86,8 +100,11 @@ func SetupRoutes(app *fiber.App) {
 		return c.JSON(fiber.Map{"message": "Welcome admin"})
 	})
 
+	// Admin User endpoints
+	admin.Get("/users", userHandler.GetAllUsers)
+
 	// Admin Project endpoints
-	projectHandler := handler.NewProjectHandler()
+	projectHandler := handler.NewProjectHandler(service.GetProjectService())
 	admin.Post("/projects", projectHandler.CreateProject)
 	admin.Get("/projects", projectHandler.ListProjects)
 	admin.Put("/projects/:id", projectHandler.UpdateProject)
@@ -99,8 +116,9 @@ func SetupRoutes(app *fiber.App) {
 	admin.Put("/classes/:id", classHandler.UpdateClass)
 	admin.Delete("/classes/:id", classHandler.DeleteClass)
 
-	// Health check
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
-	})
+	// Admin Category endpoints
+	admin.Post("/categories", categoryHandler.CreateCategory)
+	admin.Get("/categories", categoryHandler.ListCategories)
+	admin.Put("/categories/:id", categoryHandler.UpdateCategory)
+	admin.Delete("/categories/:id", categoryHandler.DeleteCategory)
 }

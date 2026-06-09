@@ -11,14 +11,15 @@
 
 1. [Authentication](#authentication)
 2. [User Management](#user-management)
-3. [Projects](#projects-admin)
-4. [Classes](#classes)
-5. [Discussions & Replies](#discussions--replies)
-6. [Certificates](#certificates)
-7. [Showcases](#showcases)
-8. [Gamification](#gamification)
-9. [Error Handling](#error-handling)
-10. [Rate Limiting](#rate-limiting)
+3. [Admin User Management](#admin-user-management)
+4. [Projects](#projects-admin)
+5. [Classes](#classes)
+6. [Discussions & Replies](#discussions--replies)
+7. [Certificates](#certificates)
+8. [Showcases](#showcases)
+9. [Gamification](#gamification)
+10. [Error Handling](#error-handling)
+11. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -240,7 +241,88 @@ Get top users ranked by points.
 
 ---
 
-## 📌 Projects (Admin)
+## �‍💼 Admin User Management
+
+### List All Users (Admin)
+
+**Endpoint**: `GET /admin/users`
+
+Retrieve paginated list of all users in the system (Admin only).
+
+**Headers**:
+
+```
+Authorization: Bearer {admin_token}
+```
+
+**Query Parameters**:
+
+- `page` (optional, default: 1) - Page number
+- `limit` (optional, default: 20) - Items per page (max: 100)
+
+**Response** (200 OK):
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "name": "Admin User",
+      "avatar": "https://example.com/avatar.jpg",
+      "role": "admin",
+      "level": 5,
+      "total_points": 5000,
+      "is_active": true,
+      "created_at": "2024-01-15T08:00:00Z"
+    },
+    {
+      "id": 2,
+      "email": "john@example.com",
+      "name": "John Developer",
+      "avatar": "https://example.com/john.jpg",
+      "role": "user",
+      "level": 2,
+      "total_points": 450,
+      "is_active": true,
+      "created_at": "2024-01-20T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "email": "jane@example.com",
+      "name": "Jane Designer",
+      "avatar": "https://example.com/jane.jpg",
+      "role": "user",
+      "level": 3,
+      "total_points": 1200,
+      "is_active": true,
+      "created_at": "2024-01-22T14:15:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 156
+  }
+}
+```
+
+**Error Responses**:
+
+- `401 Unauthorized` - Invalid or missing authentication token
+- `403 Forbidden` - User is not an admin
+
+**Example Request**:
+
+```bash
+curl -X GET 'http://localhost:3000/api/admin/users?page=1&limit=20' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' \
+  -H 'Content-Type: application/json'
+```
+
+---
+
+## �📌 Projects (Admin)
 
 ### Create Project
 

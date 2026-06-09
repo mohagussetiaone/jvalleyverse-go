@@ -93,24 +93,6 @@ func SeedInitialData(db *gorm.DB) error {
 }
 
 // ============================================================================
-// HELPER: get the global DB from repository package
-// ============================================================================
-
-func getDB() *gorm.DB {
-	// Access the DB via a new repository that exposes it
-	repo := newSeedRepository(getDB())
-	return repo.db
-}
-
-type seedRepository struct {
-	db *gorm.DB
-}
-
-func newSeedRepository(db *gorm.DB) *seedRepository {
-    return &seedRepository{db: db}
-}
-
-// ============================================================================
 // 1. SEED USERS
 // ============================================================================
 
@@ -192,7 +174,7 @@ func seedUsers(db *gorm.DB) (map[string]*domain.User, error) {
 			return nil, err
 		}
 		result[keys[i]] = &user
-		fmt.Printf("    ✓ User: %s (ID: %d, Role: %s)\n", user.Name, user.ID, user.Role)
+		fmt.Printf("    ✓ User: %s (ID: %s, Role: %s)\n", user.Name, user.ID, user.Role)
 	}
 
 	return result, nil
@@ -245,7 +227,7 @@ func seedCategories(db *gorm.DB) (map[string]*domain.Category, error) {
 			return nil, err
 		}
 		result[cat.Slug] = &cat
-		fmt.Printf("    ✓ Category: %s (ID: %d)\n", cat.Name, cat.ID)
+		fmt.Printf("    ✓ Category: %s (ID: %s)\n", cat.Name, cat.ID)
 	}
 
 	return result, nil
@@ -324,7 +306,7 @@ func seedProjects(db *gorm.DB, admin *domain.User, categories map[string]*domain
 			return nil, err
 		}
 		result[pd.key] = &project
-		fmt.Printf("    ✓ Project: %s (ID: %d)\n", project.Title, project.ID)
+		fmt.Printf("    ✓ Project: %s (ID: %s)\n", project.Title, project.ID)
 	}
 
 	return result, nil
@@ -358,8 +340,8 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "Di kelas ini kamu akan belajar dasar-dasar bahasa Go (Golang), mulai dari instalasi, konfigurasi environment, hingga membuat program pertama. Go adalah bahasa yang dikembangkan oleh Google, terkenal dengan performa tinggi dan kesederhanaan syntaxnya.",
-				Rules: "1. Pastikan sudah menginstall Go versi terbaru\n2. Gunakan code editor (VS Code direkomendasikan)\n3. Selesaikan semua latihan sebelum lanjut ke kelas berikutnya\n4. Jangan ragu bertanya di forum diskusi",
+				About: "Di kelas ini kamu akan belajar dasar-dasar bahasa Go (Golang), mulai dari instalasi, konfigurasi environment, hingga membuat program pertama.",
+				Rules: "1. Pastikan sudah menginstall Go versi terbaru\n2. Gunakan code editor (VS Code direkomendasikan)\n3. Selesaikan semua latihan sebelum lanjut ke kelas berikutnya",
 				Tools: mustJSON([]string{"Go 1.21+", "VS Code", "Git", "Terminal/Command Prompt"}),
 				ResourceMedia: mustJSON(map[string][]string{
 					"videos":    {"https://youtube.com/watch?v=example1"},
@@ -389,7 +371,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "Fiber adalah web framework Go yang terinspirasi dari Express.js. Di kelas ini kamu akan belajar setup Fiber, membuat route, menggunakan middleware, dan handling request/response.",
+				About: "Fiber adalah web framework Go yang terinspirasi dari Express.js. Setup Fiber, membuat route, menggunakan middleware, dan handling request/response.",
 				Rules: "1. Sudah menyelesaikan kelas Pengenalan Go\n2. Praktikkan setiap contoh kode\n3. Buat minimal 5 endpoint berbeda sebagai latihan",
 				Tools: mustJSON([]string{"Go 1.21+", "Fiber v2", "Postman/Insomnia", "VS Code"}),
 				ResourceMedia: mustJSON(map[string][]string{
@@ -419,7 +401,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "GORM adalah ORM paling populer untuk Go. Kamu akan belajar koneksi database, model definition, migration, CRUD operations, relationships, dan query optimization.",
+				About: "GORM adalah ORM paling populer untuk Go. Koneksi database, model definition, migration, CRUD operations, relationships, dan query optimization.",
 				Rules: "1. Install PostgreSQL di local atau gunakan Docker\n2. Sudah menyelesaikan kelas Fiber Framework\n3. Pahami konsep dasar SQL sebelum memulai",
 				Tools: mustJSON([]string{"Go 1.21+", "PostgreSQL 15+", "GORM v2", "pgAdmin/DBeaver", "Docker (optional)"}),
 				ResourceMedia: mustJSON(map[string][]string{
@@ -451,7 +433,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "Memulai project React modern menggunakan Vite sebagai build tool, TypeScript untuk type safety, dan Tailwind CSS untuk styling yang cepat dan konsisten.",
+				About: "Memulai project React modern menggunakan Vite sebagai build tool, TypeScript untuk type safety, dan Tailwind CSS untuk styling yang cepat.",
 				Rules: "1. Install Node.js versi 18+\n2. Familiar dengan HTML, CSS, JavaScript\n3. Gunakan npm atau yarn sebagai package manager",
 				Tools: mustJSON([]string{"Node.js 18+", "VS Code", "Chrome DevTools", "npm/yarn"}),
 				ResourceMedia: mustJSON(map[string][]string{
@@ -481,7 +463,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "Belajar membuat komponen-komponen UI yang reusable untuk dashboard. Mulai dari layout system, sidebar navigation, stats cards, hingga data table dengan sorting dan filtering.",
+				About: "Membuat komponen-komponen UI reusable untuk dashboard. Layout system, sidebar navigation, stats cards, hingga data table dengan sorting dan filtering.",
 				Rules: "1. Sudah menyelesaikan kelas Setup React\n2. Jangan copy-paste, ketik sendiri untuk memahami\n3. Buat variasi komponen sebagai latihan",
 				Tools: mustJSON([]string{"React 18+", "TypeScript", "Tailwind CSS", "Recharts/Chart.js"}),
 				ResourceMedia: mustJSON(map[string][]string{
@@ -513,7 +495,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 				Visibility:  "public",
 			},
 			detail: domain.ClassDetail{
-				About: "Pengenalan Flutter dan Dart untuk pemula. Belajar widget tree, layout system, state management dasar, dan navigasi antar halaman.",
+				About: "Pengenalan Flutter dan Dart untuk pemula. Widget tree, layout system, state management dasar, dan navigasi antar halaman.",
 				Rules: "1. Install Flutter SDK & Android Studio/VS Code\n2. Setup emulator atau gunakan physical device\n3. Selesaikan Flutter doctor tanpa error",
 				Tools: mustJSON([]string{"Flutter SDK 3.x", "Dart", "Android Studio / VS Code", "Android Emulator / iOS Simulator"}),
 				ResourceMedia: mustJSON(map[string][]string{
@@ -548,7 +530,7 @@ func seedClasses(db *gorm.DB, admin *domain.User, projects map[string]*domain.Pr
 			return nil, err
 		}
 
-		fmt.Printf("    ✓ Class: %s (ID: %d, Project: %s)\n", class.Title, class.ID, cd.projectKey)
+		fmt.Printf("    ✓ Class: %s (ID: %s, Project: %s)\n", class.Title, class.ID, cd.projectKey)
 	}
 
 	// Link classes with NextClassID for progression
@@ -603,7 +585,7 @@ func seedClassProgress(db *gorm.DB, users map[string]*domain.User, classes map[s
 			StartedAt:          &now,
 			ProgressPercentage: 10,
 		},
-		// Andi sudah advanced, selesai beberapa kelas
+		// Andi sudah advanced
 		{
 			UserID:             users["andi"].ID,
 			ClassID:            classes["go-intro"].ID,
@@ -654,12 +636,15 @@ func seedClassProgress(db *gorm.DB, users map[string]*domain.User, classes map[s
 // ============================================================================
 
 func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[string]*domain.Class, categories map[string]*domain.Category) error {
+	classGoIntroID := classes["go-intro"].ID
+	classReactSetupID := classes["react-setup"].ID
+
 	// Discussion 1: Budi bertanya tentang Go
 	disc1 := domain.Discussion{
 		Title:      "Perbedaan goroutine dan thread biasa?",
-		Content:    "Halo semua, saya baru belajar Go dan masih bingung bedanya goroutine dengan thread biasa di bahasa lain. Bisa tolong jelaskan dengan contoh sederhana?\n\nSaya sudah baca dokumentasi tapi masih kurang paham bagian scheduler-nya.",
+		Content:    "Halo semua, saya baru belajar Go dan masih bingung bedanya goroutine dengan thread biasa di bahasa lain. Bisa tolong jelaskan dengan contoh sederhana?",
 		UserID:     users["budi"].ID,
-		ClassID:    &classes["go-intro"].ID,
+		ClassID:    &classGoIntroID,
 		CategoryID: categories["backend-development"].ID,
 		ViewsCount: 42,
 		Status:     "open",
@@ -670,7 +655,7 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 
 	// Replies for Discussion 1
 	reply1 := domain.Reply{
-		Content:      "Goroutine itu lightweight thread yang dikelola oleh Go runtime, bukan OS. Satu OS thread bisa menjalankan ribuan goroutine karena Go punya scheduler sendiri (M:N scheduling).\n\nContoh sederhana:\n```go\ngo func() {\n    fmt.Println(\"Hello dari goroutine!\")\n}()\n```\n\nBeda dengan thread biasa yang berat (biasanya 1-8MB stack), goroutine cuma pakai ~2KB stack yang bisa grow/shrink otomatis.",
+		Content:      "Goroutine itu lightweight thread yang dikelola oleh Go runtime, bukan OS. Satu OS thread bisa menjalankan ribuan goroutine karena Go punya scheduler sendiri (M:N scheduling).",
 		UserID:       users["andi"].ID,
 		DiscussionID: disc1.ID,
 		LikesCount:   5,
@@ -681,10 +666,10 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 	}
 
 	reply2 := domain.Reply{
-		Content:      "Tambahannya, goroutine juga lebih murah untuk context switching karena Go scheduler yang handle, bukan kernel. Makanya bisa jalankan puluhan ribu goroutine tanpa masalah 🚀",
-		UserID:       users["admin"].ID,
+		Content:    "Tambahannya, goroutine juga lebih murah untuk context switching karena Go scheduler yang handle, bukan kernel. Makanya bisa jalankan puluhan ribu goroutine tanpa masalah.",
+		UserID:     users["admin"].ID,
 		DiscussionID: disc1.ID,
-		LikesCount:   3,
+		LikesCount: 3,
 	}
 	if err := db.Where("discussion_id = ? AND user_id = ? AND content LIKE ?", reply2.DiscussionID, reply2.UserID, "%context switching%").FirstOrCreate(&reply2).Error; err != nil {
 		return err
@@ -692,7 +677,7 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 
 	// Nested reply
 	nestedReply := domain.Reply{
-		Content:      "Terima kasih penjelasannya! Sekarang sudah lebih paham. Jadi intinya goroutine itu lebih efisien dari thread ya 👍",
+		Content:      "Terima kasih penjelasannya! Sekarang sudah lebih paham. Jadi intinya goroutine itu lebih efisien dari thread ya.",
 		UserID:       users["budi"].ID,
 		DiscussionID: disc1.ID,
 		ParentID:     &reply1.ID,
@@ -704,9 +689,9 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 	// Discussion 2: Siti bertanya tentang React
 	disc2 := domain.Discussion{
 		Title:      "Kapan pakai useState vs useReducer?",
-		Content:    "Saya lagi belajar React hooks dan bingung kapan harus pakai useState dan kapan pakai useReducer. Ada rule of thumb-nya gak?\n\nTerutama untuk form yang kompleks, lebih baik pakai yang mana?",
+		Content:    "Saya lagi belajar React hooks dan bingung kapan harus pakai useState dan kapan pakai useReducer. Ada rule of thumb-nya gak?",
 		UserID:     users["siti"].ID,
-		ClassID:    &classes["react-setup"].ID,
+		ClassID:    &classReactSetupID,
 		CategoryID: categories["frontend-development"].ID,
 		ViewsCount: 28,
 		Status:     "open",
@@ -716,7 +701,7 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 	}
 
 	reply3 := domain.Reply{
-		Content:      "Rule of thumb saya:\n- **useState**: untuk state sederhana (toggle, single value, counter)\n- **useReducer**: untuk state kompleks (form dengan banyak field, state yang saling bergantung)\n\nUseReducer juga bagus kalau kamu perlu predictable state transitions. Mirip seperti Redux tapi built-in.",
+		Content:      "Rule of thumb: useState untuk state sederhana, useReducer untuk state kompleks dengan banyak field yang saling bergantung.",
 		UserID:       users["andi"].ID,
 		DiscussionID: disc2.ID,
 		LikesCount:   4,
@@ -728,7 +713,7 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 	// Discussion 3: General discussion
 	disc3 := domain.Discussion{
 		Title:      "Tips belajar programming untuk pemula",
-		Content:    "Halo teman-teman! Saya mau share tips belajar programming berdasarkan pengalaman saya:\n\n1. Konsisten lebih penting dari intensitas\n2. Jangan cuma nonton tutorial, langsung praktik\n3. Buat project sendiri, sekecil apapun\n4. Gabung komunitas untuk diskusi\n5. Jangan takut error, itu bagian dari proses\n\nShare juga tips kalian dong!",
+		Content:    "Halo teman-teman! Share tips belajar programming: konsisten, langsung praktik, buat project sendiri, gabung komunitas, jangan takut error.",
 		UserID:     users["admin"].ID,
 		CategoryID: categories["web-development"].ID,
 		ViewsCount: 156,
@@ -748,69 +733,93 @@ func seedDiscussions(db *gorm.DB, users map[string]*domain.User, classes map[str
 // ============================================================================
 
 func seedShowcases(db *gorm.DB, users map[string]*domain.User, categories map[string]*domain.Category) error {
-	showcasesData := []domain.Showcase{
+	showcasesData := []struct {
+		key     string
+		userKey string
+		catKey  string
+		s       domain.Showcase
+	}{
 		{
-			Title:       "Portfolio Website Personal",
-			Description: "Website portfolio menggunakan Next.js 14 dan Tailwind CSS. Fitur: dark mode, animasi smooth, blog dengan MDX, dan SEO optimized. Responsive untuk semua device.",
-			MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800", "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"}),
-			UserID:      users["budi"].ID,
-			CategoryID:  categories["web-development"].ID,
-			Status:      "published",
-			Visibility:  "public",
-			LikesCount:  12,
-			ViewsCount:  89,
+			key:     "portfolio-budi",
+			userKey: "budi",
+			catKey:  "web-development",
+			s: domain.Showcase{
+				Title:       "Portfolio Website Personal",
+				Description: "Website portfolio menggunakan Next.js 14 dan Tailwind CSS. Fitur: dark mode, animasi smooth, blog dengan MDX, dan SEO optimized.",
+				MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=800", "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"}),
+				Status:      "published",
+				Visibility:  "public",
+				LikesCount:  12,
+				ViewsCount:  89,
+			},
 		},
 		{
-			Title:       "REST API Microservices Go",
-			Description: "Arsitektur microservices menggunakan Go, gRPC, dan RabbitMQ. Termasuk API gateway, service discovery, dan distributed tracing dengan Jaeger.",
-			MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800"}),
-			UserID:      users["andi"].ID,
-			CategoryID:  categories["backend-development"].ID,
-			Status:      "published",
-			Visibility:  "public",
-			LikesCount:  23,
-			ViewsCount:  145,
+			key:     "microservices-andi",
+			userKey: "andi",
+			catKey:  "backend-development",
+			s: domain.Showcase{
+				Title:       "REST API Microservices Go",
+				Description: "Arsitektur microservices menggunakan Go, gRPC, dan RabbitMQ. Termasuk API gateway, service discovery, dan distributed tracing.",
+				MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800"}),
+				Status:      "published",
+				Visibility:  "public",
+				LikesCount:  23,
+				ViewsCount:  145,
+			},
 		},
 		{
-			Title:       "Mobile App UI Kit Design",
-			Description: "Koleksi UI Kit untuk aplikasi mobile modern. Termasuk 50+ screen design untuk e-commerce, social media, dan productivity app. Dibuat dengan Figma dan diimplementasi dengan Flutter.",
-			MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800", "https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=800"}),
-			UserID:      users["siti"].ID,
-			CategoryID:  categories["ui-ux-design"].ID,
-			Status:      "published",
-			Visibility:  "public",
-			LikesCount:  18,
-			ViewsCount:  112,
+			key:     "uikit-siti",
+			userKey: "siti",
+			catKey:  "ui-ux-design",
+			s: domain.Showcase{
+				Title:       "Mobile App UI Kit Design",
+				Description: "Koleksi UI Kit untuk aplikasi mobile modern. 50+ screen design untuk e-commerce, social media, dan productivity app.",
+				MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800"}),
+				Status:      "published",
+				Visibility:  "public",
+				LikesCount:  18,
+				ViewsCount:  112,
+			},
 		},
 		{
-			Title:       "Aplikasi Todo Sederhana Flutter",
-			Description: "Aplikasi todo list pertama saya pakai Flutter! Fitur: CRUD task, reminder, dark mode. Masih belajar tapi seneng bisa bikin ini 😊",
-			MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800"}),
-			UserID:      users["dewi"].ID,
-			CategoryID:  categories["mobile-development"].ID,
-			Status:      "published",
-			Visibility:  "public",
-			LikesCount:  7,
-			ViewsCount:  34,
+			key:     "todo-flutter-dewi",
+			userKey: "dewi",
+			catKey:  "mobile-development",
+			s: domain.Showcase{
+				Title:       "Aplikasi Todo Sederhana Flutter",
+				Description: "Aplikasi todo list pertama dengan Flutter. Fitur CRUD, local storage dengan Hive, dan UI yang clean.",
+				MediaURLs:   mustJSON([]string{"https://images.unsplash.com/photo-1617040619263-41c5a9ca7521?w=800"}),
+				Status:      "published",
+				Visibility:  "public",
+				LikesCount:  7,
+				ViewsCount:  34,
+			},
 		},
 	}
 
-	for _, showcaseData := range showcasesData {
-		showcase := showcaseData
+	// Create showcases
+	showcaseMap := make(map[string]*domain.Showcase)
+	for _, sd := range showcasesData {
+		showcase := sd.s
+		showcase.UserID = users[sd.userKey].ID
+		showcase.CategoryID = categories[sd.catKey].ID
+
 		if err := db.Where("title = ? AND user_id = ?", showcase.Title, showcase.UserID).FirstOrCreate(&showcase).Error; err != nil {
 			return err
 		}
-		fmt.Printf("    ✓ Showcase: %s by User#%d\n", showcase.Title, showcase.UserID)
+		showcaseMap[sd.key] = &showcase
+		fmt.Printf("    ✓ Showcase: %s (ID: %s)\n", showcase.Title, showcase.ID)
 	}
 
-	// Seed some showcase likes
+	// Seed showcase likes using actual CUID IDs
 	likes := []domain.ShowcaseLike{
-		{UserID: users["andi"].ID, ShowcaseID: 1, CreatedAt: time.Now()},
-		{UserID: users["siti"].ID, ShowcaseID: 1, CreatedAt: time.Now()},
-		{UserID: users["budi"].ID, ShowcaseID: 2, CreatedAt: time.Now()},
-		{UserID: users["dewi"].ID, ShowcaseID: 2, CreatedAt: time.Now()},
-		{UserID: users["budi"].ID, ShowcaseID: 3, CreatedAt: time.Now()},
-		{UserID: users["andi"].ID, ShowcaseID: 4, CreatedAt: time.Now()},
+		{UserID: users["andi"].ID, ShowcaseID: showcaseMap["portfolio-budi"].ID},
+		{UserID: users["siti"].ID, ShowcaseID: showcaseMap["portfolio-budi"].ID},
+		{UserID: users["admin"].ID, ShowcaseID: showcaseMap["microservices-andi"].ID},
+		{UserID: users["budi"].ID, ShowcaseID: showcaseMap["microservices-andi"].ID},
+		{UserID: users["dewi"].ID, ShowcaseID: showcaseMap["uikit-siti"].ID},
+		{UserID: users["budi"].ID, ShowcaseID: showcaseMap["uikit-siti"].ID},
+		{UserID: users["andi"].ID, ShowcaseID: showcaseMap["todo-flutter-dewi"].ID},
 	}
 
 	for _, like := range likes {
@@ -821,19 +830,19 @@ func seedShowcases(db *gorm.DB, users map[string]*domain.User, categories map[st
 	// Seed showcase comments
 	comments := []domain.ShowcaseComment{
 		{
-			Content:    "Keren banget portfolionya! Animasinya smooth 🔥",
+			Content:    "Keren banget portfolionya! Animasinya smooth.",
 			UserID:     users["andi"].ID,
-			ShowcaseID: 1,
+			ShowcaseID: showcaseMap["portfolio-budi"].ID,
 		},
 		{
 			Content:    "Arsitektur microservicesnya rapi, boleh share repo-nya?",
 			UserID:     users["budi"].ID,
-			ShowcaseID: 2,
+			ShowcaseID: showcaseMap["microservices-andi"].ID,
 		},
 		{
-			Content:    "UI Kit-nya cantik banget! Warna-warnanya harmonious 😍",
+			Content:    "UI Kit-nya cantik banget! Warna-warnanya harmonious.",
 			UserID:     users["dewi"].ID,
-			ShowcaseID: 3,
+			ShowcaseID: showcaseMap["uikit-siti"].ID,
 		},
 	}
 

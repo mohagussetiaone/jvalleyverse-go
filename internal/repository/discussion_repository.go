@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 
 	"gorm.io/gorm"
@@ -11,35 +12,35 @@ type DiscussionRepository struct {
 	db *gorm.DB
 }
 
-func NewDiscussionRepository() *DiscussionRepository {
+func NewDiscussionRepository(db *gorm.DB) *DiscussionRepository {
 	return &DiscussionRepository{db: db}
 }
 
 // Create creates new discussion
-func (r *DiscussionRepository) Create(discussion *domain.Discussion) error {
-	return r.db.Create(discussion).Error
+func (r *DiscussionRepository) Create(ctx context.Context, discussion *domain.Discussion) error {
+	return r.db.WithContext(ctx).Create(discussion).Error
 }
 
 // FindByID finds discussion with user info
-func (r *DiscussionRepository) FindByID(discussionID uint) (*domain.Discussion, error) {
+func (r *DiscussionRepository) FindByID(ctx context.Context, discussionID string) (*domain.Discussion, error) {
 	discussion := &domain.Discussion{}
-	if err := r.db.Preload("User").Preload("Class").First(discussion, discussionID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", discussionID).Preload("User").Preload("Class").First(discussion).Error; err != nil {
 		return nil, err
 	}
 	return discussion, nil
 }
 
 // ListByClassID lists discussions in a class
-func (r *DiscussionRepository) ListByClassID(classID uint, page, limit int) ([]domain.Discussion, int64, error) {
+func (r *DiscussionRepository) ListByClassID(ctx context.Context, classID string, page, limit int) ([]domain.Discussion, int64, error) {
 	var discussions []domain.Discussion
 	var total int64
 
-	if err := r.db.Model(&domain.Discussion{}).Where("class_id = ?", classID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Where("class_id = ?", classID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.Where("class_id = ?", classID).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("class_id = ?", classID).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -47,16 +48,16 @@ func (r *DiscussionRepository) ListByClassID(classID uint, page, limit int) ([]d
 }
 
 // ListByUserID lists discussions created by user
-func (r *DiscussionRepository) ListByUserID(userID uint, page, limit int) ([]domain.Discussion, int64, error) {
+func (r *DiscussionRepository) ListByUserID(ctx context.Context, userID string, page, limit int) ([]domain.Discussion, int64, error) {
 	var discussions []domain.Discussion
 	var total int64
 
-	if err := r.db.Model(&domain.Discussion{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.Where("user_id = ?", userID).Preload("Class").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Class").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -64,11 +65,11 @@ func (r *DiscussionRepository) ListByUserID(userID uint, page, limit int) ([]dom
 }
 
 // Update updates discussion
-func (r *DiscussionRepository) Update(discussion *domain.Discussion) error {
-	return r.db.Model(discussion).Updates(discussion).Error
+func (r *DiscussionRepository) Update(ctx context.Context, discussion *domain.Discussion) error {
+	return r.db.WithContext(ctx).Model(discussion).Updates(discussion).Error
 }
 
 // DeleteByID deletes discussion and cascade replies
-func (r *DiscussionRepository) DeleteByID(discussionID uint) error {
-	return r.db.Delete(&domain.Discussion{}, discussionID).Error
+func (r *DiscussionRepository) DeleteByID(ctx context.Context, discussionID string) error {
+	return r.db.WithContext(ctx).Where("id = ?", discussionID).Delete(&domain.Discussion{}).Error
 }

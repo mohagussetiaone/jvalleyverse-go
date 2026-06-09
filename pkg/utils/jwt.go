@@ -12,7 +12,7 @@ import (
 )
 
 // GenerateJWT creates a new JWT token for a user
-func GenerateJWT(userID uint, role string) (string, error) {
+func GenerateJWT(userID string, role string) (string, error) {
     claims := jwt.MapClaims{
         "user_id": userID,
         "role":    role,
@@ -24,7 +24,7 @@ func GenerateJWT(userID uint, role string) (string, error) {
 }
 
 // ParseJWT validates and parses a JWT token, returns userID and role
-func ParseJWT(tokenString string) (uint, string, error) {
+func ParseJWT(tokenString string) (string, string, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, errors.New("unexpected signing method")
@@ -32,17 +32,17 @@ func ParseJWT(tokenString string) (uint, string, error) {
         return []byte(config.AppConfig.JWTSecret), nil
     })
     if err != nil {
-        return 0, "", err
+        return "", "", err
     }
     if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-        userID, ok1 := claims["user_id"].(float64)
+        userID, ok1 := claims["user_id"].(string)
         role, ok2 := claims["role"].(string)
         if !ok1 || !ok2 {
-            return 0, "", errors.New("invalid claims")
+            return "", "", errors.New("invalid claims")
         }
-        return uint(userID), role, nil
+        return userID, role, nil
     }
-    return 0, "", errors.New("invalid token")
+    return "", "", errors.New("invalid token")
 }
 
 // GenerateXSRFToken creates a random string for XSRF protection

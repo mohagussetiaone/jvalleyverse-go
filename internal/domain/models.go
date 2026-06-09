@@ -13,7 +13,7 @@ import (
 
 // User represents a system user with roles and gamification tracking
 type User struct {
-	ID           uint           `gorm:"primaryKey" json:"id"`
+	ID           string         `gorm:"primaryKey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
@@ -45,7 +45,7 @@ type User struct {
 
 // Category represents content categories
 type Category struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
+	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
@@ -66,16 +66,16 @@ type Category struct {
 
 // Project represents an admin-created learning project containing classes
 type Project struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
+	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Title       string         `gorm:"not null;index" json:"title"`
 	Description string         `gorm:"type:text" json:"description"`
 	Thumbnail   string         `json:"thumbnail"` // Image URL
-	CategoryID  uint           `gorm:"not null;index" json:"category_id"`
+	CategoryID  string         `gorm:"not null;index" json:"category_id"`
 	Category    Category       `gorm:"foreignKey:CategoryID" json:"category"`
-	AdminID     uint           `gorm:"not null;index" json:"admin_id"` // Only admin can create
+	AdminID     string         `gorm:"not null;index" json:"admin_id"` // Only admin can create
 	Admin       User           `gorm:"foreignKey:AdminID" json:"admin"`
 	Visibility  string         `gorm:"default:'public'" json:"visibility"`
 
@@ -85,7 +85,7 @@ type Project struct {
 
 // Class represents a learning class/module under a project
 type Class struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
+	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
@@ -93,9 +93,9 @@ type Class struct {
 	Slug        string         `gorm:"not null" json:"slug"` // ← NEW: URL slug
 	Description string         `gorm:"type:text" json:"description"`
 	Thumbnail   string         `json:"thumbnail"`
-	ProjectID   uint           `gorm:"not null;index" json:"project_id"`
+	ProjectID   string         `gorm:"not null;index" json:"project_id"`
 	Project     Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
-	AdminID     uint           `gorm:"not null;index" json:"admin_id"` // Created by admin
+	AdminID     string         `gorm:"not null;index" json:"admin_id"` // Created by admin
 	Admin       User           `gorm:"foreignKey:AdminID" json:"admin,omitempty"`
 	Difficulty  string         `gorm:"default:'beginner'" json:"difficulty"`
 	Duration    int            `json:"duration"` // In minutes
@@ -104,7 +104,7 @@ type Class struct {
 	IsFirst     bool           `json:"is_first"`
 
 	// Progression
-	NextClassID *uint          `json:"next_class_id"` // ← NEW: Link to next class
+	NextClassID *string        `json:"next_class_id"` // ← NEW: Link to next class
 	NextClass   *Class         `gorm:"foreignKey:NextClassID" json:"next_class,omitempty"`
 
 	Visibility  string         `gorm:"default:'public'" json:"visibility"`
@@ -118,8 +118,8 @@ type Class struct {
 
 // ClassDetail represents detailed content for a class
 type ClassDetail struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
-	ClassID       uint           `gorm:"uniqueIndex;not null" json:"class_id"`
+	ID            string         `gorm:"primaryKey" json:"id"`
+	ClassID       string         `gorm:"uniqueIndex;not null" json:"class_id"`
 	Class         Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 	About         string         `gorm:"type:text" json:"about"`
 	Rules         string         `gorm:"type:text" json:"rules"`
@@ -146,10 +146,10 @@ type Resource struct {
 
 // ClassProgress tracks user learning progress in a class
 type ClassProgress struct {
-	ID                 uint           `gorm:"primaryKey" json:"id"`
-	UserID             uint           `gorm:"not null;index" json:"user_id"`
+	ID                 string         `gorm:"primaryKey" json:"id"`
+	UserID             string         `gorm:"not null;index" json:"user_id"`
 	User               User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID            uint           `gorm:"not null;index" json:"class_id"`
+	ClassID            string         `gorm:"not null;index" json:"class_id"`
 	Class              Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 	Status             string         `gorm:"default:'not_started'" json:"status"` // not_started | started | in_progress | completed
 	StartedAt          *time.Time     `json:"started_at"`
@@ -167,13 +167,13 @@ type ClassProgress struct {
 // Certificate represents user achievement/completion of a class
 // IMPORTANT: Only accessible to the user who owns it + admin
 type Certificate struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
+	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID      uint           `gorm:"not null;index" json:"user_id"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
 	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID     uint           `gorm:"not null;index" json:"class_id"`
+	ClassID     string         `gorm:"not null;index" json:"class_id"`
 	Class       Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 	UniqueCode  string         `gorm:"uniqueIndex;not null" json:"unique_code"` // UUID or slug
 	BadgeURL    string         `json:"badge_url"`
@@ -187,17 +187,17 @@ type Certificate struct {
 
 // Discussion represents a discussion thread (usually in a class context)
 type Discussion struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
+	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Title       string         `gorm:"not null;index" json:"title"`
 	Content     string         `gorm:"type:text;not null" json:"content"`
-	UserID      uint           `gorm:"not null;index" json:"user_id"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
 	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID     *uint          `gorm:"index" json:"class_id"`              // Optional - can be standalone
+	ClassID     *string        `gorm:"index" json:"class_id"` // Optional - can be standalone
 	Class       *Class         `gorm:"foreignKey:ClassID" json:"class,omitempty"`
-	CategoryID  uint           `gorm:"index" json:"category_id"`           // For filtering
+	CategoryID  string         `gorm:"index" json:"category_id"` // For filtering
 	Category    Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	ViewsCount  int            `gorm:"default:0" json:"views_count"`
 	Status      string         `gorm:"default:'open';type:discussionstatus" json:"status"` // Can close discussion
@@ -210,16 +210,16 @@ type Discussion struct {
 // Reply represents a comment/reply in a discussion
 // Can be nested (parent_id points to another reply for threaded discussions)
 type Reply struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
+	ID            string         `gorm:"primaryKey" json:"id"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 	Content       string         `gorm:"type:text;not null" json:"content"`
-	UserID        uint           `gorm:"not null;index" json:"user_id"`
+	UserID        string         `gorm:"not null;index" json:"user_id"`
 	User          User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	DiscussionID  uint           `gorm:"not null;index" json:"discussion_id"`
+	DiscussionID  string         `gorm:"not null;index" json:"discussion_id"`
 	Discussion    Discussion     `gorm:"foreignKey:DiscussionID" json:"discussion,omitempty"`
-	ParentID      *uint          `gorm:"index" json:"parent_id"`                   // For nested replies
+	ParentID      *string        `gorm:"index" json:"parent_id"` // For nested replies
 	Parent        *Reply         `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 	LikesCount    int            `gorm:"default:0" json:"likes_count"`
 	IsMarkedBest  bool           `gorm:"default:false" json:"is_marked_best"` // Discussion owner can mark best answer
@@ -234,16 +234,16 @@ type Reply struct {
 
 // Showcase represents user portfolio item (projects completed, work display)
 type Showcase struct {
-	ID           uint           `gorm:"primaryKey" json:"id"`
+	ID           string         `gorm:"primaryKey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 	Title        string         `gorm:"not null;index" json:"title"`
 	Description  string         `gorm:"type:text" json:"description"`
 	MediaURLs    datatypes.JSON `gorm:"type:jsonb" json:"media_urls"` // JSON array of image/video URLs
-	UserID       uint           `gorm:"not null;index" json:"user_id"`
+	UserID       string         `gorm:"not null;index" json:"user_id"`
 	User         User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	CategoryID   uint           `gorm:"not null;index" json:"category_id"`
+	CategoryID   string         `gorm:"not null;index" json:"category_id"`
 	Category     Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	Status       string         `gorm:"default:'published';type:showcasestatus" json:"status"`
 	Visibility   string         `gorm:"default:'public';type:showcasevisibility" json:"visibility"`
@@ -257,25 +257,25 @@ type Showcase struct {
 
 // ShowcaseLike represents a like on a showcase (composite key: user_id + showcase_id)
 type ShowcaseLike struct {
-	UserID     uint      `gorm:"primaryKey" json:"user_id"`
+	UserID     string    `gorm:"primaryKey" json:"user_id"`
 	User       User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ShowcaseID uint      `gorm:"primaryKey" json:"showcase_id"`
+	ShowcaseID string    `gorm:"primaryKey" json:"showcase_id"`
 	Showcase   Showcase  `gorm:"foreignKey:ShowcaseID" json:"showcase,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
 // ShowcaseComment represents comments on showcase items
 type ShowcaseComment struct {
-	ID           uint           `gorm:"primaryKey" json:"id"`
+	ID           string         `gorm:"primaryKey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 	Content      string         `gorm:"type:text;not null" json:"content"`
-	UserID       uint           `gorm:"not null;index" json:"user_id"`
+	UserID       string         `gorm:"not null;index" json:"user_id"`
 	User         User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ShowcaseID   uint           `gorm:"not null;index" json:"showcase_id"`
+	ShowcaseID   string         `gorm:"not null;index" json:"showcase_id"`
 	Showcase     Showcase       `gorm:"foreignKey:ShowcaseID" json:"showcase,omitempty"`
-	ParentID     *uint          `gorm:"index" json:"parent_id"` // For nested comments
+	ParentID     *string        `gorm:"index" json:"parent_id"` // For nested comments
 	Parent       *ShowcaseComment `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 
 	// Relationships
@@ -288,11 +288,11 @@ type ShowcaseComment struct {
 
 // CommunityPoint represents activity log and points transaction
 type CommunityPoint struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
+	ID            string         `gorm:"primaryKey" json:"id"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID        uint           `gorm:"not null;index" json:"user_id"`
+	UserID        string         `gorm:"not null;index" json:"user_id"`
 	User          User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	ActivityType  string         `gorm:"not null;index;type:pointactivitytype" json:"activity_type"`
 	PointsEarned  int            `gorm:"not null" json:"points_earned"`
@@ -304,7 +304,7 @@ type CommunityPoint struct {
 
 // UserLevel represents level configuration and requirements
 type UserLevel struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
+	ID          string    `gorm:"primaryKey" json:"id"`
 	Level       int       `gorm:"uniqueIndex;not null" json:"level"` // 1, 2, 3, 4, 5
 	MinPoints   int       `gorm:"not null;uniqueIndex" json:"min_points"`
 	MaxPoints   int       `gorm:"not null" json:"max_points"`
@@ -334,12 +334,12 @@ func (ul UserLevel) String() string {
 // ============================================================================
 
 // IsUserOwnerOfCertificate checks if user owns this certificate (privacy check)
-func (c *Certificate) IsUserOwnerOfCertificate(userID uint) bool {
+func (c *Certificate) IsUserOwnerOfCertificate(userID string) bool {
 	return c.UserID == userID
 }
 
 // IsUserOwnerOfShowcase checks if user owns this showcase
-func (s *Showcase) IsUserOwnerOfShowcase(userID uint) bool {
+func (s *Showcase) IsUserOwnerOfShowcase(userID string) bool {
 	return s.UserID == userID
 }
 

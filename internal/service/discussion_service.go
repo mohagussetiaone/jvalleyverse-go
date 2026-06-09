@@ -1,9 +1,19 @@
 package service
 
 import (
+	"context"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/repository"
 )
+
+// IDiscussionService defines the business logic for managing discussion threads
+type IDiscussionService interface {
+	CreateDiscussion(ctx context.Context, userID string, title, content string, classID *string, categoryID string) (*domain.Discussion, error)
+	ListDiscussions(ctx context.Context, page, limit int, classID *string, status *string) ([]map[string]interface{}, error)
+	GetDiscussionWithReplies(ctx context.Context, discussionID string) (map[string]interface{}, error)
+	UpdateDiscussion(ctx context.Context, discussionID, userID string, title, content string) error
+	CloseDiscussion(ctx context.Context, discussionID, userID string) error
+}
 
 type DiscussionService struct {
 	discussionRepo *repository.DiscussionRepository
@@ -11,26 +21,31 @@ type DiscussionService struct {
 	userRepo       *repository.UserRepository
 }
 
-func NewDiscussionService() *DiscussionService {
+func NewDiscussionService(
+	discussionRepo *repository.DiscussionRepository,
+	replyRepo *repository.ReplyRepository,
+	userRepo *repository.UserRepository,
+) *DiscussionService {
 	return &DiscussionService{
-		discussionRepo: repository.NewDiscussionRepository(),
-		replyRepo:      repository.NewReplyRepository(),
-		userRepo:       repository.NewUserRepository(),
+		discussionRepo: discussionRepo,
+		replyRepo:      replyRepo,
+		userRepo:       userRepo,
 	}
 }
 
 // CreateDiscussion creates new discussion thread
-func (s *DiscussionService) CreateDiscussion(userID uint, title, content string, classID uint) (*domain.Discussion, error) {
+func (s *DiscussionService) CreateDiscussion(ctx context.Context, userID string, title, content string, classID *string, categoryID string) (*domain.Discussion, error) {
 	discussion := &domain.Discussion{
-		UserID:    userID,
-		ClassID:   &classID,
-		Title:     title,
-		Content:   content,
-		Status:    "open",
+		UserID:     userID,
+		ClassID:    classID,
+		CategoryID: categoryID,
+		Title:      title,
+		Content:    content,
+		Status:     "open",
 		ViewsCount: 0,
 	}
 
-	if err := s.discussionRepo.Create(discussion); err != nil {
+	if err := s.discussionRepo.Create(ctx, discussion); err != nil {
 		return nil, err
 	}
 
@@ -38,14 +53,13 @@ func (s *DiscussionService) CreateDiscussion(userID uint, title, content string,
 }
 
 // ListDiscussions returns paginated discussions
-func (s *DiscussionService) ListDiscussions(page, limit int, classID *uint, status *string) ([]map[string]interface{}, error) {
+func (s *DiscussionService) ListDiscussions(ctx context.Context, page, limit int, classID *string, status *string) ([]map[string]interface{}, error) {
 	var discussions []domain.Discussion
 	var err error
 
 	if classID != nil {
-		discussions, _, err = s.discussionRepo.ListByClassID(*classID, page, limit)
+		discussions, _, err = s.discussionRepo.ListByClassID(ctx, *classID, page, limit)
 	} else {
-		// TODO: Implement general list all discussions
 		discussions = []domain.Discussion{}
 	}
 
@@ -63,7 +77,7 @@ func (s *DiscussionService) ListDiscussions(page, limit int, classID *uint, stat
 			"user_name":  d.User.Name,
 			"class_id":   d.ClassID,
 			"status":     d.Status,
-		"view_count": d.ViewsCount,
+			"view_count": d.ViewsCount,
 			"created_at": d.CreatedAt,
 		}
 	}
@@ -72,18 +86,18 @@ func (s *DiscussionService) ListDiscussions(page, limit int, classID *uint, stat
 }
 
 // GetDiscussionWithReplies returns discussion with all threaded replies
-func (s *DiscussionService) GetDiscussionWithReplies(discussionID uint) (map[string]interface{}, error) {
-	discussion, err := s.discussionRepo.FindByID(discussionID)
+func (s *DiscussionService) GetDiscussionWithReplies(ctx context.Context, discussionID string) (map[string]interface{}, error) {
+	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Increment view count
 	discussion.ViewsCount++
-	s.discussionRepo.Update(discussion)
+	s.discussionRepo.Update(ctx, discussion)
 
 	// Get all replies
-	replies, err := s.replyRepo.ListByDiscussionID(discussionID)
+	replies, err := s.replyRepo.ListByDiscussionID(ctx, discussionID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,33 +129,33 @@ func (s *DiscussionService) GetDiscussionWithReplies(discussionID uint) (map[str
 }
 
 // UpdateDiscussion updates discussion (owner only)
-func (s *DiscussionService) UpdateDiscussion(discussionID, userID uint, title, content string) error {
-	discussion, err := s.discussionRepo.FindByID(discussionID)
+func (s *DiscussionService) UpdateDiscussion(ctx context.Context, discussionID, userID string, title, content string) error {
+	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
 	if err != nil {
 		return err
 	}
 
 	// Only owner can update
 	if discussion.UserID != userID {
-		return nil // Silent fail or return error based on preference
+		return domain.ErrForbidden
 	}
 
 	discussion.Title = title
 	discussion.Content = content
-	return s.discussionRepo.Update(discussion)
+	return s.discussionRepo.Update(ctx, discussion)
 }
 
 // CloseDiscussion closes a discussion (owner or admin)
-func (s *DiscussionService) CloseDiscussion(discussionID, userID uint) error {
-	discussion, err := s.discussionRepo.FindByID(discussionID)
+func (s *DiscussionService) CloseDiscussion(ctx context.Context, discussionID, userID string) error {
+	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
 	if err != nil {
 		return err
 	}
 
 	if discussion.UserID != userID {
-		return nil // Only owner can close
+		return domain.ErrForbidden
 	}
 
 	discussion.Status = "closed"
-	return s.discussionRepo.Update(discussion)
+	return s.discussionRepo.Update(ctx, discussion)
 }

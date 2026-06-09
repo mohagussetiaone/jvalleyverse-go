@@ -1,47 +1,77 @@
 package service
 
 import (
+	"context"
 	"jvalleyverse/internal/repository"
 )
 
-type GamificationService struct {
-	pointRepo  *repository.CommunityPointRepository
-	levelRepo  *repository.UserLevelRepository
-	userRepo   *repository.UserRepository
-	showcaseRepo *repository.ShowcaseRepository
+// IGamificationService defines the business logic for the point and level system
+type IGamificationService interface {
+	AwardPoints(ctx context.Context, userID string, activityType string, points int, metadata map[string]interface{}) error
+	GetLeaderboard(ctx context.Context, limit int) ([]map[string]interface{}, error)
+	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error)
+	GetLevelInfo() []map[string]interface{}
+	GetUserStats(ctx context.Context, userID string) (map[string]interface{}, error)
 }
 
-func NewGamificationService() *GamificationService {
+type GamificationService struct {
+	pointRepo    *repository.CommunityPointRepository
+	levelRepo    *repository.UserLevelRepository
+	userRepo     *repository.UserRepository
+	showcaseRepo *repository.ShowcaseRepository
+	userService  IUserService
+}
+
+func NewGamificationService(
+	pointRepo *repository.CommunityPointRepository,
+	levelRepo *repository.UserLevelRepository,
+	userRepo *repository.UserRepository,
+	showcaseRepo *repository.ShowcaseRepository,
+	userService IUserService,
+) *GamificationService {
 	return &GamificationService{
-		pointRepo:    repository.NewCommunityPointRepository(),
-		levelRepo:    repository.NewUserLevelRepository(),
-		userRepo:     repository.NewUserRepository(),
-		showcaseRepo: repository.NewShowcaseRepository(),
+		pointRepo:    pointRepo,
+		levelRepo:    levelRepo,
+		userRepo:     userRepo,
+		showcaseRepo: showcaseRepo,
+		userService:  userService,
 	}
 }
 
 // AwardPoints awards points to user for activity
-func (s *GamificationService) AwardPoints(userID uint, activityType string, points int, metadata map[string]interface{}) error {
-	userSvc := NewUserService()
-	return userSvc.AddPoints(userID, activityType, points, metadata)
+func (s *GamificationService) AwardPoints(ctx context.Context, userID string, activityType string, points int, metadata map[string]interface{}) error {
+	return s.userService.AddPoints(ctx, userID, activityType, points, metadata)
 }
 
 // GetLeaderboard returns top users by points
-func (s *GamificationService) GetLeaderboard(limit int) ([]map[string]interface{}, error) {
-	// Top users overall - TODO: Query directly for better performance
-	// For now, using repository methods
-	result := []map[string]interface{}{}
+func (s *GamificationService) GetLeaderboard(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+	if limit <= 0 {
+		limit = 10
+	}
 
-	// Would normally do a SQL query like:
-	// SELECT user_id, SUM(points) as total_points FROM community_points GROUP BY user_id ORDER BY total_points DESC LIMIT ?
-	
-	// For MVP, return empty and implement database query optimization later
+	users, err := s.userRepo.GetTopByPoints(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(users))
+	for i, u := range users {
+		result[i] = map[string]interface{}{
+			"rank":         i + 1,
+			"user_id":      u.ID,
+			"name":         u.Name,
+			"avatar":       u.Avatar,
+			"total_points": u.TotalPoints,
+			"level":        u.Level,
+		}
+	}
+
 	return result, nil
 }
 
 // GetUserActivityLog returns user's activity history
-func (s *GamificationService) GetUserActivityLog(userID uint, page, limit int) ([]map[string]interface{}, error) {
-	activities, _, err := s.pointRepo.ListByUserID(userID, page, limit)
+func (s *GamificationService) GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error) {
+	activities, _, err := s.pointRepo.ListByUserID(ctx, userID, page, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -96,42 +126,22 @@ func (s *GamificationService) GetLevelInfo() []map[string]interface{} {
 }
 
 // GetUserStats returns comprehensive user statistics
-func (s *GamificationService) GetUserStats(userID uint) (map[string]interface{}, error) {
-	user, err := s.userRepo.FindByID(userID)
+func (s *GamificationService) GetUserStats(ctx context.Context, userID string) (map[string]interface{}, error) {
+	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	level, _ := s.levelRepo.FindByUserID(userID)
-	activityLog, _ := s.GetUserActivityLog(userID, 1, 10)
+	activityLog, _ := s.GetUserActivityLog(ctx, userID, 1, 10)
 
 	return map[string]interface{}{
-		"user_id":       user.ID,
-		"name":          user.Name,
-		"total_points":  user.TotalPoints,
-		"current_level": level.Level,
+		"user_id":         user.ID,
+		"name":            user.Name,
+		"total_points":    user.TotalPoints,
+		"current_level":   user.Level,
 		"recent_activity": activityLog,
 	}, nil
 }
-
-// Points Distribution System:
-// - Create showcase: 10 pts
-// - Receive showcase like: 5 pts
-// - Create discussion: 5 pts
-// - Create reply: 5 pts
-// - Receive reply like: 3 pts
-// - Best answer selected: 25 pts
-// - Complete class: 50 pts
-//
-// Level Thresholds:
-// - Beginner: 0-99 pts
-// - Intermediate: 100-499 pts
-// - Advanced: 500-999 pts
-// - Expert: 1000-1999 pts
-// - Master: 2000+ pts
-// - Discussion reply: 2 pts
-// - Class completed: 100 pts
-// - Certificate issued: 50 pts
 
 func (s *GamificationService) calculateLevel(points int) int {
 	if points >= 2000 {
