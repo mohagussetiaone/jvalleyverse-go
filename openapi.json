@@ -12,7 +12,7 @@
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "name": {
@@ -33,14 +33,14 @@
       "Certificate": {
         "properties": {
           "class_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "code": {
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "issued_at": {
@@ -48,7 +48,7 @@
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "valid_until": {
@@ -61,7 +61,7 @@
       "Class": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "content": {
@@ -75,25 +75,21 @@
             "type": "string"
           },
           "difficulty": {
-            "enum": [
-              "beginner",
-              "intermediate",
-              "advanced"
-            ],
+            "enum": ["beginner", "intermediate", "advanced"],
             "type": "string"
           },
           "duration": {
             "type": "integer"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_completed": {
             "type": "boolean"
           },
           "project_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "thumbnail": {
@@ -113,11 +109,11 @@
       "Discussion": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "class_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "content": {
@@ -128,7 +124,7 @@
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "replies_count": {
@@ -142,7 +138,7 @@
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
@@ -169,7 +165,7 @@
             "type": "integer"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           }
         },
@@ -192,11 +188,11 @@
       "Project": {
         "properties": {
           "admin_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "created_at": {
@@ -207,7 +203,7 @@
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "thumbnail": {
@@ -218,10 +214,7 @@
             "type": "string"
           },
           "visibility": {
-            "enum": [
-              "public",
-              "private"
-            ],
+            "enum": ["public", "private"],
             "type": "string"
           }
         },
@@ -237,15 +230,15 @@
             "type": "string"
           },
           "discussion_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "parent_reply_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "nullable": true,
             "type": "string"
           },
@@ -254,7 +247,7 @@
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
@@ -266,7 +259,7 @@
       "Showcase": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "created_at": {
@@ -277,7 +270,7 @@
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_liked": {
@@ -300,18 +293,14 @@
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
             "type": "string"
           },
           "visibility": {
-            "enum": [
-              "public",
-              "private",
-              "friends_only"
-            ],
+            "enum": ["public", "private", "friends_only"],
             "type": "string"
           }
         },
@@ -335,7 +324,7 @@
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_active": {
@@ -351,10 +340,7 @@
             "type": "integer"
           },
           "role": {
-            "enum": [
-              "admin",
-              "user"
-            ],
+            "enum": ["admin", "user"],
             "type": "string"
           },
           "total_points": {
@@ -380,7 +366,7 @@
             "type": "integer"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "level": {
@@ -428,7 +414,7 @@
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "content": {
@@ -438,18 +424,14 @@
                     "type": "string"
                   },
                   "difficulty": {
-                    "enum": [
-                      "beginner",
-                      "intermediate",
-                      "advanced"
-                    ],
+                    "enum": ["beginner", "intermediate", "advanced"],
                     "type": "string"
                   },
                   "duration": {
                     "type": "integer"
                   },
                   "project_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "thumbnail": {
@@ -460,11 +442,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "title",
-                  "project_id",
-                  "category_id"
-                ],
+                "required": ["title", "project_id", "category_id"],
                 "type": "object"
               }
             }
@@ -485,9 +463,7 @@
           }
         ],
         "summary": "Create class",
-        "tags": [
-          "Admin - Classes"
-        ]
+        "tags": ["Admin - Classes"]
       }
     },
     "/admin/classes/{id}": {
@@ -498,7 +474,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -520,9 +496,7 @@
           }
         ],
         "summary": "Delete class",
-        "tags": [
-          "Admin - Classes"
-        ]
+        "tags": ["Admin - Classes"]
       },
       "put": {
         "parameters": [
@@ -531,7 +505,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -548,11 +522,7 @@
                     "type": "string"
                   },
                   "difficulty": {
-                    "enum": [
-                      "beginner",
-                      "intermediate",
-                      "advanced"
-                    ],
+                    "enum": ["beginner", "intermediate", "advanced"],
                     "type": "string"
                   },
                   "duration": {
@@ -585,9 +555,7 @@
           }
         ],
         "summary": "Update class",
-        "tags": [
-          "Admin - Classes"
-        ]
+        "tags": ["Admin - Classes"]
       }
     },
     "/admin/dashboard": {
@@ -606,9 +574,7 @@
           }
         ],
         "summary": "Admin dashboard",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/projects": {
@@ -661,9 +627,7 @@
           }
         ],
         "summary": "List all projects (Admin view)",
-        "tags": [
-          "Admin - Projects"
-        ]
+        "tags": ["Admin - Projects"]
       },
       "post": {
         "requestBody": {
@@ -672,7 +636,7 @@
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "description": {
@@ -686,17 +650,11 @@
                     "type": "string"
                   },
                   "visibility": {
-                    "enum": [
-                      "public",
-                      "private"
-                    ],
+                    "enum": ["public", "private"],
                     "type": "string"
                   }
                 },
-                "required": [
-                  "title",
-                  "category_id"
-                ],
+                "required": ["title", "category_id"],
                 "type": "object"
               }
             }
@@ -724,9 +682,7 @@
           }
         ],
         "summary": "Create project (Admin only)",
-        "tags": [
-          "Admin - Projects"
-        ]
+        "tags": ["Admin - Projects"]
       }
     },
     "/admin/projects/{id}": {
@@ -737,7 +693,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -759,9 +715,7 @@
           }
         ],
         "summary": "Delete project",
-        "tags": [
-          "Admin - Projects"
-        ]
+        "tags": ["Admin - Projects"]
       },
       "put": {
         "parameters": [
@@ -770,7 +724,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -787,10 +741,7 @@
                     "type": "string"
                   },
                   "visibility": {
-                    "enum": [
-                      "public",
-                      "private"
-                    ],
+                    "enum": ["public", "private"],
                     "type": "string"
                   }
                 },
@@ -817,9 +768,7 @@
           }
         ],
         "summary": "Update project",
-        "tags": [
-          "Admin - Projects"
-        ]
+        "tags": ["Admin - Projects"]
       }
     },
     "/api/admin/categories": {
@@ -842,10 +791,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name",
-                  "slug"
-                ],
+                "required": ["name", "slug"],
                 "type": "object"
               }
             }
@@ -876,9 +822,7 @@
           }
         ],
         "summary": "Create category (Admin only)",
-        "tags": [
-          "Admin - Categories"
-        ]
+        "tags": ["Admin - Categories"]
       }
     },
     "/api/admin/categories/{id}": {
@@ -889,7 +833,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -914,9 +858,7 @@
           }
         ],
         "summary": "Delete category (Admin only)",
-        "tags": [
-          "Admin - Categories"
-        ]
+        "tags": ["Admin - Categories"]
       },
       "put": {
         "parameters": [
@@ -925,7 +867,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -981,9 +923,7 @@
           }
         ],
         "summary": "Update category (Admin only)",
-        "tags": [
-          "Admin - Categories"
-        ]
+        "tags": ["Admin - Categories"]
       }
     },
     "/api/categories": {
@@ -1004,9 +944,7 @@
           }
         },
         "summary": "List all categories",
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       }
     },
     "/api/categories/{category_id}/projects": {
@@ -1017,7 +955,7 @@
             "name": "category_id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1041,9 +979,7 @@
           }
         },
         "summary": "List projects in a category",
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       }
     },
     "/api/categories/{slug}": {
@@ -1076,9 +1012,7 @@
           }
         },
         "summary": "Get category detail by slug",
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       }
     },
     "/auth/login": {
@@ -1096,10 +1030,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "email",
-                  "password"
-                ],
+                "required": ["email", "password"],
                 "type": "object"
               }
             }
@@ -1133,9 +1064,7 @@
           }
         },
         "summary": "Login user",
-        "tags": [
-          "Authentication"
-        ]
+        "tags": ["Authentication"]
       }
     },
     "/auth/register": {
@@ -1157,11 +1086,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "email",
-                  "password",
-                  "name"
-                ],
+                "required": ["email", "password", "name"],
                 "type": "object"
               }
             }
@@ -1187,9 +1112,7 @@
           }
         },
         "summary": "Register new user",
-        "tags": [
-          "Authentication"
-        ]
+        "tags": ["Authentication"]
       }
     },
     "/certificates": {
@@ -1208,9 +1131,7 @@
           }
         ],
         "summary": "Get user certificates",
-        "tags": [
-          "Certificates"
-        ]
+        "tags": ["Certificates"]
       }
     },
     "/certificates/{code}": {
@@ -1242,9 +1163,7 @@
           }
         ],
         "summary": "View certificate (Private - Owner only)",
-        "tags": [
-          "Certificates"
-        ]
+        "tags": ["Certificates"]
       }
     },
     "/classes/{id}": {
@@ -1255,7 +1174,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1269,9 +1188,7 @@
           }
         },
         "summary": "Get class details",
-        "tags": [
-          "Classes"
-        ]
+        "tags": ["Classes"]
       }
     },
     "/classes/{id}/complete": {
@@ -1282,7 +1199,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1304,9 +1221,7 @@
           }
         ],
         "summary": "Mark class as completed",
-        "tags": [
-          "Classes"
-        ]
+        "tags": ["Classes"]
       }
     },
     "/discussions": {
@@ -1323,7 +1238,7 @@
             "in": "query",
             "name": "class_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -1331,7 +1246,7 @@
             "in": "query",
             "name": "category_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1342,9 +1257,7 @@
           }
         },
         "summary": "List discussions",
-        "tags": [
-          "Discussions"
-        ]
+        "tags": ["Discussions"]
       },
       "post": {
         "requestBody": {
@@ -1353,11 +1266,11 @@
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "class_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "content": {
@@ -1367,10 +1280,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "title",
-                  "content"
-                ],
+                "required": ["title", "content"],
                 "type": "object"
               }
             }
@@ -1391,9 +1301,7 @@
           }
         ],
         "summary": "Create discussion",
-        "tags": [
-          "Discussions"
-        ]
+        "tags": ["Discussions"]
       }
     },
     "/discussions/{id}": {
@@ -1404,7 +1312,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1423,9 +1331,7 @@
           }
         ],
         "summary": "Delete discussion",
-        "tags": [
-          "Discussions"
-        ]
+        "tags": ["Discussions"]
       },
       "get": {
         "parameters": [
@@ -1434,7 +1340,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1448,9 +1354,7 @@
           }
         },
         "summary": "Get discussion with threaded replies",
-        "tags": [
-          "Discussions"
-        ]
+        "tags": ["Discussions"]
       },
       "put": {
         "parameters": [
@@ -1459,7 +1363,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1499,9 +1403,7 @@
           }
         ],
         "summary": "Update discussion",
-        "tags": [
-          "Discussions"
-        ]
+        "tags": ["Discussions"]
       }
     },
     "/discussions/{id}/replies": {
@@ -1512,7 +1414,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1523,9 +1425,7 @@
           }
         },
         "summary": "Get discussion replies",
-        "tags": [
-          "Replies"
-        ]
+        "tags": ["Replies"]
       },
       "post": {
         "parameters": [
@@ -1534,7 +1434,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1548,9 +1448,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "content"
-                ],
+                "required": ["content"],
                 "type": "object"
               }
             }
@@ -1571,9 +1469,7 @@
           }
         ],
         "summary": "Reply to discussion",
-        "tags": [
-          "Replies"
-        ]
+        "tags": ["Replies"]
       }
     },
     "/health": {
@@ -1597,9 +1493,7 @@
           }
         },
         "summary": "Health check endpoint",
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/leaderboard": {
@@ -1646,9 +1540,7 @@
           }
         },
         "summary": "Get top users by points",
-        "tags": [
-          "Gamification"
-        ]
+        "tags": ["Gamification"]
       }
     },
     "/levels": {
@@ -1659,9 +1551,7 @@
           }
         },
         "summary": "Get level progression info",
-        "tags": [
-          "Gamification"
-        ]
+        "tags": ["Gamification"]
       }
     },
     "/projects/{id}/classes": {
@@ -1672,7 +1562,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -1720,9 +1610,7 @@
           }
         },
         "summary": "List classes in a project",
-        "tags": [
-          "Classes"
-        ]
+        "tags": ["Classes"]
       }
     },
     "/replies/{id}": {
@@ -1733,7 +1621,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1758,9 +1646,7 @@
           }
         ],
         "summary": "Delete reply",
-        "tags": [
-          "Replies"
-        ]
+        "tags": ["Replies"]
       },
       "put": {
         "parameters": [
@@ -1769,7 +1655,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1783,9 +1669,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "content"
-                ],
+                "required": ["content"],
                 "type": "object"
               }
             }
@@ -1812,9 +1696,7 @@
           }
         ],
         "summary": "Update reply",
-        "tags": [
-          "Replies"
-        ]
+        "tags": ["Replies"]
       }
     },
     "/replies/{id}/replies": {
@@ -1825,7 +1707,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1839,9 +1721,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "content"
-                ],
+                "required": ["content"],
                 "type": "object"
               }
             }
@@ -1862,9 +1742,7 @@
           }
         ],
         "summary": "Reply to a reply (nested)",
-        "tags": [
-          "Replies"
-        ]
+        "tags": ["Replies"]
       }
     },
     "/showcases": {
@@ -1881,7 +1759,7 @@
             "in": "query",
             "name": "category_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -1889,11 +1767,7 @@
             "in": "query",
             "name": "sort",
             "schema": {
-              "enum": [
-                "newest",
-                "trending",
-                "most_liked"
-              ],
+              "enum": ["newest", "trending", "most_liked"],
               "type": "string"
             }
           }
@@ -1904,9 +1778,7 @@
           }
         },
         "summary": "List showcases",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       },
       "post": {
         "requestBody": {
@@ -1915,7 +1787,7 @@
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "description": {
@@ -1932,18 +1804,11 @@
                     "type": "string"
                   },
                   "visibility": {
-                    "enum": [
-                      "public",
-                      "private",
-                      "friends_only"
-                    ],
+                    "enum": ["public", "private", "friends_only"],
                     "type": "string"
                   }
                 },
-                "required": [
-                  "title",
-                  "category_id"
-                ],
+                "required": ["title", "category_id"],
                 "type": "object"
               }
             }
@@ -1964,9 +1829,7 @@
           }
         ],
         "summary": "Create showcase",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       }
     },
     "/showcases/{id}": {
@@ -1977,7 +1840,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1996,9 +1859,7 @@
           }
         ],
         "summary": "Delete showcase",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       },
       "get": {
         "parameters": [
@@ -2007,7 +1868,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2021,9 +1882,7 @@
           }
         },
         "summary": "Get showcase details",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       },
       "put": {
         "parameters": [
@@ -2032,7 +1891,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2072,9 +1931,7 @@
           }
         ],
         "summary": "Update showcase (Owner only)",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       }
     },
     "/showcases/{id}/like": {
@@ -2085,7 +1942,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2104,9 +1961,7 @@
           }
         ],
         "summary": "Unlike showcase",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       },
       "post": {
         "parameters": [
@@ -2115,7 +1970,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2134,9 +1989,7 @@
           }
         ],
         "summary": "Like showcase",
-        "tags": [
-          "Showcases"
-        ]
+        "tags": ["Showcases"]
       }
     },
     "/users/me": {
@@ -2162,9 +2015,7 @@
           }
         ],
         "summary": "Get current user profile",
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       },
       "put": {
         "requestBody": {
@@ -2210,9 +2061,7 @@
           }
         ],
         "summary": "Update user profile",
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       }
     },
     "/users/me/activity": {
@@ -2244,9 +2093,7 @@
           }
         ],
         "summary": "Get user activity log",
-        "tags": [
-          "Gamification"
-        ]
+        "tags": ["Gamification"]
       }
     },
     "/users/{id}": {
@@ -2257,7 +2104,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2283,9 +2130,7 @@
           }
         ],
         "summary": "Get public user profile",
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       }
     },
     "/users/{id}/points": {
@@ -2296,7 +2141,7 @@
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2307,9 +2152,7 @@
           }
         },
         "summary": "Get user points and level",
-        "tags": [
-          "Gamification"
-        ]
+        "tags": ["Gamification"]
       }
     }
   },

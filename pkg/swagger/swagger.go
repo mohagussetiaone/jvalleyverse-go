@@ -15,7 +15,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "name": {
@@ -36,14 +36,14 @@ const OpenAPISpec = `{
       "Certificate": {
         "properties": {
           "class_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "code": {
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "issued_at": {
@@ -51,7 +51,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "valid_until": {
@@ -64,7 +64,7 @@ const OpenAPISpec = `{
       "Class": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "content": {
@@ -89,14 +89,14 @@ const OpenAPISpec = `{
             "type": "integer"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_completed": {
             "type": "boolean"
           },
           "project_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "thumbnail": {
@@ -116,11 +116,11 @@ const OpenAPISpec = `{
       "Discussion": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "class_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "content": {
@@ -131,7 +131,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "replies_count": {
@@ -145,7 +145,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
@@ -172,7 +172,7 @@ const OpenAPISpec = `{
             "type": "integer"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           }
         },
@@ -195,11 +195,11 @@ const OpenAPISpec = `{
       "Project": {
         "properties": {
           "admin_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "created_at": {
@@ -210,7 +210,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "thumbnail": {
@@ -240,15 +240,15 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "discussion_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "parent_reply_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "nullable": true,
             "type": "string"
           },
@@ -257,7 +257,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
@@ -269,7 +269,7 @@ const OpenAPISpec = `{
       "Showcase": {
         "properties": {
           "category_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "created_at": {
@@ -280,7 +280,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_liked": {
@@ -303,7 +303,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "user_id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "user_name": {
@@ -338,7 +338,7 @@ const OpenAPISpec = `{
             "type": "string"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "is_active": {
@@ -383,7 +383,7 @@ const OpenAPISpec = `{
             "type": "integer"
           },
           "id": {
-            "example": "cmq6b6ehc000010uj9ewttltv",
+            "example": "",
             "type": "string"
           },
           "level": {
@@ -490,7 +490,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -526,7 +526,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -595,7 +595,7 @@ const OpenAPISpec = `{
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "content": {
@@ -616,7 +616,7 @@ const OpenAPISpec = `{
                     "type": "integer"
                   },
                   "project_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "thumbnail": {
@@ -665,7 +665,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -698,7 +698,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -839,7 +839,7 @@ const OpenAPISpec = `{
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "description": {
@@ -904,7 +904,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -937,7 +937,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1033,7 +1033,7 @@ const OpenAPISpec = `{
                             "type": "string"
                           },
                           "id": {
-                            "example": "cmq6b6ehc000010uj9ewttltv",
+                            "example": "",
                             "type": "string"
                           },
                           "is_active": {
@@ -1232,7 +1232,7 @@ const OpenAPISpec = `{
             "name": "category_id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1358,7 +1358,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1385,7 +1385,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1426,7 +1426,7 @@ const OpenAPISpec = `{
             "in": "query",
             "name": "class_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -1434,7 +1434,7 @@ const OpenAPISpec = `{
             "in": "query",
             "name": "category_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1456,11 +1456,11 @@ const OpenAPISpec = `{
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "class_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "content": {
@@ -1507,7 +1507,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1537,7 +1537,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1562,7 +1562,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1615,7 +1615,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1637,7 +1637,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1775,7 +1775,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -1836,7 +1836,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1872,7 +1872,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1928,7 +1928,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -1984,7 +1984,7 @@ const OpenAPISpec = `{
             "in": "query",
             "name": "category_id",
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           },
@@ -2018,7 +2018,7 @@ const OpenAPISpec = `{
               "schema": {
                 "properties": {
                   "category_id": {
-                    "example": "cmq6b6ehc000010uj9ewttltv",
+                    "example": "",
                     "type": "string"
                   },
                   "description": {
@@ -2080,7 +2080,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2110,7 +2110,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2135,7 +2135,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2188,7 +2188,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2218,7 +2218,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2360,7 +2360,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }
@@ -2394,7 +2394,7 @@ const OpenAPISpec = `{
             "name": "id",
             "required": true,
             "schema": {
-              "example": "cmq6b6ehc000010uj9ewttltv",
+              "example": "",
               "type": "string"
             }
           }

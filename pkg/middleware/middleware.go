@@ -16,7 +16,7 @@ import (
 // ==================== CORS ====================
 func SetupCORS() fiber.Handler {
 	return cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
+		AllowOrigins: "http://localhost:3000,https://jvalleyverse.mohagussetiaone.my.id",
 		AllowMethods:     "GET,POST,PUT,DELETE,PATCH,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-XSRF-TOKEN",
 		AllowCredentials: true,
