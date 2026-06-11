@@ -33,6 +33,13 @@ func (p *Project) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+func (ph *Phase) BeforeCreate(tx *gorm.DB) error {
+	if ph.ID == "" {
+		ph.ID = cuid.New()
+	}
+	return nil
+}
+
 func (c *Class) BeforeCreate(tx *gorm.DB) error {
 	if c.ID == "" {
 		c.ID = cuid.New()

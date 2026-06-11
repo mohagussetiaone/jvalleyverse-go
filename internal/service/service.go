@@ -338,6 +338,7 @@ var (
 	gamificationSvc IGamificationService
 	projectSvc      IProjectService
 	categorySvc     ICategoryService
+	phaseSvc        IPhaseService
 )
 
 // InitServices initializes all global service instances
@@ -355,16 +356,18 @@ func InitServices(db *gorm.DB) {
 	discussionRepo := repository.NewDiscussionRepository(db)
 	replyRepo := repository.NewReplyRepository(db)
 	projectRepo := repository.NewProjectRepository(db)
+	phaseRepo := repository.NewPhaseRepository(db)
 
 	// Initialize services with repositories
 	userSvc = NewUserService(userRepo, pointRepo, levelRepo)
 	showcaseSvc = NewShowcaseService(showcaseRepo, likeRepo, userSvc)
 	certificateSvc = NewCertificateService(certificateRepo, classRepo, userRepo)
-	classSvc = NewClassService(classRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, projectRepo)
+	classSvc = NewClassService(classRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, projectRepo, phaseRepo)
 	discussionSvc = NewDiscussionService(discussionRepo, replyRepo, userRepo)
 	replySvc = NewReplyService(replyRepo, discussionRepo, userSvc)
 	gamificationSvc = NewGamificationService(pointRepo, levelRepo, userRepo, showcaseRepo, userSvc)
 	projectSvc = NewProjectService(projectRepo, classRepo, userRepo)
+	phaseSvc = NewPhaseService(phaseRepo, projectRepo)
 
 	// Category service
 	categoryRepo := repository.NewCategoryRepository(db)
@@ -406,4 +409,8 @@ func GetProjectService() IProjectService {
 
 func GetCategoryService() ICategoryService {
 	return categorySvc
+}
+
+func GetPhaseService() IPhaseService {
+	return phaseSvc
 }

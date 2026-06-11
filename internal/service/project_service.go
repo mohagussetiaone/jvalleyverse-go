@@ -13,6 +13,7 @@ type IProjectService interface {
 	GetProject(ctx context.Context, projectID string) (map[string]interface{}, error)
 	UpdateProject(ctx context.Context, projectID, adminID string, title, description string, visibility string) error
 	DeleteProject(ctx context.Context, projectID, adminID string) error
+	ListPublicProjects(ctx context.Context, page, limit int) ([]map[string]interface{}, error)
 }
 
 type ProjectService struct {
@@ -35,6 +36,10 @@ func NewProjectService(
 
 // CreateProject creates new learning project (admin only)
 func (s *ProjectService) CreateProject(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string) (*domain.Project, error) {
+	if title == "" || categoryID == "" {
+		return nil, domain.ErrInvalidInput
+	}
+
 	project := &domain.Project{
 		Title:       title,
 		Description: description,
@@ -65,9 +70,11 @@ func (s *ProjectService) ListProjects(ctx context.Context, page, limit int) ([]m
 			"title":       p.Title,
 			"description": p.Description,
 			"thumbnail":   p.Thumbnail,
+			"category":    p.Category,
 			"admin_id":    p.AdminID,
 			"admin_name":  p.Admin.Name,
 			"visibility":  p.Visibility,
+			"phase_count": len(p.Phases),
 			"created_at":  p.CreatedAt,
 		}
 	}
@@ -77,24 +84,9 @@ func (s *ProjectService) ListProjects(ctx context.Context, page, limit int) ([]m
 
 // GetProject returns specific project with classes
 func (s *ProjectService) GetProject(ctx context.Context, projectID string) (map[string]interface{}, error) {
-	project, err := s.projectRepo.FindByID(ctx, projectID)
+	project, err := s.projectRepo.FindByIDWithPhases(ctx, projectID)
 	if err != nil {
 		return nil, err
-	}
-
-	// Get classes in project
-	classes, _, err := s.classRepo.ListByProjectID(ctx, projectID, 1, 100)
-	if err != nil {
-		return nil, err
-	}
-
-	classData := make([]map[string]interface{}, len(classes))
-	for i, c := range classes {
-		classData[i] = map[string]interface{}{
-			"id":         c.ID,
-			"title":      c.Title,
-			"difficulty": c.Difficulty,
-		}
 	}
 
 	return map[string]interface{}{
@@ -102,12 +94,43 @@ func (s *ProjectService) GetProject(ctx context.Context, projectID string) (map[
 		"title":       project.Title,
 		"description": project.Description,
 		"thumbnail":   project.Thumbnail,
+		"category":    project.Category,
 		"admin_id":    project.AdminID,
 		"admin_name":  project.Admin.Name,
 		"visibility":  project.Visibility,
-		"classes":     classData,
+		"phases":      project.Phases,
 		"created_at":  project.CreatedAt,
 	}, nil
+}
+
+func (s *ProjectService) ListPublicProjects(
+	ctx context.Context,
+	page,
+	limit int,
+) ([]map[string]interface{}, error) {
+
+	projects, _, err := s.projectRepo.ListPublic(ctx, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(projects))
+
+	for i, p := range projects {
+		result[i] = map[string]interface{}{
+			"id":          p.ID,
+			"title":       p.Title,
+			"description": p.Description,
+			"thumbnail":   p.Thumbnail,
+			"category":    p.Category,
+			"admin_name":  p.Admin.Name,
+			"visibility":  p.Visibility,
+			"phase_count": len(p.Phases),
+			"created_at":  p.CreatedAt,
+		}
+	}
+
+	return result, nil
 }
 
 // UpdateProject updates project details (admin only)
@@ -122,9 +145,15 @@ func (s *ProjectService) UpdateProject(ctx context.Context, projectID, adminID s
 		return domain.ErrForbidden
 	}
 
-	project.Title = title
-	project.Description = description
-	project.Visibility = visibility
+	if title != "" {
+		project.Title = title
+	}
+	if description != "" {
+		project.Description = description
+	}
+	if visibility != "" {
+		project.Visibility = visibility
+	}
 
 	return s.projectRepo.Update(ctx, project)
 }

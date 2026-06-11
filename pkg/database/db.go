@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/pkg/config"
@@ -25,13 +26,85 @@ func ConnectDB() {
         panic("Failed to connect to database: " + err.Error())
     }
 
-    // Create ENUM types if they don't exist
-    createEnumTypes()
+	// Create ENUM types if they don't exist
+	createEnumTypes()
 
-    // Auto migrate schema
-    if err := domain.AutoMigrate(DB); err != nil {
-        panic("Migration failed: " + err.Error())
-    }
+	// Backfill legacy classes before AutoMigrate enforces phase_id NOT NULL.
+	if err := migrateLegacyClassPhases(DB); err != nil {
+		panic("Legacy phase migration failed: " + err.Error())
+	}
+
+	// Auto migrate schema
+	if err := domain.AutoMigrate(DB); err != nil {
+		panic("Migration failed: " + err.Error())
+	}
+}
+
+func migrateLegacyClassPhases(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&domain.Project{}) || !db.Migrator().HasTable(&domain.Class{}) {
+		return nil
+	}
+
+	if err := db.AutoMigrate(&domain.Phase{}); err != nil {
+		return err
+	}
+
+	if !db.Migrator().HasColumn(&domain.Class{}, "phase_id") {
+		if err := db.Exec(`ALTER TABLE "classes" ADD COLUMN "phase_id" text`).Error; err != nil {
+			return err
+		}
+	}
+
+	type legacyProjectRow struct {
+		ProjectID string
+	}
+
+	var rows []legacyProjectRow
+	if err := db.Raw(`
+		SELECT DISTINCT project_id
+		FROM classes
+		WHERE deleted_at IS NULL
+		  AND project_id IS NOT NULL
+		  AND (phase_id IS NULL OR phase_id = '')
+	`).Scan(&rows).Error; err != nil {
+		return err
+	}
+
+	for _, row := range rows {
+		if row.ProjectID == "" {
+			continue
+		}
+
+		if err := db.Transaction(func(tx *gorm.DB) error {
+			var phase domain.Phase
+			err := tx.Where("project_id = ?", row.ProjectID).
+				Order("order_index ASC").
+				First(&phase).Error
+			if err != nil {
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+
+				phase = domain.Phase{
+					ProjectID:   row.ProjectID,
+					Title:       "General",
+					Description: "Auto-generated default phase for legacy classes",
+					OrderIndex:  0,
+				}
+				if err := tx.Create(&phase).Error; err != nil {
+					return err
+				}
+			}
+
+			return tx.Model(&domain.Class{}).
+				Where("project_id = ? AND (phase_id IS NULL OR phase_id = '')", row.ProjectID).
+				Update("phase_id", phase.ID).Error
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // createEnumTypes creates PostgreSQL ENUM types for the application

@@ -37,14 +37,16 @@ func (h *CertificateHandler) ListCertificates(c *fiber.Ctx) error {
 
 // GetCertificate returns specific certificate by unique code
 func (h *CertificateHandler) GetCertificate(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	role, _ := c.Locals("role").(string)
 	code := c.Params("code")
 	if code == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid certificate code"})
 	}
 
-	cert, err := h.certificateSvc.GetCertificateByCode(c.UserContext(), code)
+	cert, err := h.certificateSvc.GetCertificateByCode(c.UserContext(), code, userID, role)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "Certificate not found"})
+		return c.Status(mapServiceErrorToStatus(err)).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(cert)

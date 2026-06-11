@@ -24,7 +24,30 @@ func (r *ProjectRepository) Create(ctx context.Context, project *domain.Project)
 // FindByID finds project with admin and classes
 func (r *ProjectRepository) FindByID(ctx context.Context, projectID string) (*domain.Project, error) {
 	project := &domain.Project{}
-	if err := r.db.WithContext(ctx).Where("id = ?", projectID).Preload("Admin").First(project).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", projectID).
+		Preload("Admin").
+		Preload("Category").
+		First(project).Error; err != nil {
+		return nil, err
+	}
+	return project, nil
+}
+
+// FindByIDWithPhases finds project including all phases and their classes
+func (r *ProjectRepository) FindByIDWithPhases(ctx context.Context, projectID string) (*domain.Project, error) {
+	project := &domain.Project{}
+	if err := r.db.WithContext(ctx).Where("id = ?", projectID).
+		Preload("Admin").
+		Preload("Category").
+		Preload("Phases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("order_index ASC")
+		}).
+		Preload("Phases.Classes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("order_index ASC")
+		}).
+		Preload("Phases.Classes.Details").
+		Preload("Phases.Classes.NextClass").
+		First(project).Error; err != nil {
 		return nil, err
 	}
 	return project, nil
@@ -40,7 +63,46 @@ func (r *ProjectRepository) ListAll(ctx context.Context, page, limit int) ([]dom
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Preload("Admin").Offset(offset).Limit(limit).Find(&projects).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("Admin").
+		Preload("Category").
+		Preload("Phases").
+		Offset(offset).
+		Limit(limit).
+		Find(&projects).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return projects, total, nil
+}
+
+func (r *ProjectRepository) ListPublic(
+	ctx context.Context,
+	page,
+	limit int,
+) ([]domain.Project, int64, error) {
+
+	var projects []domain.Project
+	var total int64
+
+	query := r.db.WithContext(ctx).
+		Model(&domain.Project{}).
+		Where("visibility = ?", "public")
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+
+	if err := query.
+		Preload("Admin").
+		Preload("Category").
+		Preload("Phases").
+		Offset(offset).
+		Limit(limit).
+		Order("created_at DESC").
+		Find(&projects).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -57,7 +119,13 @@ func (r *ProjectRepository) ListByAdminID(ctx context.Context, adminID string, p
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("admin_id = ?", adminID).Offset(offset).Limit(limit).Find(&projects).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Where("admin_id = ?", adminID).
+		Preload("Category").
+		Preload("Phases").
+		Offset(offset).
+		Limit(limit).
+		Find(&projects).Error; err != nil {
 		return nil, 0, err
 	}
 

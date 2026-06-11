@@ -1,1216 +1,244 @@
-# API Documentation
+# Flow Final
 
-REST API untuk platform belajar berbasis komunitas. Dibangun dengan Go + GORM.
+Dokumen ini merangkum flow final backend yang sekarang aktif.
 
----
+## Struktur Utama
 
-## Daftar Isi
-
-- [Base URL & Auth](#base-url--auth)
-- [Role & Permission](#role--permission)
-- [Admin Flow](#admin-flow)
-  - [1. Category](#1-category)
-  - [2. Project](#2-project)
-  - [3. Class](#3-class)
-  - [4. Class Detail](#4-class-detail)
-  - [5. Certificate](#5-certificate)
-  - [6. User Management](#6-user-management)
-  - [7. Level Config](#7-level-config)
-- [User Flow](#user-flow)
-  - [1. Auth](#1-auth)
-  - [2. Browse Konten](#2-browse-konten)
-  - [3. Progress Belajar](#3-progress-belajar)
-  - [4. Discussion](#4-discussion)
-  - [5. Showcase](#5-showcase)
-  - [6. Profil & Gamifikasi](#6-profil--gamifikasi)
-- [Gamifikasi — Poin & Level](#gamifikasi--poin--level)
-- [Error Response](#error-response)
-
----
-
-## Base URL & Auth
-
-```
-Base URL: /api/v1
+```text
+Category
+└─ Project
+   └─ Phase
+      └─ Class
+         ├─ Class Detail
+         ├─ Class Progress
+         └─ Certificate
 ```
 
-Semua endpoint yang membutuhkan autentikasi menggunakan **JWT Bearer Token**.
+## Peran
 
-```
-Authorization: Bearer <token>
-```
+- `public`: bisa lihat konten publik
+- `user`: bisa belajar, diskusi, showcase, lihat certificate sendiri
+- `admin`: mengelola konten dan user
 
-Token didapat dari endpoint `POST /auth/login` atau `POST /auth/register`.
+## 1. Auth
 
----
+Flow:
 
-## Role & Permission
+1. User register
+2. User login
+3. Server memberi JWT
+4. JWT dipakai untuk endpoint protected
 
-| Role     | Keterangan                  |
-| -------- | --------------------------- |
-| `public` | Tidak perlu token           |
-| `user`   | User terdaftar, token valid |
-| `admin`  | Role admin, token valid     |
+Endpoint:
 
----
+- `POST /api/auth/register`
+- `POST /api/auth/login`
 
-## Admin Flow
+## 2. Admin Content Flow
 
-> Urutan pembuatan konten **wajib diikuti**: Category → Project → Class → Class Detail.  
-> Tidak bisa membuat Project tanpa Category, tidak bisa membuat Class tanpa Project.
+Urutan wajib:
 
----
+1. Buat `Category`
+2. Buat `Project` di dalam category
+3. Buat `Phase` di dalam project
+4. Buat `Class` di dalam phase
+5. Tambah `Class Detail`
 
-### 1. Category
+Aturan:
 
-#### `POST /admin/categories`
+- `class` wajib punya `project_id` dan `phase_id`
+- admin hanya bisa ubah data miliknya sendiri
+- class lama yang belum punya `phase` akan di-backfill ke default phase saat migrasi
 
-Buat category baru.
+Endpoint admin:
 
-**Auth:** `admin`
+- `POST /api/admin/categories`
+- `GET /api/admin/categories`
+- `PUT /api/admin/categories/:id`
+- `DELETE /api/admin/categories/:id`
+- `POST /api/admin/projects`
+- `GET /api/admin/projects`
+- `PUT /api/admin/projects/:id`
+- `DELETE /api/admin/projects/:id`
+- `POST /api/admin/projects/:project_id/phases`
+- `PUT /api/admin/phases/:phase_id`
+- `DELETE /api/admin/phases/:phase_id`
+- `POST /api/admin/classes`
+- `POST /api/admin/classes/:id/details`
+- `PUT /api/admin/classes/:id`
+- `DELETE /api/admin/classes/:id`
 
-**Request Body:**
+## 3. Public Browse Flow
 
-```json
-{
-  "name": "Web Development",
-  "slug": "web-development",
-  "description": "Kelas seputar pengembangan web",
-  "icon": "code",
-  "color": "#3B82F6"
-}
-```
+Flow:
 
-**Response `201`:**
+1. Lihat daftar category
+2. Lihat project di category
+3. Buka project
+4. Lihat phases
+5. Lihat classes
+6. Buka detail class
 
-```json
-{
-  "id": 1,
-  "name": "Web Development",
-  "slug": "web-development",
-  "description": "Kelas seputar pengembangan web",
-  "icon": "code",
-  "color": "#3B82F6",
-  "created_at": "2025-01-01T00:00:00Z",
-  "updated_at": "2025-01-01T00:00:00Z"
-}
-```
+Endpoint public:
 
-> `slug` harus unik dan lowercase. Digunakan sebagai filter di seluruh konten (project, showcase, discussion).
+- `GET /api/categories`
+- `GET /api/categories/:slug`
+- `GET /api/categories/:category_id/projects`
+- `GET /api/projects/:project_id`
+- `GET /api/projects/:project_id/phases`
+- `GET /api/projects/:project_id/phases/:phase_id`
+- `GET /api/projects/:project_id/classes`
+- `GET /api/projects/:project_id/phases/:phase_id/classes`
+- `GET /api/projects/:project_id/classes/:slug`
 
----
+## 4. Learning Flow
 
-#### `GET /admin/categories`
+Flow user belajar:
 
-List semua categories.
+1. User buka detail class
+2. User `start class`
+3. User `update progress`
+4. User `complete class`
+5. Server update progress
+6. Server tambah poin
+7. Server buat certificate
 
-**Auth:** `admin`
+Status progress:
 
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "Web Development",
-      "slug": "web-development",
-      "color": "#3B82F6"
-    }
-  ],
-  "total": 1
-}
-```
-
----
-
-#### `PUT /admin/categories/:id`
-
-Update category.
-
-**Auth:** `admin`
-
-**Request Body:** _(field yang ingin diubah)_
-
-```json
-{
-  "name": "Web Dev",
-  "color": "#6366F1"
-}
+```text
+not_started -> started -> in_progress -> completed
 ```
 
-**Response `200`:** Objek category yang sudah diupdate.
+Endpoint:
 
----
+- `POST /api/classes/:id/start`
+- `PUT /api/classes/:id/progress`
+- `POST /api/classes/:id/complete`
 
-#### `DELETE /admin/categories/:id`
+Hasil saat complete:
 
-Hapus category (soft delete).
+- progress jadi `completed`
+- points bertambah
+- response mengandung `certificate`
+- response mengandung `achievement`
+- response mengandung `next_class` bila ada
 
-**Auth:** `admin`
+## 5. Certificate Flow
 
-**Response `200`:**
+Flow:
 
-```json
-{
-  "message": "category deleted"
-}
-```
+1. Certificate dibuat saat class selesai
+2. Owner bisa lihat daftar certificate miliknya
+3. Certificate by code hanya bisa diakses owner atau admin
 
----
+Endpoint:
 
-### 2. Project
+- `GET /api/certificates`
+- `GET /api/certificates/:code`
 
-#### `POST /admin/projects`
+## 6. User Profile Flow
 
-Buat project baru.
+Flow:
 
-**Auth:** `admin`
+1. User lihat profil sendiri
+2. User update profil sendiri
+3. User lihat activity log
+4. Public bisa lihat profil ringkas user
 
-**Request Body:**
+Endpoint:
 
-```json
-{
-  "title": "Fullstack React & Go",
-  "description": "Belajar fullstack dari nol hingga deployment",
-  "thumbnail": "https://cdn.example.com/thumbnail.jpg",
-  "category_id": 1,
-  "visibility": "public"
-}
-```
+- `GET /api/users/me`
+- `PUT /api/users/me`
+- `GET /api/users/me/activity`
+- `GET /api/users/:id`
 
-> `visibility`: `public` | `draft`
+## 7. Discussion Flow
 
-**Response `201`:**
+Flow:
 
-```json
-{
-  "id": 1,
-  "title": "Fullstack React & Go",
-  "category_id": 1,
-  "admin_id": 2,
-  "visibility": "public",
-  "created_at": "2025-01-01T00:00:00Z"
-}
-```
+1. User buat discussion
+2. Discussion bisa dikaitkan ke class
+3. User lain balas discussion
+4. Owner reply bisa edit atau hapus reply miliknya
+5. Owner discussion bisa update thread miliknya
 
-> `admin_id` otomatis diambil dari JWT — tidak perlu dikirim di body.
+Endpoint:
 
----
+- `POST /api/discussions`
+- `GET /api/discussions`
+- `GET /api/discussions/:id`
+- `PUT /api/discussions/:id`
+- `POST /api/discussions/:id/replies`
+- `PUT /api/replies/:id`
+- `DELETE /api/replies/:id`
 
-#### `GET /admin/projects`
+## 8. Showcase Flow
 
-List semua project.
+Flow:
 
-**Auth:** `admin`
+1. User buat showcase
+2. Public bisa lihat showcase
+3. Owner bisa update atau delete showcase
+4. User lain bisa like atau unlike
+5. Showcase owner bisa dapat poin dari interaksi
 
-**Query Params:**
-| Param | Tipe | Keterangan |
-|-------|------|-----------|
-| `category_id` | int | Filter by category |
-| `visibility` | string | `public` / `draft` |
-| `page` | int | Default: 1 |
-| `limit` | int | Default: 10 |
+Endpoint:
 
-**Response `200`:**
+- `GET /api/showcases`
+- `GET /api/showcases/:id`
+- `POST /api/showcases`
+- `PUT /api/showcases/:id`
+- `DELETE /api/showcases/:id`
+- `POST /api/showcases/:id/like`
+- `DELETE /api/showcases/:id/like`
 
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "title": "Fullstack React & Go",
-      "category": { "id": 1, "name": "Web Development" },
-      "visibility": "public"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "limit": 10
-}
-```
+## 9. Gamification Flow
 
----
+Flow:
 
-#### `PUT /admin/projects/:id`
+1. Aktivitas user menghasilkan poin
+2. Poin tersimpan ke activity log
+3. Level user dihitung dari total poin
+4. Leaderboard menampilkan ranking user
 
-Update project.
+Endpoint:
 
-**Auth:** `admin`
+- `GET /api/leaderboard`
+- `GET /api/levels`
+- `GET /api/users/:id/points`
 
-**Request Body:** _(field yang ingin diubah)_
+Contoh aktivitas yang memicu poin:
 
-```json
-{
-  "title": "Fullstack React & Go — Updated",
-  "visibility": "draft"
-}
-```
+- menyelesaikan class
+- membuat showcase
+- mendapat like showcase
+- membuat reply atau diskusi
 
----
+## 10. Admin User Flow
 
-#### `DELETE /admin/projects/:id`
+Flow:
 
-Hapus project beserta semua class di dalamnya (cascade).
+1. Admin buka dashboard
+2. Admin lihat daftar user
+3. Admin memantau konten dan struktur belajar
 
-**Auth:** `admin`
+Endpoint:
 
----
+- `GET /api/admin/dashboard`
+- `GET /api/admin/users`
 
-### 3. Class
+## Ringkasan Besar
 
-#### `POST /admin/projects/:id/classes`
+```text
+Admin:
+Category -> Project -> Phase -> Class -> Class Detail
 
-Buat class baru di dalam project.
+User:
+Browse -> Open Class -> Start -> Progress -> Complete -> Certificate
 
-**Auth:** `admin`
+Community:
+Discussion + Reply + Showcase + Like
 
-**Request Body:**
-
-```json
-{
-  "title": "Setup Environment",
-  "slug": "setup-environment",
-  "description": "Instalasi tools dasar yang diperlukan",
-  "thumbnail": "https://cdn.example.com/class.jpg",
-  "difficulty": "beginner",
-  "duration": 30,
-  "order_index": 1,
-  "is_first": true,
-  "next_class_id": null,
-  "visibility": "public"
-}
-```
-
-> `difficulty`: `beginner` | `intermediate` | `advanced`  
-> `duration`: dalam menit  
-> `next_class_id`: isi `null` dulu, update setelah semua class dibuat  
-> `is_first`: hanya satu class per project yang boleh `true`
-
-**Response `201`:**
-
-```json
-{
-  "id": 10,
-  "title": "Setup Environment",
-  "slug": "setup-environment",
-  "project_id": 1,
-  "order_index": 1,
-  "is_first": true,
-  "next_class_id": null,
-  "difficulty": "beginner",
-  "duration": 30,
-  "visibility": "public"
-}
-```
-
----
-
-#### `PUT /admin/classes/:id`
-
-Update class. Gunakan ini untuk **chain `next_class_id`** setelah semua class dibuat.
-
-**Auth:** `admin`
-
-**Request Body:**
-
-```json
-{
-  "next_class_id": 11,
-  "order_index": 1
-}
-```
-
-**Response `200`:** Objek class yang sudah diupdate.
-
-> **Perhatian:** Validasi di server wajib mencegah circular reference (Class A → B → A).
-
----
-
-#### `GET /admin/projects/:id/classes`
-
-List semua class dalam project, diurutkan by `order_index`.
-
-**Auth:** `admin`
-
----
-
-#### `DELETE /admin/classes/:id`
-
-Hapus class beserta detail dan sertifikat terkait (cascade).
-
-**Auth:** `admin`
-
----
-
-### 4. Class Detail
-
-#### `POST /admin/classes/:id/detail`
-
-Buat detail konten class. Satu class hanya punya satu ClassDetail.
-
-**Auth:** `admin`
-
-**Request Body:**
-
-```json
-{
-  "about": "Di kelas ini kamu akan belajar cara setup environment Go dan React dari awal.",
-  "rules": "Wajib menyelesaikan semua resource dan submit project akhir.",
-  "tools": ["VSCode", "Go 1.22", "Node 20", "Docker"],
-  "resource_media": {
-    "videos": ["https://youtube.com/watch?v=xxx"],
-    "documents": ["https://cdn.example.com/materi.pdf"],
-    "images": ["https://cdn.example.com/diagram.png"]
-  },
-  "resources": [
-    {
-      "type": "pdf",
-      "title": "Slide Materi Setup",
-      "url": "https://cdn.example.com/slide.pdf"
-    },
-    {
-      "type": "link",
-      "title": "Repo GitHub Starter",
-      "url": "https://github.com/example/starter"
-    }
-  ]
-}
-```
-
-> `resource_media`: untuk embed konten langsung (video player, pdf viewer).  
-> `resources`: daftar unduhan / referensi eksternal.  
-> `type` pada resources: `pdf` | `video` | `link` | `document`
-
-**Response `201`:**
-
-```json
-{
-  "id": 5,
-  "class_id": 10,
-  "about": "Di kelas ini kamu akan...",
-  "tools": ["VSCode", "Go 1.22", "Node 20", "Docker"],
-  "created_at": "2025-01-01T00:00:00Z"
-}
-```
-
----
-
-#### `PUT /admin/classes/:id/detail`
-
-Update detail class yang sudah ada.
-
-**Auth:** `admin`
-
-**Request Body:** _(field yang ingin diubah)_
-
----
-
-### 5. Certificate
-
-#### `POST /admin/certificates`
-
-Terbitkan sertifikat ke user setelah menyelesaikan class.
-
-**Auth:** `admin`
-
-**Request Body:**
-
-```json
-{
-  "user_id": 42,
-  "class_id": 10,
-  "badge_url": "https://cdn.example.com/badge-setup-env.png",
-  "expires_at": null
-}
-```
-
-> `expires_at`: opsional. Isi `null` jika sertifikat tidak kedaluwarsa.  
-> `unique_code` di-generate otomatis di server (UUID).
-
-**Response `201`:**
-
-```json
-{
-  "id": 7,
-  "user_id": 42,
-  "class_id": 10,
-  "unique_code": "CERT-abc123xyz",
-  "badge_url": "https://cdn.example.com/badge-setup-env.png",
-  "issued_at": "2025-01-01T00:00:00Z",
-  "expires_at": null
-}
-```
-
----
-
-#### `GET /admin/users/:id/certificates`
-
-Lihat semua sertifikat milik user tertentu.
-
-**Auth:** `admin`
-
----
-
-### 6. User Management
-
-#### `GET /admin/users`
-
-List semua user.
-
-**Auth:** `admin`
-
-**Query Params:**
-| Param | Tipe | Keterangan |
-|-------|------|-----------|
-| `search` | string | Cari by name / email |
-| `is_active` | bool | Filter aktif/nonaktif |
-| `level` | int | Filter by level (1–5) |
-| `page` | int | Default: 1 |
-| `limit` | int | Default: 20 |
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 42,
-      "name": "Budi Santoso",
-      "email": "budi@mail.com",
-      "role": "user",
-      "level": 2,
-      "points": 450,
-      "total_points": 450,
-      "is_active": true
-    }
-  ],
-  "total": 1
-}
-```
-
----
-
-#### `PUT /admin/users/:id`
-
-Update role atau status aktif user.
-
-**Auth:** `admin`
-
-**Request Body:**
-
-```json
-{
-  "is_active": false,
-  "role": "user"
-}
-```
-
-> `role`: `admin` | `user`  
-> Set `is_active: false` untuk suspend user sementara.
-
-**Response `200`:** Objek user yang sudah diupdate.
-
----
-
-### 7. Level Config
-
-#### `POST /admin/levels`
-
-Konfigurasi threshold poin untuk tiap level.
-
-**Auth:** `admin`
-
-**Request Body:**
-
-```json
-{
-  "level": 2,
-  "min_points": 100,
-  "max_points": 499,
-  "badge_name": "Pelajar Aktif",
-  "badge_icon": "star",
-  "description": "Sudah menyelesaikan beberapa kelas"
-}
-```
-
-> `level`: 1–5, harus unik.  
-> `min_points` harus unik per level dan tidak overlap antar level.
-
-**Response `201`:**
-
-```json
-{
-  "id": 2,
-  "level": 2,
-  "min_points": 100,
-  "max_points": 499,
-  "badge_name": "Pelajar Aktif",
-  "badge_icon": "star"
-}
-```
-
----
-
-#### `GET /admin/levels`
-
-List semua konfigurasi level.
-
-**Auth:** `admin`
-
----
-
-## User Flow
-
----
-
-### 1. Auth
-
-#### `POST /auth/register`
-
-Daftar akun baru.
-
-**Auth:** `public`
-
-**Request Body:**
-
-```json
-{
-  "name": "Budi Santoso",
-  "email": "budi@mail.com",
-  "password": "min8karakter"
-}
-```
-
-**Response `201`:**
-
-```json
-{
-  "token": "eyJhbGc...",
-  "user": {
-    "id": 42,
-    "name": "Budi Santoso",
-    "email": "budi@mail.com",
-    "level": 1,
-    "points": 0,
-    "is_active": true
-  }
-}
-```
-
----
-
-#### `POST /auth/login`
-
-Login dan dapatkan token.
-
-**Auth:** `public`
-
-**Request Body:**
-
-```json
-{
-  "email": "budi@mail.com",
-  "password": "min8karakter"
-}
-```
-
-**Response `200`:**
-
-```json
-{
-  "token": "eyJhbGc...",
-  "user": {
-    "id": 42,
-    "name": "Budi Santoso",
-    "level": 2,
-    "points": 450
-  }
-}
-```
-
----
-
-### 2. Browse Konten
-
-#### `GET /projects`
-
-Daftar semua project yang `visibility: public`.
-
-**Auth:** `user`
-
-**Query Params:**
-| Param | Tipe | Keterangan |
-|-------|------|-----------|
-| `category_id` | int | Filter by category |
-| `search` | string | Cari by title |
-| `page` | int | Default: 1 |
-| `limit` | int | Default: 10 |
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "title": "Fullstack React & Go",
-      "thumbnail": "https://cdn.example.com/thumbnail.jpg",
-      "category": { "id": 1, "name": "Web Development" }
-    }
-  ],
-  "total": 1
-}
-```
-
----
-
-#### `GET /projects/:id/classes`
-
-Daftar class dalam project, diurutkan by `order_index`.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 10,
-      "title": "Setup Environment",
-      "slug": "setup-environment",
-      "order_index": 1,
-      "is_first": true,
-      "difficulty": "beginner",
-      "duration": 30
-    },
-    {
-      "id": 11,
-      "title": "Build REST API",
-      "slug": "build-rest-api",
-      "order_index": 2,
-      "is_first": false,
-      "difficulty": "intermediate",
-      "duration": 60
-    }
-  ]
-}
-```
-
----
-
-#### `GET /classes/:id`
-
-Detail class beserta konten lengkap dan `next_class_id`.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "id": 10,
-  "title": "Setup Environment",
-  "slug": "setup-environment",
-  "difficulty": "beginner",
-  "duration": 30,
-  "next_class_id": 11,
-  "details": {
-    "about": "Di kelas ini kamu akan...",
-    "rules": "Wajib submit project akhir.",
-    "tools": ["VSCode", "Go 1.22"],
-    "resource_media": {
-      "videos": ["https://youtube.com/watch?v=xxx"],
-      "documents": [],
-      "images": []
-    },
-    "resources": [{ "type": "pdf", "title": "Slide Materi", "url": "https://cdn.example.com/slide.pdf" }]
-  },
-  "discussions": []
-}
-```
-
----
-
-### 3. Progress Belajar
-
-#### `POST /classes/:id/progress`
-
-Mulai atau update progress belajar.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "status": "in_progress",
-  "progress_percentage": 60,
-  "notes": "Sudah sampai bagian instalasi Go"
-}
-```
-
-> `status`: `not_started` | `started` | `in_progress` | `completed`  
-> Saat `status: "completed"`, server otomatis:
->
-> 1. Insert `CommunityPoint` dengan activity_type `class_completed`
-> 2. Update `User.points` dan `User.total_points`
-> 3. Cek threshold `UserLevel` — update `User.level` jika naik
-
-**Response `200`:**
-
-```json
-{
-  "id": 3,
-  "user_id": 42,
-  "class_id": 10,
-  "status": "in_progress",
-  "progress_percentage": 60,
-  "started_at": "2025-01-01T08:00:00Z",
-  "completed_at": null
-}
-```
-
----
-
-#### `GET /me/progress`
-
-Semua progress belajar user yang sedang login.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "class_id": 10,
-      "class_title": "Setup Environment",
-      "status": "completed",
-      "progress_percentage": 100,
-      "completed_at": "2025-01-01T10:00:00Z"
-    },
-    {
-      "class_id": 11,
-      "class_title": "Build REST API",
-      "status": "in_progress",
-      "progress_percentage": 40
-    }
-  ]
-}
-```
-
----
-
-### 4. Discussion
-
-#### `POST /discussions`
-
-Buat thread diskusi baru.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "title": "Kenapa goroutine lebih ringan dari thread OS?",
-  "content": "Saya penasaran soal perbedaan goroutine dan thread biasa...",
-  "class_id": 10,
-  "category_id": 1
-}
-```
-
-> `class_id`: opsional — bisa membuat diskusi standalone tanpa class.
-
-**Response `201`:**
-
-```json
-{
-  "id": 5,
-  "title": "Kenapa goroutine lebih ringan dari thread OS?",
-  "user_id": 42,
-  "class_id": 10,
-  "category_id": 1,
-  "status": "open",
-  "is_pinned": false,
-  "views_count": 0,
-  "created_at": "2025-01-01T00:00:00Z"
-}
-```
-
----
-
-#### `GET /discussions`
-
-List semua diskusi.
-
-**Auth:** `user`
-
-**Query Params:**
-| Param | Tipe | Keterangan |
-|-------|------|-----------|
-| `class_id` | int | Filter by class |
-| `category_id` | int | Filter by category |
-| `status` | string | `open` / `closed` |
-| `page` | int | Default: 1 |
-| `limit` | int | Default: 20 |
-
----
-
-#### `GET /discussions/:id`
-
-Detail diskusi beserta replies.
-
-**Auth:** `user`
-
-> Views count otomatis bertambah setiap kali endpoint ini dipanggil.
-
----
-
-#### `POST /discussions/:id/replies`
-
-Balas diskusi.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "content": "Goroutine dikelola oleh Go runtime, bukan OS, sehingga lebih ringan...",
-  "parent_id": null
-}
-```
-
-> `parent_id`: isi ID reply lain jika ingin nested reply (balas reply).
-
-**Response `201`:**
-
-```json
-{
-  "id": 20,
-  "discussion_id": 5,
-  "user_id": 42,
-  "content": "Goroutine dikelola oleh Go runtime...",
-  "parent_id": null,
-  "likes_count": 0,
-  "is_marked_best": false
-}
-```
-
----
-
-#### `POST /replies/:id/mark-best`
-
-Tandai reply sebagai jawaban terbaik.
-
-**Auth:** `user` _(hanya owner discussion)_
-
-**Response `200`:**
-
-```json
-{
-  "id": 20,
-  "is_marked_best": true
-}
-```
-
----
-
-### 5. Showcase
-
-#### `POST /showcases`
-
-Upload karya portofolio.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "title": "Todo App with Go + React",
-  "description": "Project akhir kelas Fullstack. Fitur: auth, CRUD, realtime update.",
-  "media_urls": ["https://cdn.example.com/screenshot1.png", "https://cdn.example.com/screenshot2.png"],
-  "category_id": 1,
-  "visibility": "public"
-}
-```
-
-> `media_urls`: array URL gambar/video yang sudah diupload ke storage terlebih dahulu.  
-> `visibility`: `public` | `private`
-
-**Response `201`:**
-
-```json
-{
-  "id": 8,
-  "title": "Todo App with Go + React",
-  "user_id": 42,
-  "category_id": 1,
-  "status": "published",
-  "visibility": "public",
-  "likes_count": 0,
-  "views_count": 0
-}
-```
-
----
-
-#### `GET /showcases`
-
-List semua showcase publik.
-
-**Auth:** `user`
-
-**Query Params:**
-| Param | Tipe | Keterangan |
-|-------|------|-----------|
-| `category_id` | int | Filter by category |
-| `user_id` | int | Filter by user |
-| `page` | int | Default: 1 |
-| `limit` | int | Default: 12 |
-
----
-
-#### `POST /showcases/:id/like`
-
-Toggle like pada showcase.
-
-**Auth:** `user`
-
-**Request Body:** _(tidak diperlukan)_
-
-**Response `200`:**
-
-```json
-{
-  "showcase_id": 8,
-  "user_id": 42,
-  "liked": true
-}
-```
-
-> Menggunakan composite key `(user_id, showcase_id)` — otomatis toggle antara like dan unlike.
-
----
-
-#### `POST /showcases/:id/comments`
-
-Komentar pada showcase.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "content": "Keren banget projectnya! Stack-nya solid.",
-  "parent_id": null
-}
-```
-
-> `parent_id`: isi ID komentar lain untuk nested comment.
-
-**Response `201`:**
-
-```json
-{
-  "id": 15,
-  "showcase_id": 8,
-  "user_id": 42,
-  "content": "Keren banget projectnya!",
-  "parent_id": null,
-  "created_at": "2025-01-01T00:00:00Z"
-}
-```
-
----
-
-### 6. Profil & Gamifikasi
-
-#### `GET /me`
-
-Profil lengkap user yang sedang login.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "id": 42,
-  "name": "Budi Santoso",
-  "email": "budi@mail.com",
-  "avatar": "https://cdn.example.com/avatar.jpg",
-  "bio": "Learning everyday",
-  "role": "user",
-  "level": 2,
-  "points": 450,
-  "total_points": 450,
-  "is_active": true
-}
-```
-
----
-
-#### `PUT /me`
-
-Update profil sendiri.
-
-**Auth:** `user`
-
-**Request Body:**
-
-```json
-{
-  "name": "Budi S.",
-  "avatar": "https://cdn.example.com/new-avatar.jpg",
-  "bio": "Fullstack developer in progress"
-}
-```
-
-> User tidak bisa mengubah `email`, `role`, atau `level` sendiri.
-
----
-
-#### `GET /me/points`
-
-Riwayat transaksi poin user.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "activity_type": "class_completed",
-      "points_earned": 100,
-      "points_after": 450,
-      "level_after": 2,
-      "description": "Selesai kelas: Setup Environment",
-      "metadata": {
-        "class_id": 10,
-        "class_title": "Setup Environment"
-      },
-      "created_at": "2025-01-01T10:00:00Z"
-    }
-  ]
-}
-```
-
----
-
-#### `GET /me/certificates`
-
-Sertifikat milik user yang sedang login.
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    {
-      "id": 7,
-      "unique_code": "CERT-abc123xyz",
-      "badge_url": "https://cdn.example.com/badge.png",
-      "issued_at": "2025-01-01T00:00:00Z",
-      "expires_at": null,
-      "class": {
-        "id": 10,
-        "title": "Setup Environment",
-        "project": { "id": 1, "title": "Fullstack React & Go" }
-      }
-    }
-  ]
-}
-```
-
-> **Private** — hanya mengembalikan sertifikat milik user yang login. Admin menggunakan `GET /admin/users/:id/certificates`.
-
----
-
-#### `GET /levels`
-
-List semua konfigurasi level (untuk ditampilkan di UI).
-
-**Auth:** `user`
-
-**Response `200`:**
-
-```json
-{
-  "data": [
-    { "level": 1, "min_points": 0, "max_points": 99, "badge_name": "Pemula", "badge_icon": "seedling" },
-    { "level": 2, "min_points": 100, "max_points": 499, "badge_name": "Pelajar Aktif", "badge_icon": "star" },
-    { "level": 3, "min_points": 500, "max_points": 1499, "badge_name": "Kontributor", "badge_icon": "fire" },
-    { "level": 4, "min_points": 1500, "max_points": 4999, "badge_name": "Expert", "badge_icon": "trophy" },
-    { "level": 5, "min_points": 5000, "max_points": 999999, "badge_name": "Master", "badge_icon": "crown" }
-  ]
-}
-```
-
----
-
-## Gamifikasi — Poin & Level
-
-Sistem poin ditrigger otomatis di server. Client **tidak perlu** mengirim request poin secara manual.
-
-| Activity Type        | Poin | Keterangan                 |
-| -------------------- | ---- | -------------------------- |
-| `class_completed`    | 100  | Menyelesaikan satu class   |
-| `showcase_posted`    | 50   | Upload showcase baru       |
-| `discussion_created` | 20   | Membuat thread diskusi     |
-| `reply_posted`       | 10   | Membalas diskusi           |
-| `reply_marked_best`  | 30   | Reply ditandai best answer |
-| `showcase_liked`     | 5    | Mendapat like di showcase  |
-
-**Level naik** diperiksa setiap kali poin bertambah. Jika `User.points >= UserLevel.min_points` untuk level berikutnya, `User.level` diupdate dan `CommunityPoint.level_after` mencatat level baru.
-
----
-
-## Error Response
-
-Semua error menggunakan format berikut:
-
-```json
-{
-  "error": "pesan error yang human-readable",
-  "code": "ERROR_CODE"
-}
-```
-
-| HTTP Status | Keterangan                                             |
-| ----------- | ------------------------------------------------------ |
-| `400`       | Request tidak valid / field wajib kosong               |
-| `401`       | Token tidak ada atau expired                           |
-| `403`       | Tidak punya akses (role tidak sesuai)                  |
-| `404`       | Resource tidak ditemukan                               |
-| `409`       | Conflict — misal slug sudah dipakai, sudah pernah like |
-| `500`       | Internal server error                                  |
-
-**Contoh `401`:**
-
-```json
-{
-  "error": "token tidak valid atau sudah expired",
-  "code": "UNAUTHORIZED"
-}
-```
-
-**Contoh `403`:**
-
-```json
-{
-  "error": "hanya admin yang bisa mengakses endpoint ini",
-  "code": "FORBIDDEN"
-}
+Gamification:
+Activity -> Points -> Level -> Leaderboard
 ```

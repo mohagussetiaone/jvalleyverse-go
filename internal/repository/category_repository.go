@@ -24,7 +24,7 @@ func (r *CategoryRepository) Create(ctx context.Context, category *domain.Catego
 // ListAll lists all categories
 func (r *CategoryRepository) ListAll(ctx context.Context) ([]domain.Category, error) {
 	var categories []domain.Category
-	err := r.db.WithContext(ctx).Find(&categories).Error
+	err := r.db.WithContext(ctx).Order("name ASC").Find(&categories).Error
 	return categories, err
 }
 
@@ -40,7 +40,13 @@ func (r *CategoryRepository) FindByID(ctx context.Context, id string) (*domain.C
 // FindBySlug finds category by slug
 func (r *CategoryRepository) FindBySlug(ctx context.Context, slug string) (*domain.Category, error) {
 	category := &domain.Category{}
-	if err := r.db.WithContext(ctx).Where("slug = ?", slug).First(category).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Where("slug = ?", slug).
+		Preload("Projects", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC")
+		}).
+		Preload("Projects.Admin").
+		First(category).Error; err != nil {
 		return nil, err
 	}
 	return category, nil
@@ -53,12 +59,21 @@ func (r *CategoryRepository) Update(ctx context.Context, category *domain.Catego
 
 // DeleteByID soft-deletes category
 func (r *CategoryRepository) DeleteByID(ctx context.Context, id string) error {
-	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&domain.Category{}).Error
+	return r.db.WithContext(ctx).
+		Unscoped().
+		Where("id = ?", id).
+		Delete(&domain.Category{}).Error
 }
 
 // ListProjectsByCategoryID lists projects belonging to a category
 func (r *CategoryRepository) ListProjectsByCategoryID(ctx context.Context, categoryID string) ([]domain.Project, error) {
 	var projects []domain.Project
-	err := r.db.WithContext(ctx).Where("category_id = ?", categoryID).Find(&projects).Error
+	err := r.db.WithContext(ctx).
+		Where("category_id = ?", categoryID).
+		Preload("Admin").
+		Preload("Category").
+		Preload("Phases").
+		Order("created_at DESC").
+		Find(&projects).Error
 	return projects, err
 }

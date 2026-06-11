@@ -64,7 +64,7 @@ type Category struct {
 // PROJECT & CLASS MODELS (Admin-managed Learning Content)
 // ============================================================================
 
-// Project represents an admin-created learning project containing classes
+// Project represents an admin-created learning project containing phases
 type Project struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -80,31 +80,50 @@ type Project struct {
 	Visibility  string         `gorm:"default:'public'" json:"visibility"`
 
 	// Relationships
-	Classes []Class `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"classes,omitempty"`
+	Phases []Phase `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"phases,omitempty"`
 }
 
-// Class represents a learning class/module under a project
+// Phase represents a learning phase/section under a project, containing classes
+// Example: Project "Belajar Go" → Phase "Dasar-Dasar Go" → Class "Variabel & Tipe Data"
+type Phase struct {
+	ID          string         `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Title       string         `gorm:"not null;index" json:"title"`
+	Description string         `gorm:"type:text" json:"description"`
+	ProjectID   string         `gorm:"not null;index" json:"project_id"`
+	Project     Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
+	OrderIndex  int            `gorm:"default:0" json:"order_index"` // Phase ordering within a project
+
+	// Relationships
+	Classes []Class `gorm:"foreignKey:PhaseID;constraint:OnDelete:CASCADE" json:"classes,omitempty"`
+}
+
+// Class represents a learning class/module under a phase
 type Class struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Title       string         `gorm:"not null;index" json:"title"`
-	Slug        string         `gorm:"not null" json:"slug"` // ← NEW: URL slug
+	Slug        string         `gorm:"not null" json:"slug"` // URL slug, unique within project
 	Description string         `gorm:"type:text" json:"description"`
 	Thumbnail   string         `json:"thumbnail"`
-	ProjectID   string         `gorm:"not null;index" json:"project_id"`
+	ProjectID   string         `gorm:"not null;index" json:"project_id"` // Denormalized for fast lookup by slug
 	Project     Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
+	PhaseID     string         `gorm:"not null;index" json:"phase_id"` // Phase this class belongs to
+	Phase       Phase          `gorm:"foreignKey:PhaseID" json:"phase,omitempty"`
 	AdminID     string         `gorm:"not null;index" json:"admin_id"` // Created by admin
 	Admin       User           `gorm:"foreignKey:AdminID" json:"admin,omitempty"`
 	Difficulty  string         `gorm:"default:'beginner'" json:"difficulty"`
 	Duration    int            `json:"duration"` // In minutes
-	OrderIndex  int            `gorm:"default:0" json:"order_index"`
+	OrderIndex  int            `gorm:"default:0" json:"order_index"` // Class ordering within a phase
 	SequenceNum int            `json:"sequence_number"`
 	IsFirst     bool           `json:"is_first"`
 
 	// Progression
-	NextClassID *string        `json:"next_class_id"` // ← NEW: Link to next class
+	NextClassID *string        `json:"next_class_id"` // Link to next class
 	NextClass   *Class         `gorm:"foreignKey:NextClassID" json:"next_class,omitempty"`
 
 	Visibility  string         `gorm:"default:'public'" json:"visibility"`
@@ -363,6 +382,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&User{},
 		&Category{},
 		&Project{},
+		&Phase{},
 		&Class{},
 		&ClassDetail{},
 		&ClassProgress{},

@@ -16,6 +16,25 @@ func NewClassRepository(db *gorm.DB) *ClassRepository {
 	return &ClassRepository{db: db}
 }
 
+// FindPublicByID finds public class with all relations
+func (r *ClassRepository) FindPublicByID(ctx context.Context, classID string) (*domain.Class, error) {
+	class := &domain.Class{}
+
+	if err := r.db.WithContext(ctx).
+		Where("id = ?", classID).
+		Where("visibility = ?", "public").
+		Preload("Project").
+		Preload("Phase").
+		Preload("Admin").
+		Preload("Details").
+		Preload("NextClass").
+		First(class).Error; err != nil {
+		return nil, err
+	}
+
+	return class, nil
+}
+
 // Create creates new class
 func (r *ClassRepository) Create(ctx context.Context, class *domain.Class) error {
 	return r.db.WithContext(ctx).Create(class).Error
@@ -55,7 +74,7 @@ func (r *ClassRepository) FindNextClass(ctx context.Context, nextClassID string)
 }
 
 // ListByProjectID lists classes in a project
-func (r *ClassRepository) ListByProjectID(ctx context.Context, projectID string, page, limit int) ([]domain.Class, int64, error) {
+func (r *ClassRepository) ListByProjectID(ctx context.Context, projectID string, limit, offset int) ([]domain.Class, int64, error) {
 	var classes []domain.Class
 	var total int64
 
@@ -63,8 +82,29 @@ func (r *ClassRepository) ListByProjectID(ctx context.Context, projectID string,
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Preload("Admin").Offset(offset).Limit(limit).Find(&classes).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("project_id = ?", projectID).
+		Preload("Admin").
+		Order("order_index ASC").
+		Offset(offset).Limit(limit).Find(&classes).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return classes, total, nil
+}
+
+// ListByPhaseID lists classes belonging to a specific phase
+func (r *ClassRepository) ListByPhaseID(ctx context.Context, phaseID string) ([]domain.Class, int64, error) {
+	var classes []domain.Class
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.Class{}).Where("phase_id = ?", phaseID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.db.WithContext(ctx).Where("phase_id = ?", phaseID).
+		Preload("Admin").
+		Order("order_index ASC").
+		Find(&classes).Error; err != nil {
 		return nil, 0, err
 	}
 
