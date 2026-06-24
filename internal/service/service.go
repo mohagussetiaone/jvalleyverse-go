@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"jvalleyverse/internal/domain"
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
+	"time"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -15,23 +19,30 @@ type IUserService interface {
 	GetProfile(ctx context.Context, userID string) (*domain.User, error)
 	UpdateProfile(ctx context.Context, userID string, name, bio, avatar string) error
 	AddPoints(ctx context.Context, userID string, category string, points int, metadata map[string]interface{}) error
-	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error)
+	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]dto.ActivityItem, int64, error)
 	CreateUser(ctx context.Context, user *domain.User) error
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
-	ListAllUsers(ctx context.Context, page, limit int) ([]map[string]interface{}, int64, error)
+	ListAllUsers(ctx context.Context, page, limit int) ([]dto.UserListItem, int64, error)
+	ListMentors(ctx context.Context, page, limit int) ([]dto.MentorItem, int64, error)
+	GenerateRefreshToken(ctx context.Context, userID string) (*domain.RefreshToken, error)
+	ValidateRefreshToken(ctx context.Context, token string) (*domain.RefreshToken, error)
+	RevokeRefreshToken(ctx context.Context, token string) error
+	RevokeAllUserTokens(ctx context.Context, userID string) error
 }
 
 type UserService struct {
-	userRepo  *repository.UserRepository
-	pointRepo *repository.CommunityPointRepository
-	levelRepo *repository.UserLevelRepository
+	userRepo    *repository.UserRepository
+	pointRepo   *repository.CommunityPointRepository
+	levelRepo   *repository.UserLevelRepository
+	refreshRepo *repository.RefreshTokenRepository
 }
 
-func NewUserService(userRepo *repository.UserRepository, pointRepo *repository.CommunityPointRepository, levelRepo *repository.UserLevelRepository) *UserService {
+func NewUserService(userRepo *repository.UserRepository, pointRepo *repository.CommunityPointRepository, levelRepo *repository.UserLevelRepository, refreshRepo *repository.RefreshTokenRepository) *UserService {
 	return &UserService{
-		userRepo:  userRepo,
-		pointRepo: pointRepo,
-		levelRepo: levelRepo,
+		userRepo:    userRepo,
+		pointRepo:   pointRepo,
+		levelRepo:   levelRepo,
+		refreshRepo: refreshRepo,
 	}
 }
 
@@ -79,7 +90,7 @@ func (s *UserService) AddPoints(ctx context.Context, userID string, category str
 		return err
 	}
 
-	newLevel := calculateLevel(user.TotalPoints)
+	newLevel := CalculateLevel(user.TotalPoints)
 	oldLevel := user.Level
 
 	// Only update if level changed
@@ -92,8 +103,8 @@ func (s *UserService) AddPoints(ctx context.Context, userID string, category str
 	return nil
 }
 
-// calculateLevel determines user level based on total points
-func calculateLevel(totalPoints int) int {
+// CalculateLevel determines user level based on total points
+func CalculateLevel(totalPoints int) int {
 	if totalPoints < 100 {
 		return 1
 	} else if totalPoints < 500 {
@@ -107,22 +118,22 @@ func calculateLevel(totalPoints int) int {
 }
 
 // GetUserActivityLog returns user's activity points history
-func (s *UserService) GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error) {
-	points, _, err := s.pointRepo.ListByUserID(ctx, userID, page, limit)
+func (s *UserService) GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]dto.ActivityItem, int64, error) {
+	points, total, err := s.pointRepo.ListByUserID(ctx, userID, page, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	result := make([]map[string]interface{}, len(points))
+	result := make([]dto.ActivityItem, len(points))
 	for i, p := range points {
-		result[i] = map[string]interface{}{
-			"id":        p.ID,
-			"activity":  p.ActivityType,
-			"points":    p.PointsEarned,
-			"timestamp": p.CreatedAt,
+		result[i] = dto.ActivityItem{
+			ID:        p.ID,
+			Activity:  p.ActivityType,
+			Points:    p.PointsEarned,
+			Timestamp: p.CreatedAt,
 		}
 	}
-	return result, nil
+	return result, total, nil
 }
 
 // CreateUser creates a new user
@@ -135,25 +146,82 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*domain
 	return s.userRepo.FindByEmail(ctx, email)
 }
 
+// GenerateRefreshToken creates a new refresh token for a user
+func (s *UserService) GenerateRefreshToken(ctx context.Context, userID string) (*domain.RefreshToken, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return nil, err
+	}
+	token := hex.EncodeToString(bytes)
+
+	rt := &domain.RefreshToken{
+		UserID:    userID,
+		Token:     token,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour), // 7 days
+	}
+
+	if err := s.refreshRepo.Create(ctx, rt); err != nil {
+		return nil, err
+	}
+	return rt, nil
+}
+
+// ValidateRefreshToken validates and returns a refresh token
+func (s *UserService) ValidateRefreshToken(ctx context.Context, token string) (*domain.RefreshToken, error) {
+	return s.refreshRepo.FindByToken(ctx, token)
+}
+
+// RevokeRefreshToken revokes a specific refresh token
+func (s *UserService) RevokeRefreshToken(ctx context.Context, token string) error {
+	return s.refreshRepo.RevokeByToken(ctx, token)
+}
+
+// RevokeAllUserTokens revokes all refresh tokens for a user
+func (s *UserService) RevokeAllUserTokens(ctx context.Context, userID string) error {
+	return s.refreshRepo.RevokeByUserID(ctx, userID)
+}
+
+// ListMentors returns paginated list of users with role "mentor"
+func (s *UserService) ListMentors(ctx context.Context, page, limit int) ([]dto.MentorItem, int64, error) {
+	users, total, err := s.userRepo.ListByRole(ctx, "mentor", page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]dto.MentorItem, len(users))
+	for i, user := range users {
+		result[i] = dto.MentorItem{
+			ID:          user.ID,
+			Name:        user.Name,
+			Avatar:      user.Avatar,
+			Bio:         user.Bio,
+			Level:       user.Level,
+			TotalPoints: user.TotalPoints,
+		}
+	}
+
+	return result, total, nil
+}
+
 // ListAllUsers returns paginated list of all users (admin only)
-func (s *UserService) ListAllUsers(ctx context.Context, page, limit int) ([]map[string]interface{}, int64, error) {
+func (s *UserService) ListAllUsers(ctx context.Context, page, limit int) ([]dto.UserListItem, int64, error) {
 	users, total, err := s.userRepo.ListAll(ctx, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	result := make([]map[string]interface{}, len(users))
+	result := make([]dto.UserListItem, len(users))
 	for i, user := range users {
-		result[i] = map[string]interface{}{
-			"id":           user.ID,
-			"email":        user.Email,
-			"name":         user.Name,
-			"avatar":       user.Avatar,
-			"role":         user.Role,
-			"level":        user.Level,
-			"total_points": user.TotalPoints,
-			"is_active":    user.IsActive,
-			"created_at":   user.CreatedAt,
+		result[i] = dto.UserListItem{
+			ID:          user.ID,
+			Email:       user.Email,
+			Name:        user.Name,
+			Avatar:      user.Avatar,
+			Role:        user.Role,
+			Level:       user.Level,
+			TotalPoints: user.TotalPoints,
+			IsActive:    user.IsActive,
+			CreatedAt:   user.CreatedAt,
 		}
 	}
 
@@ -163,8 +231,9 @@ func (s *UserService) ListAllUsers(ctx context.Context, page, limit int) ([]map[
 // IShowcaseService defines the business logic for managing user showcases
 type IShowcaseService interface {
 	CreateShowcase(ctx context.Context, userID string, title string, description string, mediaURLs []string, categoryID string, visibility string) (*domain.Showcase, error)
-	ListShowcases(ctx context.Context, page, limit int, categoryID string, sort string) ([]domain.Showcase, int64, error)
-	GetShowcaseByID(ctx context.Context, showcaseID string) (*domain.Showcase, error)
+	ListShowcases(ctx context.Context, page, limit int, categoryID string, sort string) ([]dto.ShowcaseListItem, int64, error)
+	ListMyShowcases(ctx context.Context, userID string, page, limit int) ([]dto.ShowcaseListItem, int64, error)
+	GetShowcaseByID(ctx context.Context, showcaseID string) (*dto.ShowcaseDetail, error)
 	UpdateShowcase(ctx context.Context, showcaseID string, userID string, title string, description string, visibility string) (*domain.Showcase, error)
 	DeleteShowcase(ctx context.Context, showcaseID string, userID string) error
 	LikeShowcase(ctx context.Context, userID, showcaseID string) error
@@ -221,17 +290,30 @@ func (s *ShowcaseService) CreateShowcase(ctx context.Context, userID string, tit
 }
 
 // ListShowcases returns paginated list of public showcases
-func (s *ShowcaseService) ListShowcases(ctx context.Context, page, limit int, categoryID string, sort string) ([]domain.Showcase, int64, error) {
+func (s *ShowcaseService) ListShowcases(ctx context.Context, page, limit int, categoryID string, sort string) ([]dto.ShowcaseListItem, int64, error) {
 	var catPtr *string
 	if categoryID != "" {
 		catPtr = &categoryID
 	}
-	return s.showcaseRepo.ListAll(ctx, page, limit, catPtr)
+	showcases, total, err := s.showcaseRepo.ListAll(ctx, page, limit, catPtr)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]dto.ShowcaseListItem, len(showcases))
+	for i, sc := range showcases {
+		result[i] = dto.ToShowcaseListItem(sc)
+	}
+	return result, total, nil
 }
 
 // GetShowcaseByID returns a showcase by ID with user and category preloaded
-func (s *ShowcaseService) GetShowcaseByID(ctx context.Context, showcaseID string) (*domain.Showcase, error) {
-	return s.showcaseRepo.FindByID(ctx, showcaseID)
+func (s *ShowcaseService) GetShowcaseByID(ctx context.Context, showcaseID string) (*dto.ShowcaseDetail, error) {
+	sc, err := s.showcaseRepo.FindByID(ctx, showcaseID)
+	if err != nil {
+		return nil, err
+	}
+	return dto.ToShowcaseDetail(sc), nil
 }
 
 // UpdateShowcase updates title, description, visibility — only owner can do it
@@ -270,7 +352,22 @@ func (s *ShowcaseService) DeleteShowcase(ctx context.Context, showcaseID string,
 	return s.showcaseRepo.Delete(ctx, showcaseID)
 }
 
-// LikeShowcase adds like to showcase and awards points to creator
+// ListMyShowcases returns paginated showcases by user
+func (s *ShowcaseService) ListMyShowcases(ctx context.Context, userID string, page, limit int) ([]dto.ShowcaseListItem, int64, error) {
+	showcases, total, err := s.showcaseRepo.ListByUserID(ctx, userID, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]dto.ShowcaseListItem, len(showcases))
+	for i, sc := range showcases {
+		result[i] = dto.ToShowcaseListItem(sc)
+	}
+
+	return result, total, nil
+}
+
+// LikeShowcase adds like to showcase, awards points, and creates notification
 func (s *ShowcaseService) LikeShowcase(ctx context.Context, userID, showcaseID string) error {
 	// Check if already liked
 	exists, err := s.likeRepo.Exists(ctx, userID, showcaseID)
@@ -295,13 +392,21 @@ func (s *ShowcaseService) LikeShowcase(ctx context.Context, userID, showcaseID s
 		return err
 	}
 
-	// Award points to showcase creator
+	// Award points to showcase creator + send notification
 	showcase, err := s.showcaseRepo.FindByID(ctx, showcaseID)
 	if err == nil && showcase.UserID != userID {
 		s.userService.AddPoints(ctx, showcase.UserID, "receive_like", 5, map[string]interface{}{
 			"showcase_id": showcaseID,
 			"from_user":   userID,
 		})
+		// Create notification for showcase owner
+		if notifSvc != nil {
+			notifSvc.CreateNotification(ctx, showcase.UserID, "showcase_like",
+				"Showcase Anda Mendapat Like",
+				"Seseorang menyukai showcase Anda: "+showcase.Title,
+				"/showcases/"+showcaseID,
+			)
+		}
 	}
 
 	return nil
@@ -332,13 +437,19 @@ var (
 	userSvc         IUserService
 	showcaseSvc     IShowcaseService
 	certificateSvc  ICertificateService
-	classSvc        IClassService
+	lessonSvc       ILessonService
+	blogSvc         IBlogService
 	discussionSvc   IDiscussionService
 	replySvc        IReplyService
 	gamificationSvc IGamificationService
-	projectSvc      IProjectService
+	studyCaseSvc    IStudyCaseService
+	courseSvc       ICourseService
 	categorySvc     ICategoryService
-	phaseSvc        IPhaseService
+	sectionSvc      ISectionService
+	reviewSvc       IReviewService
+	auditSvc        *AuditService
+	notifSvc        INotificationService
+	dashboardSvc    IDashboardService
 )
 
 // InitServices initializes all global service instances
@@ -350,33 +461,56 @@ func InitServices(db *gorm.DB) {
 	showcaseRepo := repository.NewShowcaseRepository(db)
 	likeRepo := repository.NewShowcaseLikeRepository(db)
 	certificateRepo := repository.NewCertificateRepository(db)
-	classRepo := repository.NewClassRepository(db)
-	classDetailRepo := repository.NewClassDetailRepository(db)
-	classProgressRepo := repository.NewClassProgressRepository(db)
+	lessonRepo := repository.NewLessonRepository(db)
+	classDetailRepo := repository.NewLessonDetailRepository(db)
+	classProgressRepo := repository.NewLessonProgressRepository(db)
 	discussionRepo := repository.NewDiscussionRepository(db)
 	replyRepo := repository.NewReplyRepository(db)
-	projectRepo := repository.NewProjectRepository(db)
-	phaseRepo := repository.NewPhaseRepository(db)
+	courseRepo := repository.NewCourseRepository(db)
+	sectionRepo := repository.NewSectionRepository(db)
+	enrollRepo := repository.NewEnrollmentRepository(db)
+	blogRepo := repository.NewBlogRepository(db)
 
 	// Initialize services with repositories
-	userSvc = NewUserService(userRepo, pointRepo, levelRepo)
+	refreshRepo := repository.NewRefreshTokenRepository(db)
+	userSvc = NewUserService(userRepo, pointRepo, levelRepo, refreshRepo)
 	showcaseSvc = NewShowcaseService(showcaseRepo, likeRepo, userSvc)
-	certificateSvc = NewCertificateService(certificateRepo, classRepo, userRepo)
-	classSvc = NewClassService(classRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, projectRepo, phaseRepo)
+	certificateSvc = NewCertificateService(certificateRepo, lessonRepo, userRepo)
+	lessonSvc = NewLessonService(lessonRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, courseRepo, enrollRepo, sectionRepo)
 	discussionSvc = NewDiscussionService(discussionRepo, replyRepo, userRepo)
 	replySvc = NewReplyService(replyRepo, discussionRepo, userSvc)
 	gamificationSvc = NewGamificationService(pointRepo, levelRepo, userRepo, showcaseRepo, userSvc)
-	projectSvc = NewProjectService(projectRepo, classRepo, userRepo)
-	phaseSvc = NewPhaseService(phaseRepo, projectRepo)
+	courseSvc = NewCourseService(courseRepo, lessonRepo, userRepo, enrollRepo)
+	sectionSvc = NewSectionService(sectionRepo, courseRepo, enrollRepo) // StudyCase service
+	studyCaseRepo := repository.NewStudyCaseRepository(db)
+	studyCaseSvc = NewStudyCaseService(studyCaseRepo)
+
+	blogSvc = NewBlogService(blogRepo)
+	// Review service
+	reviewRepo := repository.NewReviewRepository(db)
+	reviewSvc = NewReviewService(reviewRepo)
 
 	// Category service
 	categoryRepo := repository.NewCategoryRepository(db)
-	categorySvc = NewCategoryService(categoryRepo)
+	categorySvc = NewCategoryService(categoryRepo, enrollRepo)
+
+	// Audit service
+	auditSvc = NewAuditService(repository.NewAdminAuditLogRepository(db))
+
+	// Notification service
+	notifRepo := repository.NewNotificationRepository(db)
+	notifSvc = NewNotificationService(notifRepo)
+
+	// Dashboard service
+	dashboardSvc = NewDashboardService(lessonRepo, classProgressRepo, notifSvc)
 }
 
-// Getter functions to access global services
 func GetUserService() IUserService {
 	return userSvc
+}
+
+func GetBlogService() IBlogService {
+	return blogSvc
 }
 
 func GetShowcaseService() IShowcaseService {
@@ -387,8 +521,8 @@ func GetCertificateService() ICertificateService {
 	return certificateSvc
 }
 
-func GetClassService() IClassService {
-	return classSvc
+func GetLessonService() ILessonService {
+	return lessonSvc
 }
 
 func GetDiscussionService() IDiscussionService {
@@ -403,14 +537,34 @@ func GetGamificationService() IGamificationService {
 	return gamificationSvc
 }
 
-func GetProjectService() IProjectService {
-	return projectSvc
+func GetCourseService() ICourseService {
+	return courseSvc
 }
 
 func GetCategoryService() ICategoryService {
 	return categorySvc
 }
 
-func GetPhaseService() IPhaseService {
-	return phaseSvc
+func GetSectionService() ISectionService {
+	return sectionSvc
+}
+
+func GetStudyCaseService() IStudyCaseService {
+	return studyCaseSvc
+}
+
+func GetReviewService() IReviewService {
+	return reviewSvc
+}
+
+func GetAuditService() *AuditService {
+	return auditSvc
+}
+
+func GetNotificationService() INotificationService {
+	return notifSvc
+}
+
+func GetDashboardService() IDashboardService {
+	return dashboardSvc
 }

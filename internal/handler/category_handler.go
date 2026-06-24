@@ -18,7 +18,7 @@ func NewCategoryHandler(categorySvc service.ICategoryService) *CategoryHandler {
 func (h *CategoryHandler) ListCategories(c *fiber.Ctx) error {
 	categories, err := h.categorySvc.ListCategories(c.UserContext())
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, 500, err)
 	}
 
 	return c.JSON(categories)
@@ -39,19 +39,29 @@ func (h *CategoryHandler) GetCategoryBySlug(c *fiber.Ctx) error {
 	return c.JSON(category)
 }
 
-// ListProjectsByCategory returns projects belonging to a category (public, no auth required)
-func (h *CategoryHandler) ListProjectsByCategory(c *fiber.Ctx) error {
+// ListCoursesByCategory returns courses belonging to a category (public, no auth required)
+func (h *CategoryHandler) ListCoursesByCategory(c *fiber.Ctx) error {
 	categoryID := c.Params("category_id")
 	if categoryID == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid category ID"})
 	}
 
-	projects, err := h.categorySvc.ListProjectsByCategoryID(c.UserContext(), categoryID)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	userID, hasAuth := c.Locals("userID").(string)
+
+	if hasAuth && userID != "" {
+		courses, err := h.categorySvc.ListCoursesByCategoryIDWithEnrollment(c.UserContext(), userID, categoryID)
+		if err != nil {
+			return safeError(c, 500, err)
+		}
+		return c.JSON(courses)
 	}
 
-	return c.JSON(projects)
+	courses, err := h.categorySvc.ListCoursesByCategoryID(c.UserContext(), categoryID)
+	if err != nil {
+		return safeError(c, 500, err)
+	}
+
+	return c.JSON(courses)
 }
 
 // CreateCategory creates a new category (admin only)
@@ -71,9 +81,12 @@ func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 
 	category, err := h.categorySvc.CreateCategory(c.UserContext(), input.Name, input.Slug, input.Description)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
+	if adminID, ok := c.Locals("userID").(string); ok {
+		logAdminAction(c.UserContext(), adminID, "create", "category", category.ID, "Name: "+input.Name)
+	}
 	return c.Status(201).JSON(category)
 }
 
@@ -95,9 +108,12 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 
 	category, err := h.categorySvc.UpdateCategory(c.UserContext(), categoryID, input.Name, input.Slug, input.Description)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
+	if adminID, ok := c.Locals("userID").(string); ok {
+		logAdminAction(c.UserContext(), adminID, "update", "category", categoryID, "Name: "+input.Name)
+	}
 	return c.JSON(category)
 }
 
@@ -109,8 +125,11 @@ func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	}
 
 	if err := h.categorySvc.DeleteCategory(c.UserContext(), categoryID); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
-	return c.JSON(fiber.Map{"message": "category deleted"})
+	if adminID, ok := c.Locals("userID").(string); ok {
+		logAdminAction(c.UserContext(), adminID, "delete", "category", categoryID, "")
+	}
+	return c.JSON(fiber.Map{"message": "Category deleted"})
 }

@@ -42,10 +42,11 @@ func (r *CategoryRepository) FindBySlug(ctx context.Context, slug string) (*doma
 	category := &domain.Category{}
 	if err := r.db.WithContext(ctx).
 		Where("slug = ?", slug).
-		Preload("Projects", func(db *gorm.DB) *gorm.DB {
+		Preload("Courses", func(db *gorm.DB) *gorm.DB {
 			return db.Order("created_at DESC")
 		}).
-		Preload("Projects.Admin").
+		Preload("Courses.Admin").
+		Preload("Courses.Mentor").
 		First(category).Error; err != nil {
 		return nil, err
 	}
@@ -65,15 +66,16 @@ func (r *CategoryRepository) DeleteByID(ctx context.Context, id string) error {
 		Delete(&domain.Category{}).Error
 }
 
-// ListProjectsByCategoryID lists projects belonging to a category
-func (r *CategoryRepository) ListProjectsByCategoryID(ctx context.Context, categoryID string) ([]domain.Project, error) {
-	var projects []domain.Project
+// ListCoursesByCategoryID lists courses belonging to a category
+func (r *CategoryRepository) ListCoursesByCategoryID(ctx context.Context, categoryID string) ([]domain.Course, error) {
+	var courses []domain.Course
 	err := r.db.WithContext(ctx).
 		Where("category_id = ?", categoryID).
 		Preload("Admin").
 		Preload("Category").
-		Preload("Phases").
+		Preload("Mentor").
+		Preload("Sections").
 		Order("created_at DESC").
-		Find(&projects).Error
-	return projects, err
+		Find(&courses).Error
+	return courses, err
 }

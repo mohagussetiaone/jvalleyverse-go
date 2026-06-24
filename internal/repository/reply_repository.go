@@ -41,6 +41,30 @@ func (r *ReplyRepository) ListByDiscussionID(ctx context.Context, discussionID s
 	return replies, err
 }
 
+// ListByUserID lists replies created by a user with pagination
+func (r *ReplyRepository) ListByUserID(ctx context.Context, userID string, page, limit int) ([]domain.Reply, int64, error) {
+	var replies []domain.Reply
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.Reply{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if err := r.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Preload("User").
+		Preload("Discussion").
+		Offset(offset).
+		Limit(limit).
+		Order("created_at DESC").
+		Find(&replies).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return replies, total, nil
+}
+
 // ListNestedByParentID lists nested replies under a parent reply
 func (r *ReplyRepository) ListNestedByParentID(ctx context.Context, parentID string) ([]domain.Reply, error) {
 	var replies []domain.Reply

@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"jvalleyverse/internal/minio"
 	"jvalleyverse/internal/service"
 	"jvalleyverse/pkg/config"
 	"jvalleyverse/pkg/database"
 	"jvalleyverse/pkg/middleware"
+	"jvalleyverse/pkg/redis"
 	"jvalleyverse/pkg/routes"
 	"jvalleyverse/pkg/swagger"
 	"log"
@@ -21,11 +23,19 @@ func main() {
 	database.ConnectDB()
 	// Initialize service layer (depends on database connection)
 	service.InitServices(database.DB)
+
+	// Auto-seed initial data if tables are empty
+	if err := service.SeedInitialData(database.DB); err != nil {
+		log.Fatalf("Failed to auto-seed data: %v", err)
+	}
 	// Connect Redis (optional - app still works without it)
-	// redis.ConnectRedis()
+	redis.ConnectRedis()
+	// Connect MinIO (optional - app still works without it)
+	minio.ConnectMinio()
 
 	app := fiber.New(fiber.Config{
-		AppName: "JValleyVerse API v1.0.0",
+		AppName:   "JValleyVerse API v1.0.0",
+		BodyLimit: 10 * 1024 * 1024,
 	})
 
 	// Logger middleware
@@ -33,6 +43,7 @@ func main() {
 
 	// Global middleware
 	app.Use(middleware.SetupCORS())
+	app.Use(middleware.SecurityHeaders())
 	app.Use(middleware.RateLimiter())
 
 	// ==================== SWAGGER DOCUMENTATION ====================

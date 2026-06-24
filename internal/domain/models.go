@@ -7,43 +7,34 @@ import (
 	"gorm.io/gorm"
 )
 
-// ============================================================================
-// CORE USER & AUTHENTICATION MODELS
-// ============================================================================
-
-// User represents a system user with roles and gamification tracking
 type User struct {
-	ID           string         `gorm:"primaryKey" json:"id"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	Email        string         `gorm:"uniqueIndex;not null" json:"email"`
-	Password     string         `json:"-"` // Never expose in JSON
-	Name         string         `gorm:"not null" json:"name"`
-	Avatar       string         `json:"avatar"`
-	Bio          string         `json:"bio"`
-	Role         string         `gorm:"default:'user';type:userrole" json:"role"` // admin || user
-	IsActive     bool           `gorm:"default:true" json:"is_active"`
-	Points       int            `gorm:"default:0" json:"points"`       // Current points
-	TotalPoints  int            `gorm:"default:0" json:"total_points"` // Lifetime points
-	Level        int            `gorm:"default:1" json:"level"`        // 1-5
+	ID          string         `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Email       string         `gorm:"uniqueIndex;not null" json:"email"`
+	Password    string         `json:"-"` // Never expose in JSON
+	Name        string         `gorm:"not null" json:"name"`
+	Avatar      string         `json:"avatar"`
+	Bio         string         `json:"bio"`
+	Role        string         `gorm:"default:'user';type:userrole" json:"role"`
+	IsActive    bool           `gorm:"default:true" json:"is_active"`
+	Points      int            `gorm:"default:0" json:"points"`
+	TotalPoints int            `gorm:"default:0" json:"total_points"`
+	Level       int            `gorm:"default:1" json:"level"`
 
-	// Relationships
-	Projects          []Project          `gorm:"foreignKey:AdminID" json:"-"`
-	Certificates      []Certificate      `gorm:"foreignKey:UserID" json:"-"`
-	Discussions       []Discussion       `gorm:"foreignKey:UserID" json:"-"`
-	Replies           []Reply            `gorm:"foreignKey:UserID" json:"-"`
-	Showcases         []Showcase         `gorm:"foreignKey:UserID" json:"-"`
-	ShowcaseLikes     []ShowcaseLike     `gorm:"foreignKey:UserID" json:"-"`
-	CommunityPoints   []CommunityPoint   `gorm:"foreignKey:UserID" json:"-"`
-	ShowcaseComments  []ShowcaseComment  `gorm:"foreignKey:UserID" json:"-"`
+	Courses          []Course          `gorm:"foreignKey:AdminID" json:"-"`
+	Certificates     []Certificate     `gorm:"foreignKey:UserID" json:"-"`
+	Discussions      []Discussion      `gorm:"foreignKey:UserID" json:"-"`
+	Replies          []Reply           `gorm:"foreignKey:UserID" json:"-"`
+	Showcases        []Showcase        `gorm:"foreignKey:UserID" json:"-"`
+	ShowcaseLikes    []ShowcaseLike    `gorm:"foreignKey:UserID" json:"-"`
+	CommunityPoints  []CommunityPoint  `gorm:"foreignKey:UserID" json:"-"`
+	MentorCourses    []Course          `gorm:"foreignKey:MentorID" json:"-"`
+	Reviews          []Review          `gorm:"foreignKey:UserID" json:"-"`
+	ShowcaseComments []ShowcaseComment `gorm:"foreignKey:UserID" json:"-"`
 }
 
-// ============================================================================
-// CATEGORY MODEL (Shared across Project, Class, Showcase, Discussion)
-// ============================================================================
-
-// Category represents content categories
 type Category struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -53,158 +44,143 @@ type Category struct {
 	Slug        string         `gorm:"uniqueIndex;not null" json:"slug"`
 	Description string         `json:"description"`
 
-	// Relationships (reverse)
-	Projects    []Project    `gorm:"foreignKey:CategoryID" json:"-"`
+	Courses     []Course     `gorm:"foreignKey:CategoryID" json:"-"`
 	Showcases   []Showcase   `gorm:"foreignKey:CategoryID" json:"-"`
 	Discussions []Discussion `gorm:"foreignKey:CategoryID" json:"-"`
-	
 }
 
-// ============================================================================
-// PROJECT & CLASS MODELS (Admin-managed Learning Content)
-// ============================================================================
+// Course represents an admin-created learning course containing sections
+type Course struct {
+	ID                 string         `gorm:"primaryKey" json:"id"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
+	Title              string         `gorm:"not null;index" json:"title"`
+	Description        string         `gorm:"type:text" json:"description"`
+	Thumbnail          string         `json:"thumbnail"`
+	CategoryID         string         `gorm:"not null;index" json:"category_id"`
+	Category           Category       `gorm:"foreignKey:CategoryID" json:"category"`
+	AdminID            string         `gorm:"not null;index" json:"admin_id"`
+	Admin              User           `gorm:"foreignKey:AdminID" json:"admin"`
+	MentorID           string         `gorm:"index" json:"mentor_id"`
+	Mentor             User           `gorm:"foreignKey:MentorID" json:"mentor,omitempty"`
+	Visibility         string         `gorm:"default:'public'" json:"visibility"`
+	Price              float64        `gorm:"default:0" json:"price"`
+	Hours              int            `json:"hours"`
+	LearningObjectives datatypes.JSON `gorm:"type:json" json:"learning_objectives"`
 
-// Project represents an admin-created learning project containing phases
-type Project struct {
+	Sections []Section `gorm:"foreignKey:CourseID;constraint:OnDelete:CASCADE" json:"sections,omitempty"`
+	Reviews  []Review  `gorm:"foreignKey:CourseID" json:"-"`
+}
+
+// Section represents a learning section under a course, containing lessons
+type Section struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Title       string         `gorm:"not null;index" json:"title"`
 	Description string         `gorm:"type:text" json:"description"`
-	Thumbnail   string         `json:"thumbnail"` // Image URL
-	CategoryID  string         `gorm:"not null;index" json:"category_id"`
-	Category    Category       `gorm:"foreignKey:CategoryID" json:"category"`
-	AdminID     string         `gorm:"not null;index" json:"admin_id"` // Only admin can create
-	Admin       User           `gorm:"foreignKey:AdminID" json:"admin"`
-	Visibility  string         `gorm:"default:'public'" json:"visibility"`
+	CourseID    string         `gorm:"not null;index" json:"course_id"`
+	Course      Course         `gorm:"foreignKey:CourseID" json:"course,omitempty"`
+	OrderIndex  int            `gorm:"default:0" json:"order_index"`
 
-	// Relationships
-	Phases []Phase `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE" json:"phases,omitempty"`
+	Lessons []Lesson `gorm:"foreignKey:SectionID;constraint:OnDelete:CASCADE" json:"lessons,omitempty"`
 }
 
-// Phase represents a learning phase/section under a project, containing classes
-// Example: Project "Belajar Go" → Phase "Dasar-Dasar Go" → Class "Variabel & Tipe Data"
-type Phase struct {
+// Lesson represents a learning lesson under a section
+type Lesson struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	Title       string         `gorm:"not null;index" json:"title"`
-	Description string         `gorm:"type:text" json:"description"`
-	ProjectID   string         `gorm:"not null;index" json:"project_id"`
-	Project     Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
-	OrderIndex  int            `gorm:"default:0" json:"order_index"` // Phase ordering within a project
-
-	// Relationships
-	Classes []Class `gorm:"foreignKey:PhaseID;constraint:OnDelete:CASCADE" json:"classes,omitempty"`
-}
-
-// Class represents a learning class/module under a phase
-type Class struct {
-	ID          string         `gorm:"primaryKey" json:"id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	Title       string         `gorm:"not null;index" json:"title"`
-	Slug        string         `gorm:"not null" json:"slug"` // URL slug, unique within project
+	Slug        string         `gorm:"not null" json:"slug"`
 	Description string         `gorm:"type:text" json:"description"`
 	Thumbnail   string         `json:"thumbnail"`
-	ProjectID   string         `gorm:"not null;index" json:"project_id"` // Denormalized for fast lookup by slug
-	Project     Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
-	PhaseID     string         `gorm:"not null;index" json:"phase_id"` // Phase this class belongs to
-	Phase       Phase          `gorm:"foreignKey:PhaseID" json:"phase,omitempty"`
-	AdminID     string         `gorm:"not null;index" json:"admin_id"` // Created by admin
+	CourseID    string         `gorm:"not null;index" json:"course_id"`
+	Course      Course         `gorm:"foreignKey:CourseID" json:"course,omitempty"`
+	SectionID   string         `gorm:"not null;index" json:"section_id"`
+	Section     Section        `gorm:"foreignKey:SectionID" json:"section,omitempty"`
+	AdminID     string         `gorm:"not null;index" json:"admin_id"`
 	Admin       User           `gorm:"foreignKey:AdminID" json:"admin,omitempty"`
 	Difficulty  string         `gorm:"default:'beginner'" json:"difficulty"`
-	Duration    int            `json:"duration"` // In minutes
-	OrderIndex  int            `gorm:"default:0" json:"order_index"` // Class ordering within a phase
+	Duration    int            `json:"duration"`
+	OrderIndex  int            `gorm:"default:0" json:"order_index"`
 	SequenceNum int            `json:"sequence_number"`
 	IsFirst     bool           `json:"is_first"`
 
-	// Progression
-	NextClassID *string        `json:"next_class_id"` // Link to next class
-	NextClass   *Class         `gorm:"foreignKey:NextClassID" json:"next_class,omitempty"`
+	VideoURL string `json:"video_url"`
 
-	Visibility  string         `gorm:"default:'public'" json:"visibility"`
+	NextLessonID *string `json:"next_lesson_id"`
+	NextLesson   *Lesson `gorm:"foreignKey:NextLessonID" json:"next_lesson,omitempty"`
 
-	// Relationships
-	Details      *ClassDetail    `gorm:"foreignKey:ClassID" json:"details,omitempty"`
-	Progress     []ClassProgress `gorm:"foreignKey:ClassID" json:"-"`
-	Certificates []Certificate   `gorm:"foreignKey:ClassID;constraint:OnDelete:CASCADE" json:"certificates,omitempty"`
-	Discussions  []Discussion    `gorm:"foreignKey:ClassID" json:"discussions,omitempty"`
+	Visibility string `gorm:"default:'public'" json:"visibility"`
+
+	Details      *LessonDetail    `gorm:"foreignKey:LessonID" json:"details,omitempty"`
+	Progress     []LessonProgress `gorm:"foreignKey:LessonID" json:"-"`
+	Certificates []Certificate    `gorm:"foreignKey:LessonID;constraint:OnDelete:CASCADE" json:"certificates,omitempty"`
+	Discussions  []Discussion     `gorm:"foreignKey:LessonID" json:"discussions,omitempty"`
+	Reviews      []Review         `gorm:"foreignKey:LessonID" json:"-"`
 }
 
-// ClassDetail represents detailed content for a class
-type ClassDetail struct {
+// LessonDetail represents detailed content for a lesson
+type LessonDetail struct {
 	ID            string         `gorm:"primaryKey" json:"id"`
-	ClassID       string         `gorm:"uniqueIndex;not null" json:"class_id"`
-	Class         Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
+	LessonID      string         `gorm:"uniqueIndex;not null" json:"lesson_id"`
+	Lesson        Lesson         `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
 	About         string         `gorm:"type:text" json:"about"`
 	Rules         string         `gorm:"type:text" json:"rules"`
-	Tools         datatypes.JSON `gorm:"type:json" json:"tools"`          // ["tool1", "tool2"]
-	ResourceMedia datatypes.JSON `gorm:"type:json" json:"resource_media"`  // { "videos": [...], "documents": [...], "images": [...] }
-	Resources     datatypes.JSON `gorm:"type:json" json:"resources"`       // [ { "type": "pdf", "title": "...", "url": "..." } ]
+	Tools         datatypes.JSON `gorm:"type:json" json:"tools"`
+	ResourceMedia datatypes.JSON `gorm:"type:json" json:"resource_media"`
+	Resources     datatypes.JSON `gorm:"type:json" json:"resources"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
-// ResourceMedia structure helper for JSON parsing
 type ResourceMedia struct {
 	Videos    []string `json:"videos"`
 	Documents []string `json:"documents"`
 	Images    []string `json:"images"`
 }
 
-// Resource structure helper for JSON parsing
 type Resource struct {
-	Type  string `json:"type"`  // pdf | video | link | document
+	Type  string `json:"type"`
 	Title string `json:"title"`
 	URL   string `json:"url"`
 }
 
-// ClassProgress tracks user learning progress in a class
-type ClassProgress struct {
-	ID                 string         `gorm:"primaryKey" json:"id"`
-	UserID             string         `gorm:"not null;index" json:"user_id"`
-	User               User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID            string         `gorm:"not null;index" json:"class_id"`
-	Class              Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
-	Status             string         `gorm:"default:'not_started'" json:"status"` // not_started | started | in_progress | completed
-	StartedAt          *time.Time     `json:"started_at"`
-	CompletedAt        *time.Time     `json:"completed_at"`
-	ProgressPercentage int            `json:"progress_percentage"` // 0-100
-	Notes              string         `json:"notes"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
+// LessonProgress tracks user learning progress in a lesson
+type LessonProgress struct {
+	ID                 string     `gorm:"primaryKey" json:"id"`
+	UserID             string     `gorm:"not null;index" json:"user_id"`
+	User               User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	LessonID           string     `gorm:"not null;index" json:"lesson_id"`
+	Lesson             Lesson     `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	Status             string     `gorm:"default:'not_started'" json:"status"`
+	StartedAt          *time.Time `json:"started_at"`
+	CompletedAt        *time.Time `json:"completed_at"`
+	ProgressPercentage int        `json:"progress_percentage"`
+	Notes              string     `json:"notes"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
-// ============================================================================
-// CERTIFICATE MODEL (User-specific, Private)
-// ============================================================================
-
-// Certificate represents user achievement/completion of a class
-// IMPORTANT: Only accessible to the user who owns it + admin
 type Certificate struct {
-	ID          string         `gorm:"primaryKey" json:"id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID      string         `gorm:"not null;index" json:"user_id"`
-	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID     string         `gorm:"not null;index" json:"class_id"`
-	Class       Class          `gorm:"foreignKey:ClassID" json:"class,omitempty"`
-	UniqueCode  string         `gorm:"uniqueIndex;not null" json:"unique_code"` // UUID or slug
-	BadgeURL    string         `json:"badge_url"`
-	IssuedAt    time.Time      `json:"issued_at"`
-	ExpiresAt   *time.Time     `json:"expires_at"` // Optional expiration
+	ID         string         `gorm:"primaryKey" json:"id"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	UserID     string         `gorm:"not null;index" json:"user_id"`
+	User       User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	LessonID   string         `gorm:"not null;index" json:"lesson_id"`
+	Lesson     Lesson         `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	UniqueCode string         `gorm:"uniqueIndex;not null" json:"unique_code"`
+	BadgeURL   string         `json:"badge_url"`
+	IssuedAt   time.Time      `json:"issued_at"`
+	ExpiresAt  *time.Time     `json:"expires_at"`
 }
 
-// ============================================================================
-// DISCUSSION & REPLY MODELS (Community Discussion)
-// ============================================================================
-
-// Discussion represents a discussion thread (usually in a class context)
 type Discussion struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -214,67 +190,58 @@ type Discussion struct {
 	Content     string         `gorm:"type:text;not null" json:"content"`
 	UserID      string         `gorm:"not null;index" json:"user_id"`
 	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ClassID     *string        `gorm:"index" json:"class_id"` // Optional - can be standalone
-	Class       *Class         `gorm:"foreignKey:ClassID" json:"class,omitempty"`
-	CategoryID  string         `gorm:"index" json:"category_id"` // For filtering
+	LessonID    *string        `gorm:"index" json:"lesson_id"`
+	Lesson      *Lesson        `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	StudyCaseID *string        `gorm:"index" json:"study_case_id"`
+	StudyCase   *StudyCase     `gorm:"foreignKey:StudyCaseID" json:"study_case,omitempty"`
+	CategoryID  string         `gorm:"index" json:"category_id"`
 	Category    Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	ViewsCount  int            `gorm:"default:0" json:"views_count"`
-	Status      string         `gorm:"default:'open';type:discussionstatus" json:"status"` // Can close discussion
+	Status      string         `gorm:"default:'open';type:discussionstatus" json:"status"`
 	IsPinned    bool           `gorm:"default:false" json:"is_pinned"`
 
-	// Relationships
 	Replies []Reply `gorm:"foreignKey:DiscussionID;constraint:OnDelete:CASCADE" json:"replies,omitempty"`
 }
 
-// Reply represents a comment/reply in a discussion
-// Can be nested (parent_id points to another reply for threaded discussions)
 type Reply struct {
-	ID            string         `gorm:"primaryKey" json:"id"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	Content       string         `gorm:"type:text;not null" json:"content"`
-	UserID        string         `gorm:"not null;index" json:"user_id"`
-	User          User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	DiscussionID  string         `gorm:"not null;index" json:"discussion_id"`
-	Discussion    Discussion     `gorm:"foreignKey:DiscussionID" json:"discussion,omitempty"`
-	ParentID      *string        `gorm:"index" json:"parent_id"` // For nested replies
-	Parent        *Reply         `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
-	LikesCount    int            `gorm:"default:0" json:"likes_count"`
-	IsMarkedBest  bool           `gorm:"default:false" json:"is_marked_best"` // Discussion owner can mark best answer
-
-	// Relationships
-	ChildReplies []Reply `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE" json:"child_replies,omitempty"`
-}
-
-// ============================================================================
-// SHOWCASE MODELS (User Portfolio & Performance)
-// ============================================================================
-
-// Showcase represents user portfolio item (projects completed, work display)
-type Showcase struct {
 	ID           string         `gorm:"primaryKey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	Title        string         `gorm:"not null;index" json:"title"`
-	Description  string         `gorm:"type:text" json:"description"`
-	MediaURLs    datatypes.JSON `gorm:"type:jsonb" json:"media_urls"` // JSON array of image/video URLs
+	Content      string         `gorm:"type:text;not null" json:"content"`
 	UserID       string         `gorm:"not null;index" json:"user_id"`
 	User         User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	CategoryID   string         `gorm:"not null;index" json:"category_id"`
-	Category     Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
-	Status       string         `gorm:"default:'published';type:showcasestatus" json:"status"`
-	Visibility   string         `gorm:"default:'public';type:showcasevisibility" json:"visibility"`
+	DiscussionID string         `gorm:"not null;index" json:"discussion_id"`
+	Discussion   Discussion     `gorm:"foreignKey:DiscussionID" json:"discussion,omitempty"`
+	ParentID     *string        `gorm:"index" json:"parent_id"`
+	Parent       *Reply         `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 	LikesCount   int            `gorm:"default:0" json:"likes_count"`
-	ViewsCount   int            `gorm:"default:0" json:"views_count"`
+	IsMarkedBest bool           `gorm:"default:false" json:"is_marked_best"`
 
-	// Relationships
-	Likes     []ShowcaseLike    `gorm:"foreignKey:ShowcaseID;constraint:OnDelete:CASCADE" json:"likes,omitempty"`
-	Comments  []ShowcaseComment `gorm:"foreignKey:ShowcaseID;constraint:OnDelete:CASCADE" json:"comments,omitempty"`
+	ChildReplies []Reply `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE" json:"child_replies,omitempty"`
 }
 
-// ShowcaseLike represents a like on a showcase (composite key: user_id + showcase_id)
+type Showcase struct {
+	ID          string         `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Title       string         `gorm:"not null;index" json:"title"`
+	Description string         `gorm:"type:text" json:"description"`
+	MediaURLs   datatypes.JSON `gorm:"type:jsonb" json:"media_urls"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
+	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CategoryID  string         `gorm:"not null;index" json:"category_id"`
+	Category    Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	Status      string         `gorm:"default:'published';type:showcasestatus" json:"status"`
+	Visibility  string         `gorm:"default:'public';type:showcasevisibility" json:"visibility"`
+	LikesCount  int            `gorm:"default:0" json:"likes_count"`
+	ViewsCount  int            `gorm:"default:0" json:"views_count"`
+
+	Likes    []ShowcaseLike    `gorm:"foreignKey:ShowcaseID;constraint:OnDelete:CASCADE" json:"likes,omitempty"`
+	Comments []ShowcaseComment `gorm:"foreignKey:ShowcaseID;constraint:OnDelete:CASCADE" json:"comments,omitempty"`
+}
+
 type ShowcaseLike struct {
 	UserID     string    `gorm:"primaryKey" json:"user_id"`
 	User       User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
@@ -283,48 +250,96 @@ type ShowcaseLike struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
-// ShowcaseComment represents comments on showcase items
 type ShowcaseComment struct {
+	ID         string           `gorm:"primaryKey" json:"id"`
+	CreatedAt  time.Time        `json:"created_at"`
+	UpdatedAt  time.Time        `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt   `gorm:"index" json:"-"`
+	Content    string           `gorm:"type:text;not null" json:"content"`
+	UserID     string           `gorm:"not null;index" json:"user_id"`
+	User       User             `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	ShowcaseID string           `gorm:"not null;index" json:"showcase_id"`
+	Showcase   Showcase         `gorm:"foreignKey:ShowcaseID" json:"showcase,omitempty"`
+	ParentID   *string          `gorm:"index" json:"parent_id"`
+	Parent     *ShowcaseComment `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
+}
+
+type Blog struct {
+	ID          string         `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Title       string         `gorm:"not null;index" json:"title"`
+	Slug        string         `gorm:"uniqueIndex" json:"slug"`
+	Description string         `gorm:"type:text" json:"description"`
+	Content     string         `gorm:"type:text" json:"content"`
+	CoverImgURL string         `json:"cover_img_url"`
+	Tags        datatypes.JSON `gorm:"type:jsonb" json:"tags"`
+	Status        string         `gorm:"default:draft" json:"status"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
+	User        User           `gorm:"foreignKey:UserID" json:"author,omitempty"`
+	CategoryID  string         `gorm:"not null;index" json:"category_id"`
+	Category    Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+}
+
+func (Blog) TableName() string {
+	return "blogs"
+}
+
+type Review struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	UserID    string         `gorm:"not null;index" json:"user_id"`
+	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CourseID  string         `gorm:"index" json:"course_id"`
+	Course    Course         `gorm:"foreignKey:CourseID" json:"course,omitempty"`
+	LessonID  string         `gorm:"index" json:"lesson_id"`
+	Lesson    Lesson         `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	Rating    int            `gorm:"not null" json:"rating"`
+	Message   string         `gorm:"type:text" json:"message"`
+}
+
+type CommunityPoint struct {
 	ID           string         `gorm:"primaryKey" json:"id"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
-	Content      string         `gorm:"type:text;not null" json:"content"`
 	UserID       string         `gorm:"not null;index" json:"user_id"`
 	User         User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ShowcaseID   string         `gorm:"not null;index" json:"showcase_id"`
-	Showcase     Showcase       `gorm:"foreignKey:ShowcaseID" json:"showcase,omitempty"`
-	ParentID     *string        `gorm:"index" json:"parent_id"` // For nested comments
-	Parent       *ShowcaseComment `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
-
-	// Relationships
-	ChildComments []ShowcaseComment `gorm:"foreignKey:ParentID;constraint:OnDelete:CASCADE" json:"child_comments,omitempty"`
+	ActivityType string         `gorm:"not null;index;type:pointactivitytype" json:"activity_type"`
+	PointsEarned int            `gorm:"not null" json:"points_earned"`
+	PointsAfter  int            `gorm:"not null" json:"points_after"`
+	LevelAfter   int            `json:"level_after"`
+	Metadata     datatypes.JSON `gorm:"type:jsonb" json:"metadata"`
+	Description  string         `json:"description"`
 }
 
-// ============================================================================
-// GAMIFICATION MODELS (Points & Levels)
-// ============================================================================
-
-// CommunityPoint represents activity log and points transaction
-type CommunityPoint struct {
-	ID            string         `gorm:"primaryKey" json:"id"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID        string         `gorm:"not null;index" json:"user_id"`
-	User          User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	ActivityType  string         `gorm:"not null;index;type:pointactivitytype" json:"activity_type"`
-	PointsEarned  int            `gorm:"not null" json:"points_earned"`
-	PointsAfter   int            `gorm:"not null" json:"points_after"` // Total after this activity
-	LevelAfter    int            `json:"level_after"`                   // In case of level up
-	Metadata      datatypes.JSON `gorm:"type:jsonb" json:"metadata"`    // {object_id, object_type, etc}
-	Description   string         `json:"description"`                   // Human readable
+type RefreshToken struct {
+	ID        string     `gorm:"primaryKey" json:"id"`
+	UserID    string     `gorm:"not null;index" json:"user_id"`
+	User      User       `gorm:"foreignKey:UserID" json:"-"`
+	Token     string     `gorm:"uniqueIndex;not null" json:"-"`
+	ExpiresAt time.Time  `gorm:"not null" json:"expires_at"`
+	RevokedAt *time.Time `json:"-"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
-// UserLevel represents level configuration and requirements
+type AdminAuditLog struct {
+	ID           string    `gorm:"primaryKey" json:"id"`
+	AdminID      string    `gorm:"not null;index" json:"admin_id"`
+	Admin        User      `gorm:"foreignKey:AdminID" json:"admin,omitempty"`
+	Action       string    `gorm:"not null;index" json:"action"`
+	ResourceType string    `gorm:"not null;index" json:"resource_type"`
+	ResourceID   string    `gorm:"index" json:"resource_id"`
+	Details      string    `gorm:"type:text" json:"details,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 type UserLevel struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
-	Level       int       `gorm:"uniqueIndex;not null" json:"level"` // 1, 2, 3, 4, 5
+	Level       int       `gorm:"uniqueIndex;not null" json:"level"`
 	MinPoints   int       `gorm:"not null;uniqueIndex" json:"min_points"`
 	MaxPoints   int       `gorm:"not null" json:"max_points"`
 	BadgeName   string    `json:"badge_name"`
@@ -334,58 +349,94 @@ type UserLevel struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// ============================================================================
-// HELPER METHODS
-// ============================================================================
+// StudyCase represents a case study project
+type StudyCase struct {
+	ID          string         `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	Name        string         `gorm:"not null;index" json:"name"`
+	Description string         `gorm:"type:text" json:"description"`
+	ImgURL      string         `json:"img_url"`
+	Tags        datatypes.JSON `gorm:"type:jsonb" json:"tags"`
+	YoutubeURL  string         `json:"youtube_url"`
+	CategoryID  *string        `gorm:"index" json:"category_id"`
+	Category    Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	UserID      string         `gorm:"not null;index" json:"user_id"`
+	User        User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 
-// TableName specifies table name for ShowcaseLike (composite key table)
+	Discussions []Discussion `gorm:"foreignKey:StudyCaseID" json:"discussions,omitempty"`
+}
+
+// CourseEnrollment tracks user enrollment in a course
+type CourseEnrollment struct {
+	ID             string         `gorm:"primaryKey" json:"id"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+	UserID         string         `gorm:"not null;uniqueIndex:idx_user_course" json:"user_id"`
+	User           User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CourseID       string         `gorm:"not null;uniqueIndex:idx_user_course" json:"course_id"`
+	Course         Course         `gorm:"foreignKey:CourseID" json:"course,omitempty"`
+	LastLessonID   *string        `json:"last_lesson_id"`
+	OriginalPrice  float64        `gorm:"default:0" json:"original_price"`
+	DiscountAmount float64        `gorm:"default:0" json:"discount_amount"`
+	DiscountCode   string         `json:"discount_code"`
+}
+
+// Notification represents a user notification
+type Notification struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	UserID    string         `gorm:"not null;index" json:"user_id"`
+	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Type      string         `gorm:"not null;index" json:"type"`
+	Title     string         `gorm:"not null" json:"title"`
+	Message   string         `gorm:"type:text" json:"message"`
+	IsRead    bool           `gorm:"default:false" json:"is_read"`
+	Link      string         `json:"link"`
+	Metadata  datatypes.JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
+}
+
+// Helper methods
+
 func (ShowcaseLike) TableName() string {
 	return "showcase_likes"
 }
 
-// String implements Stringer for UserLevel
 func (ul UserLevel) String() string {
 	return ul.BadgeName
 }
 
-// ============================================================================
-// VALIDATION & PERMISSIONS
-// ============================================================================
-
-// IsUserOwnerOfCertificate checks if user owns this certificate (privacy check)
 func (c *Certificate) IsUserOwnerOfCertificate(userID string) bool {
 	return c.UserID == userID
 }
 
-// IsUserOwnerOfShowcase checks if user owns this showcase
 func (s *Showcase) IsUserOwnerOfShowcase(userID string) bool {
 	return s.UserID == userID
 }
 
-// CanUserEditShowcase checks if user can edit showcase (owner or admin)
 func (s *Showcase) CanUserEditShowcase(user *User) bool {
 	return s.UserID == user.ID || user.Role == "admin"
 }
 
-// CanUserCreateProject checks if user can create project (admin only)
-func (p *Project) CanUserCreateProject(user *User) bool {
+func (p *Course) CanUserCreateCourse(user *User) bool {
 	return user.Role == "admin"
 }
 
-// ============================================================================
-// AUTO MIGRATION
-// ============================================================================
-
-// AutoMigrate runs all database migrations
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
+		&Blog{},
 		&User{},
 		&Category{},
-		&Project{},
-		&Phase{},
-		&Class{},
-		&ClassDetail{},
-		&ClassProgress{},
+		&Course{},
+		&Section{},
+		&StudyCase{},
+		&Lesson{},
+		&LessonDetail{},
+		&LessonProgress{},
 		&Certificate{},
 		&Discussion{},
 		&Reply{},
@@ -394,5 +445,10 @@ func AutoMigrate(db *gorm.DB) error {
 		&ShowcaseComment{},
 		&CommunityPoint{},
 		&UserLevel{},
+		&Review{},
+		&RefreshToken{},
+		&AdminAuditLog{},
+		&CourseEnrollment{},
+		&Notification{},
 	)
 }

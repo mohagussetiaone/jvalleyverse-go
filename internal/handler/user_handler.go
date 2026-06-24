@@ -7,11 +7,15 @@ import (
 )
 
 type UserHandler struct {
-	userSvc service.IUserService
+	userSvc       service.IUserService
+	dashboardSvc  service.IDashboardService
 }
 
-func NewUserHandler(userSvc service.IUserService) *UserHandler {
-	return &UserHandler{userSvc: userSvc}
+func NewUserHandler(userSvc service.IUserService, dashboardSvc service.IDashboardService) *UserHandler {
+	return &UserHandler{
+		userSvc:      userSvc,
+		dashboardSvc: dashboardSvc,
+	}
 }
 
 // GetProfile returns current user profile
@@ -20,7 +24,7 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 
 	user, err := h.userSvc.GetProfile(c.UserContext(), userID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
 	return c.JSON(user)
@@ -40,10 +44,22 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	if err := h.userSvc.UpdateProfile(c.UserContext(), userID, input.Name, input.Bio, input.Avatar); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
 	return c.JSON(fiber.Map{"message": "Profile updated"})
+}
+
+// GetDashboard returns dashboard widgets and stats
+func (h *UserHandler) GetDashboard(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	dashboard, err := h.dashboardSvc.GetDashboard(c.UserContext(), userID)
+	if err != nil {
+		return safeError(c, 500, err)
+	}
+
+	return c.JSON(dashboard)
 }
 
 // GetPublicProfile returns public user profile
@@ -74,9 +90,9 @@ func (h *UserHandler) GetActivityLog(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 20)
 
-	logs, err := h.userSvc.GetUserActivityLog(c.UserContext(), userID, page, limit)
+	logs, total, err := h.userSvc.GetUserActivityLog(c.UserContext(), userID, page, limit)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -84,7 +100,27 @@ func (h *UserHandler) GetActivityLog(c *fiber.Ctx) error {
 		"pagination": fiber.Map{
 			"page":  page,
 			"limit": limit,
-			"total": len(logs), 
+			"total": total,
+		},
+	})
+}
+
+// ListMentors returns paginated list of mentors
+func (h *UserHandler) ListMentors(c *fiber.Ctx) error {
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 20)
+
+	mentors, total, err := h.userSvc.ListMentors(c.UserContext(), page, limit)
+	if err != nil {
+		return safeError(c, 500, err)
+	}
+
+	return c.JSON(fiber.Map{
+		"data": mentors,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
 		},
 	})
 }
@@ -96,7 +132,7 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 
 	users, total, err := h.userSvc.ListAllUsers(c.UserContext(), page, limit)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, 500, err)
 	}
 
 	return c.JSON(fiber.Map{

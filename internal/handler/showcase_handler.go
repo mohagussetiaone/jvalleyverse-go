@@ -38,9 +38,30 @@ func (h *ShowcaseHandler) Create(c *fiber.Ctx) error {
 
 	showcase, err := h.showcaseSvc.CreateShowcase(c.UserContext(), userID, input.Title, input.Description, input.MediaURLs, input.CategoryID, input.Visibility)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 	return c.Status(201).JSON(showcase)
+}
+
+// ListMyShowcases returns current user's showcases (GET /api/users/me/showcases)
+func (h *ShowcaseHandler) ListMyShowcases(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 20)
+
+	showcases, total, err := h.showcaseSvc.ListMyShowcases(c.UserContext(), userID, page, limit)
+	if err != nil {
+		return safeError(c, 500, err)
+	}
+
+	return c.JSON(fiber.Map{
+		"data": showcases,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
 }
 
 // ListShowcases returns paginated public showcases (GET /api/showcases)
@@ -52,7 +73,7 @@ func (h *ShowcaseHandler) ListShowcases(c *fiber.Ctx) error {
 
 	showcases, total, err := h.showcaseSvc.ListShowcases(c.UserContext(), page, limit, categoryID, sort)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, 500, err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -98,7 +119,7 @@ func (h *ShowcaseHandler) Update(c *fiber.Ctx) error {
 		if err == domain.ErrForbidden {
 			return c.Status(403).JSON(fiber.Map{"error": "You do not own this showcase"})
 		}
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 	return c.JSON(showcase)
 }
@@ -112,7 +133,7 @@ func (h *ShowcaseHandler) Delete(c *fiber.Ctx) error {
 		if err == domain.ErrForbidden {
 			return c.Status(403).JSON(fiber.Map{"error": "You do not own this showcase"})
 		}
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 	return c.JSON(fiber.Map{"message": "Showcase deleted"})
 }
@@ -125,7 +146,7 @@ func (h *ShowcaseHandler) Like(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid showcase id"})
 	}
 	if err := h.showcaseSvc.LikeShowcase(c.UserContext(), userID, showcaseID); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 	return c.JSON(fiber.Map{"message": "Liked successfully"})
 }
@@ -138,7 +159,7 @@ func (h *ShowcaseHandler) Unlike(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid showcase id"})
 	}
 	if err := h.showcaseSvc.UnlikeShowcase(c.UserContext(), userID, showcaseID); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, mapServiceErrorToStatus(err), err)
 	}
 	return c.JSON(fiber.Map{"message": "Showcase unliked"})
 }

@@ -3,40 +3,39 @@ package service
 import (
 	"context"
 	"jvalleyverse/internal/domain"
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
 )
 
-// ICertificateService defines the business logic for managing certificates
 type ICertificateService interface {
-	IssueCertificate(ctx context.Context, userID, classID string, code string) (*domain.Certificate, error)
-	GetCertificate(ctx context.Context, certID string) (map[string]interface{}, error)
-	GetCertificateByCode(ctx context.Context, code, requesterID, requesterRole string) (map[string]interface{}, error)
-	ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error)
+	IssueCertificate(ctx context.Context, userID, lessonID string, code string) (*domain.Certificate, error)
+	GetCertificate(ctx context.Context, certID string) (*dto.CertificateItem, error)
+	GetCertificateByCode(ctx context.Context, code, requesterID, requesterRole string) (*dto.CertificateItem, error)
+	ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]dto.CertificateItem, int64, error)
 }
 
 type CertificateService struct {
-	certRepo  *repository.CertificateRepository
-	classRepo *repository.ClassRepository
-	userRepo  *repository.UserRepository
+	certRepo   *repository.CertificateRepository
+	lessonRepo *repository.LessonRepository
+	userRepo   *repository.UserRepository
 }
 
 func NewCertificateService(
 	certRepo *repository.CertificateRepository,
-	classRepo *repository.ClassRepository,
+	lessonRepo *repository.LessonRepository,
 	userRepo *repository.UserRepository,
 ) *CertificateService {
 	return &CertificateService{
-		certRepo:  certRepo,
-		classRepo: classRepo,
-		userRepo:  userRepo,
+		certRepo:   certRepo,
+		lessonRepo: lessonRepo,
+		userRepo:   userRepo,
 	}
 }
 
-// IssueCertificate issues new certificate for class completion
-func (s *CertificateService) IssueCertificate(ctx context.Context, userID, classID string, code string) (*domain.Certificate, error) {
+func (s *CertificateService) IssueCertificate(ctx context.Context, userID, lessonID string, code string) (*domain.Certificate, error) {
 	cert := &domain.Certificate{
 		UserID:     userID,
-		ClassID:    classID,
+		LessonID:   lessonID,
 		UniqueCode: code,
 	}
 
@@ -47,26 +46,15 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, userID, class
 	return cert, nil
 }
 
-// GetCertificate retrieves certificate details
-func (s *CertificateService) GetCertificate(ctx context.Context, certID string) (map[string]interface{}, error) {
+func (s *CertificateService) GetCertificate(ctx context.Context, certID string) (*dto.CertificateItem, error) {
 	cert, err := s.certRepo.FindByID(ctx, certID)
 	if err != nil {
 		return nil, err
 	}
-
-	return map[string]interface{}{
-		"id":          cert.ID,
-		"unique_code": cert.UniqueCode,
-		"issued_at":   cert.IssuedAt,
-		"user_id":     cert.UserID,
-		"class_id":    cert.ClassID,
-		"class_name":  cert.Class.Title,
-		"user_name":   cert.User.Name,
-	}, nil
+	return dto.ToCertificateItem(cert), nil
 }
 
-// GetCertificateByCode retrieves certificate by unique code
-func (s *CertificateService) GetCertificateByCode(ctx context.Context, code, requesterID, requesterRole string) (map[string]interface{}, error) {
+func (s *CertificateService) GetCertificateByCode(ctx context.Context, code, requesterID, requesterRole string) (*dto.CertificateItem, error) {
 	cert, err := s.certRepo.FindByCode(ctx, code)
 	if err != nil {
 		return nil, err
@@ -75,40 +63,27 @@ func (s *CertificateService) GetCertificateByCode(ctx context.Context, code, req
 		return nil, domain.ErrForbidden
 	}
 
-	return map[string]interface{}{
-		"id":          cert.ID,
-		"unique_code": cert.UniqueCode,
-		"issued_at":   cert.IssuedAt,
-		"user_id":     cert.UserID,
-		"class_id":    cert.ClassID,
-		"class_name":  cert.Class.Title,
-		"user_name":   cert.User.Name,
-		"achievement": map[string]interface{}{
-			"type":        "certificate",
-			"title":       cert.Class.Title,
-			"unique_code": cert.UniqueCode,
-		},
-	}, nil
+	item := dto.ToCertificateItem(cert)
+	item.Achievement = &dto.AchievementInfo{
+		Type:       "certificate",
+		Title:      cert.Lesson.Title,
+		UniqueCode: cert.UniqueCode,
+	}
+	return item, nil
 }
 
-// ListUserCertificates returns certificates earned by user
-func (s *CertificateService) ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error) {
-	certs, _, err := s.certRepo.ListByUserID(ctx, userID, page, limit)
+func (s *CertificateService) ListUserCertificates(ctx context.Context, userID string, page, limit int) ([]dto.CertificateItem, int64, error) {
+	certs, total, err := s.certRepo.ListByUserID(ctx, userID, page, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	result := make([]map[string]interface{}, len(certs))
+	result := make([]dto.CertificateItem, len(certs))
 	for i, cert := range certs {
-		result[i] = map[string]interface{}{
-			"id":          cert.ID,
-			"unique_code": cert.UniqueCode,
-			"issued_at":   cert.IssuedAt,
-			"class_id":    cert.ClassID,
-			"class_name":  cert.Class.Title,
-			"achievement": "certificate",
-		}
+		item := dto.ToCertificateItem(&cert)
+		item.Achievement = &dto.AchievementInfo{Type: "certificate"}
+		result[i] = *item
 	}
 
-	return result, nil
+	return result, total, nil
 }

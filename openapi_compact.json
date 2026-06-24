@@ -399,16 +399,16 @@
         "tags": ["Categories"]
       }
     },
-    "/api/certificates": {
-      "get": { "responses": { "200": { "description": "User certificates" }, "401": { "description": "Unauthorized" } }, "security": [{ "BearerAuth": [] }], "summary": "Get user certificates", "tags": ["Certificates"] }
+    "/api/users/me/certificates": {
+      "get": { "responses": { "200": { "description": "User certificates" }, "401": { "description": "Unauthorized" } }, "security": [{ "BearerAuth": [] }], "summary": "Get my certificates", "tags": ["Users"] }
     },
-    "/api/certificates/{code}": {
+    "/api/users/me/certificates/{code}": {
       "get": {
         "parameters": [{ "in": "path", "name": "code", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Certificate details" }, "403": { "description": "Forbidden - Not your certificate" }, "404": { "description": "Certificate not found" } },
         "security": [{ "BearerAuth": [] }],
-        "summary": "View certificate (Private - Owner only)",
-        "tags": ["Certificates"]
+        "summary": "View certificate detail (Owner only)",
+        "tags": ["Users"]
       }
     },
     "/api/classes/{id}": {
@@ -680,6 +680,18 @@
         "tags": ["Gamification"]
       }
     },
+    "/api/users/me/discussions": {
+      "get": {
+        "parameters": [
+          { "in": "query", "name": "page", "schema": { "type": "integer", "default": 1 } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "My discussions list" }, "401": { "description": "Unauthorized" } },
+        "security": [{ "BearerAuth": [] }],
+        "summary": "Get my discussions",
+        "tags": ["Users"]
+      }
+    },
     "/api/users/{id}": {
       "get": {
         "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "example": "", "type": "string" } }],
@@ -708,7 +720,6 @@
     { "description": "Admin project management", "name": "Admin - Projects" },
     { "description": "Admin class management", "name": "Admin - Classes" },
     { "description": "Public class access", "name": "Classes" },
-    { "description": "Certificate endpoints (private access)", "name": "Certificates" },
     { "description": "Discussion management", "name": "Discussions" },
     { "description": "Discussion replies (nested)", "name": "Replies" },
     { "description": "User portfolio items", "name": "Showcases" },

@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/pkg/config"
@@ -14,125 +13,57 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-    cfg := config.AppConfig
-    dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-        cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSSLMode)
-    
-    var err error
-    DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Info),
-    })
-    if err != nil {
-        panic("Failed to connect to database: " + err.Error())
-    }
+	cfg := config.AppConfig
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSSLMode)
 
-	// Create ENUM types if they don't exist
-	createEnumTypes()
-
-	// Backfill legacy classes before AutoMigrate enforces phase_id NOT NULL.
-	if err := migrateLegacyClassPhases(DB); err != nil {
-		panic("Legacy phase migration failed: " + err.Error())
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+	if err != nil {
+		panic("Failed to connect to database: " + err.Error())
 	}
 
-	// Auto migrate schema
+	createEnumTypes()
+
+	// Clean up old study_cases table if it exists with incompatible schema
+	// (e.g. previous model had MentorID, now uses UserID with NOT NULL)
+	DB.Exec("UPDATE discussions SET study_case_id = NULL WHERE study_case_id IS NOT NULL")
+	DB.Exec("DROP TABLE IF EXISTS study_cases CASCADE")
+
 	if err := domain.AutoMigrate(DB); err != nil {
 		panic("Migration failed: " + err.Error())
 	}
 }
 
-func migrateLegacyClassPhases(db *gorm.DB) error {
-	if !db.Migrator().HasTable(&domain.Project{}) || !db.Migrator().HasTable(&domain.Class{}) {
-		return nil
-	}
-
-	if err := db.AutoMigrate(&domain.Phase{}); err != nil {
-		return err
-	}
-
-	if !db.Migrator().HasColumn(&domain.Class{}, "phase_id") {
-		if err := db.Exec(`ALTER TABLE "classes" ADD COLUMN "phase_id" text`).Error; err != nil {
-			return err
-		}
-	}
-
-	type legacyProjectRow struct {
-		ProjectID string
-	}
-
-	var rows []legacyProjectRow
-	if err := db.Raw(`
-		SELECT DISTINCT project_id
-		FROM classes
-		WHERE deleted_at IS NULL
-		  AND project_id IS NOT NULL
-		  AND (phase_id IS NULL OR phase_id = '')
-	`).Scan(&rows).Error; err != nil {
-		return err
-	}
-
-	for _, row := range rows {
-		if row.ProjectID == "" {
-			continue
-		}
-
-		if err := db.Transaction(func(tx *gorm.DB) error {
-			var phase domain.Phase
-			err := tx.Where("project_id = ?", row.ProjectID).
-				Order("order_index ASC").
-				First(&phase).Error
-			if err != nil {
-				if !errors.Is(err, gorm.ErrRecordNotFound) {
-					return err
-				}
-
-				phase = domain.Phase{
-					ProjectID:   row.ProjectID,
-					Title:       "General",
-					Description: "Auto-generated default phase for legacy classes",
-					OrderIndex:  0,
-				}
-				if err := tx.Create(&phase).Error; err != nil {
-					return err
-				}
-			}
-
-			return tx.Model(&domain.Class{}).
-				Where("project_id = ? AND (phase_id IS NULL OR phase_id = '')", row.ProjectID).
-				Update("phase_id", phase.ID).Error
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// createEnumTypes creates PostgreSQL ENUM types for the application
 func createEnumTypes() {
-    enums := []struct {
-        typeName string
-        values   string
-    }{
-        {"userrole", "'admin','user'"},
-        {"projectstatus", "'draft','published','archived'"},
-        {"certificatestatus", "'issued','revoked','expired'"},
-        {"discussionstatus", "'open','closed','pinned'"},
-        {"showcaseStatus", "'draft','published','archived'"},
-        {"showcasevisibility", "'public','private','draft'"},
-        {"classDifficulty", "'beginner','intermediate','advanced'"},
-        {"pointactivitytype", "'showcase_created','showcase_liked','discussion_created','discussion_reply','class_completed','certificate_issued'"},
-    }
+	enums := []struct {
+		typeName string
+		values   string
+	}{
+		{"userrole", "'admin','user','mentor'"},
+		{"coursestatus", "'draft','published','archived'"},
+		{"certificatestatus", "'issued','revoked','expired'"},
+		{"discussionstatus", "'open','closed','pinned'"},
+		{"showcaseStatus", "'draft','published','archived'"},
+		{"showcasevisibility", "'public','private','draft'"},
+		{"lessondifficulty", "'beginner','intermediate','advanced'"},
+		{"pointactivitytype", "'showcase_created','showcase_liked','discussion_created','discussion_reply','lesson_completed','certificate_issued'"},
+	}
 
-    for _, enum := range enums {
-        // Check if enum exists, if not create it
-        sql := fmt.Sprintf(`DO $$ BEGIN
+	for _, enum := range enums {
+		sql := fmt.Sprintf(`DO $$ BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '%s') THEN
                 CREATE TYPE %s AS ENUM (%s);
             END IF;
         END $$;`, enum.typeName, enum.typeName, enum.values)
-        
-        if err := DB.Exec(sql).Error; err != nil {
-            fmt.Printf("Warning: Could not create enum %s: %v\n", enum.typeName, err)
-        }
-    }
+
+		if err := DB.Exec(sql).Error; err != nil {
+			fmt.Printf("Warning: Could not create enum %s: %v\n", enum.typeName, err)
+		}
+	}
+
+	// Add 'mentor' value to existing userrole enum (safe to run repeatedly)
+	DB.Exec("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'mentor'")
 }

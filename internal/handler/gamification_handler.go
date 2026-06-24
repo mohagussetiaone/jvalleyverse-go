@@ -41,7 +41,7 @@ func (h *GamificationHandler) GetLeaderboard(c *fiber.Ctx) error {
 
 	leaderboard, err := h.gamificationSvc.GetLeaderboard(c.UserContext(), limit)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, 500, err)
 	}
 
 	return c.JSON(fiber.Map{"data": leaderboard})

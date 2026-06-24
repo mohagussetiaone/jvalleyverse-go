@@ -24,23 +24,55 @@ func (r *DiscussionRepository) Create(ctx context.Context, discussion *domain.Di
 // FindByID finds discussion with user info
 func (r *DiscussionRepository) FindByID(ctx context.Context, discussionID string) (*domain.Discussion, error) {
 	discussion := &domain.Discussion{}
-	if err := r.db.WithContext(ctx).Where("id = ?", discussionID).Preload("User").Preload("Class").First(discussion).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", discussionID).Preload("User").Preload("Lesson").First(discussion).Error; err != nil {
 		return nil, err
 	}
 	return discussion, nil
 }
 
-// ListByClassID lists discussions in a class
-func (r *DiscussionRepository) ListByClassID(ctx context.Context, classID string, page, limit int) ([]domain.Discussion, int64, error) {
+// ListAll lists all discussions with pagination
+func (r *DiscussionRepository) ListAll(ctx context.Context, page, limit int) ([]domain.Discussion, int64, error) {
 	var discussions []domain.Discussion
 	var total int64
 
-	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Where("class_id = ?", classID).Count(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("class_id = ?", classID).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return discussions, total, nil
+}
+
+func (r *DiscussionRepository) ListByLessonID(ctx context.Context, lessonID string, page, limit int) ([]domain.Discussion, int64, error) {
+	var discussions []domain.Discussion
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Where("lesson_id = ?", lessonID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if err := r.db.WithContext(ctx).Where("lesson_id = ?", lessonID).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return discussions, total, nil
+}
+
+func (r *DiscussionRepository) ListByStudyCaseID(ctx context.Context, studyCaseID string, page, limit int) ([]domain.Discussion, int64, error) {
+	var discussions []domain.Discussion
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.Discussion{}).Where("study_case_id = ?", studyCaseID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if err := r.db.WithContext(ctx).Where("study_case_id = ?", studyCaseID).Preload("User").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -57,7 +89,7 @@ func (r *DiscussionRepository) ListByUserID(ctx context.Context, userID string, 
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Class").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Preload("User").Preload("Lesson").Offset(offset).Limit(limit).Order("created_at DESC").Find(&discussions).Error; err != nil {
 		return nil, 0, err
 	}
 

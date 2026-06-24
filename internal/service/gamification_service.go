@@ -2,16 +2,17 @@ package service
 
 import (
 	"context"
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
 )
 
 // IGamificationService defines the business logic for the point and level system
 type IGamificationService interface {
 	AwardPoints(ctx context.Context, userID string, activityType string, points int, metadata map[string]interface{}) error
-	GetLeaderboard(ctx context.Context, limit int) ([]map[string]interface{}, error)
-	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error)
-	GetLevelInfo() []map[string]interface{}
-	GetUserStats(ctx context.Context, userID string) (map[string]interface{}, error)
+	GetLeaderboard(ctx context.Context, limit int) ([]dto.LeaderboardItem, error)
+	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]dto.ActivityItem, error)
+	GetLevelInfo() []dto.LevelInfo
+	GetUserStats(ctx context.Context, userID string) (*dto.UserStats, error)
 }
 
 type GamificationService struct {
@@ -44,7 +45,7 @@ func (s *GamificationService) AwardPoints(ctx context.Context, userID string, ac
 }
 
 // GetLeaderboard returns top users by points
-func (s *GamificationService) GetLeaderboard(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+func (s *GamificationService) GetLeaderboard(ctx context.Context, limit int) ([]dto.LeaderboardItem, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -54,15 +55,15 @@ func (s *GamificationService) GetLeaderboard(ctx context.Context, limit int) ([]
 		return nil, err
 	}
 
-	result := make([]map[string]interface{}, len(users))
+	result := make([]dto.LeaderboardItem, len(users))
 	for i, u := range users {
-		result[i] = map[string]interface{}{
-			"rank":         i + 1,
-			"user_id":      u.ID,
-			"name":         u.Name,
-			"avatar":       u.Avatar,
-			"total_points": u.TotalPoints,
-			"level":        u.Level,
+		result[i] = dto.LeaderboardItem{
+			Rank:        i + 1,
+			UserID:      u.ID,
+			Name:        u.Name,
+			Avatar:      u.Avatar,
+			TotalPoints: u.TotalPoints,
+			Level:       u.Level,
 		}
 	}
 
@@ -70,19 +71,19 @@ func (s *GamificationService) GetLeaderboard(ctx context.Context, limit int) ([]
 }
 
 // GetUserActivityLog returns user's activity history
-func (s *GamificationService) GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]map[string]interface{}, error) {
+func (s *GamificationService) GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]dto.ActivityItem, error) {
 	activities, _, err := s.pointRepo.ListByUserID(ctx, userID, page, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]map[string]interface{}, len(activities))
+	result := make([]dto.ActivityItem, len(activities))
 	for i, activity := range activities {
-		result[i] = map[string]interface{}{
-			"id":        activity.ID,
-			"activity":  activity.ActivityType,
-			"points":    activity.PointsEarned,
-			"timestamp": activity.CreatedAt,
+		result[i] = dto.ActivityItem{
+			ID:        activity.ID,
+			Activity:  activity.ActivityType,
+			Points:    activity.PointsEarned,
+			Timestamp: activity.CreatedAt,
 		}
 	}
 
@@ -90,43 +91,18 @@ func (s *GamificationService) GetUserActivityLog(ctx context.Context, userID str
 }
 
 // GetLevelInfo returns all level requirements
-func (s *GamificationService) GetLevelInfo() []map[string]interface{} {
-	return []map[string]interface{}{
-		{
-			"name":        "Beginner",
-			"threshold":   0,
-			"color":       "#6366f1",
-			"description": "Just starting your journey",
-		},
-		{
-			"name":        "Intermediate",
-			"threshold":   100,
-			"color":       "#8b5cf6",
-			"description": "Building momentum",
-		},
-		{
-			"name":        "Advanced",
-			"threshold":   500,
-			"color":       "#d946ef",
-			"description": "Getting serious",
-		},
-		{
-			"name":        "Expert",
-			"threshold":   1000,
-			"color":       "#ec4899",
-			"description": "Mastering skills",
-		},
-		{
-			"name":        "Master",
-			"threshold":   2000,
-			"color":       "#f43f5e",
-			"description": "Peak achievement",
-		},
+func (s *GamificationService) GetLevelInfo() []dto.LevelInfo {
+	return []dto.LevelInfo{
+		{Name: "Beginner", Threshold: 0, Color: "#6366f1", Description: "Just starting your journey"},
+		{Name: "Intermediate", Threshold: 100, Color: "#8b5cf6", Description: "Building momentum"},
+		{Name: "Advanced", Threshold: 500, Color: "#d946ef", Description: "Getting serious"},
+		{Name: "Expert", Threshold: 1000, Color: "#ec4899", Description: "Mastering skills"},
+		{Name: "Master", Threshold: 2000, Color: "#f43f5e", Description: "Peak achievement"},
 	}
 }
 
 // GetUserStats returns comprehensive user statistics
-func (s *GamificationService) GetUserStats(ctx context.Context, userID string) (map[string]interface{}, error) {
+func (s *GamificationService) GetUserStats(ctx context.Context, userID string) (*dto.UserStats, error) {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -134,12 +110,12 @@ func (s *GamificationService) GetUserStats(ctx context.Context, userID string) (
 
 	activityLog, _ := s.GetUserActivityLog(ctx, userID, 1, 10)
 
-	return map[string]interface{}{
-		"user_id":         user.ID,
-		"name":            user.Name,
-		"total_points":    user.TotalPoints,
-		"current_level":   user.Level,
-		"recent_activity": activityLog,
+	return &dto.UserStats{
+		UserID:         user.ID,
+		Name:           user.Name,
+		TotalPoints:    user.TotalPoints,
+		CurrentLevel:   user.Level,
+		RecentActivity: activityLog,
 	}, nil
 }
 

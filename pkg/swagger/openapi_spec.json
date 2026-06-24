@@ -1,395 +1,920 @@
 {
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JValleyVerse API",
+    "description": "Community-driven learning platform with gamification, certification, showcase, and file upload features. Protected by rate limiting (Global 200/min, Content 60/min, Auth 10/min), anti-scraping (ScraperGuard), XSRF double-submit cookie, security headers, and idempotency keys for safe retry.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "JValleyVerse Team"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    },
+    {
+      "url": "https://jvalleyverse.mohagussetiaone.my.id",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints"
+    },
+    {
+      "name": "Users",
+      "description": "User profile management"
+    },
+    {
+      "name": "Courses",
+      "description": "Public course listing and details"
+    },
+    {
+      "name": "Sections",
+      "description": "Public section access within courses"
+    },
+    {
+      "name": "Lessons",
+      "description": "Public lesson access"
+    },
+    {
+      "name": "Categories",
+      "description": "Category list and browsing"
+    },
+    {
+      "name": "Discussions",
+      "description": "Discussion management"
+    },
+    {
+      "name": "Replies",
+      "description": "Discussion replies (nested)"
+    },
+    {
+      "name": "Reviews",
+      "description": "Course and lesson reviews"
+    },
+    {
+      "name": "Showcases",
+      "description": "User portfolio items"
+    },
+    {
+      "name": "Gamification",
+      "description": "Points, levels, leaderboard"
+    },
+    {
+      "name": "Health",
+      "description": "Server health check"
+    },
+    {
+      "name": "Study Cases",
+      "description": "Public study case browsing"
+    },
+    {
+      "name": "Upload",
+      "description": "File upload to MinIO"
+    },
+    {
+      "name": "Notifications",
+      "description": "User notification management"
+    },
+    {
+      "name": "Enrollment",
+      "description": "Course enrollment"
+    },
+    {
+      "name": "Dashboard",
+      "description": "User dashboard widgets"
+    },
+    {
+      "name": "Admin - Study Cases",
+      "description": "Admin study case management"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin dashboard"
+    },
+    {
+      "name": "Admin - Courses",
+      "description": "Admin course management"
+    },
+    {
+      "name": "Admin - Sections",
+      "description": "Admin section management"
+    },
+    {
+      "name": "Admin - Lessons",
+      "description": "Admin lesson management"
+    },
+    {
+      "name": "Admin - Categories",
+      "description": "Admin category management"
+    },
+    {
+      "name": "Admin - Users",
+      "description": "Admin user management"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
-      "Category": {
+      "Error": {
+        "type": "object",
         "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "url"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
+            ]
+          },
+          "level": {
+            "type": "integer"
+          },
+          "points": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
           "created_at": {
-            "format": "date-time",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Web Development"
+          },
+          "slug": {
+            "type": "string",
+            "example": "web-dev"
+          },
+          "description": {
+            "type": "string",
+            "example": "Complete web development course"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CourseDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
             "type": "string"
           },
           "description": {
-            "example": "Complete web development course",
             "type": "string"
           },
+          "thumbnail": {
+            "type": "string",
+            "format": "url"
+          },
+          "price": {
+            "type": "number",
+            "example": 0
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
+          },
+          "admin_id": {
+            "type": "string"
+          },
+          "admin_name": {
+            "type": "string"
+          },
+          "mentors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            }
+          },
+          "hours": {
+            "type": "integer"
+          },
+          "total_duration_hours": {
+            "type": "integer"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "is_enrolled": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionBrief"
+            }
+          }
+        }
+      },
+      "Section": {
+        "type": "object",
+        "properties": {
           "id": {
-            "example": "",
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string",
+            "example": "Getting Started"
+          },
+          "description": {
             "type": "string"
           },
-          "name": {
-            "example": "Web Development",
-            "type": "string"
+          "course_id": {
+            "type": "string",
+            "example": "abc123"
           },
-          "slug": {
-            "example": "web-dev",
-            "type": "string"
+          "order_index": {
+            "type": "integer"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonBrief"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
           },
           "updated_at": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
-        },
-        "type": "object"
+        }
       },
-      "Certificate": {
+      "Lesson": {
+        "type": "object",
         "properties": {
-          "class_id": {
-            "example": "",
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
           "id": {
-            "example": "",
-            "type": "string"
+            "type": "string",
+            "example": "abc123"
           },
-          "issued_at": {
-            "format": "date-time",
-            "type": "string"
+          "title": {
+            "type": "string",
+            "example": "Introduction to Go"
           },
-          "user_id": {
-            "example": "",
-            "type": "string"
+          "slug": {
+            "type": "string",
+            "example": "intro-to-go"
           },
-          "valid_until": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "Class": {
-        "properties": {
-          "category_id": {
-            "example": "",
+          "description": {
             "type": "string"
           },
           "content": {
             "type": "string"
           },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "difficulty": {
-            "enum": ["beginner", "intermediate", "advanced"],
-            "type": "string"
+          "thumbnail": {
+            "type": "string",
+            "format": "url"
           },
           "duration": {
             "type": "integer"
           },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ]
+          },
+          "course_id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "section_id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "order_index": {
+            "type": "integer"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LessonDetail": {
+        "type": "object",
+        "properties": {
           "id": {
-            "example": "",
+            "type": "string",
+            "example": "abc123"
+          },
+          "lesson_id": {
             "type": "string"
           },
-          "is_completed": {
-            "type": "boolean"
-          },
-          "project_id": {
-            "example": "",
+          "about": {
             "type": "string"
           },
-          "thumbnail": {
-            "format": "url",
+          "rules": {
+            "type": "string"
+          },
+          "tools": {
+            "type": "object"
+          },
+          "resource_media": {
+            "type": "object"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "DiscussionDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
           },
           "title": {
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "Discussion": {
-        "properties": {
-          "category_id": {
-            "example": "",
-            "type": "string"
-          },
-          "class_id": {
-            "example": "",
             "type": "string"
           },
           "content": {
             "type": "string"
           },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "replies_count": {
-            "type": "integer"
-          },
-          "title": {
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string"
-          },
           "user_id": {
-            "example": "",
             "type": "string"
           },
           "user_name": {
             "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "view_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplyInDiscussion"
+            }
           }
-        },
-        "type": "object"
+        }
+      },
+      "Reply": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "content": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "discussion_id": {
+            "type": "string"
+          },
+          "parent_id": {
+            "type": "string"
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "is_marked_best": {
+            "type": "boolean"
+          },
+          "child_replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reply"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "LeaderboardEntry": {
+        "type": "object",
         "properties": {
+          "rank": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "url"
+          },
+          "points": {
+            "type": "integer"
+          },
+          "level": {
+            "type": "integer"
+          },
           "badge": {
+            "type": "string"
+          }
+        }
+      },
+      "CommunityPoint": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "activity_type": {
+            "type": "string"
+          },
+          "points_earned": {
+            "type": "integer"
+          },
+          "points_after": {
+            "type": "integer"
+          },
+          "level_after": {
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserLevel": {
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
           },
           "level": {
             "type": "integer"
           },
-          "name": {
+          "min_points": {
+            "type": "integer"
+          },
+          "max_points": {
+            "type": "integer"
+          },
+          "badge_name": {
             "type": "string"
           },
-          "points": {
-            "type": "integer"
+          "badge_icon": {
+            "type": "string"
           },
-          "rank": {
-            "type": "integer"
-          },
-          "user_id": {
-            "example": "",
+          "description": {
             "type": "string"
           }
-        },
-        "type": "object"
+        }
       },
-      "Pagination": {
+      "LessonProgress": {
+        "type": "object",
         "properties": {
-          "limit": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "started",
+              "in_progress",
+              "completed"
+            ]
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress_percentage": {
             "type": "integer"
           },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "course_id": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "message": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
           "page": {
+            "type": "integer"
+          },
+          "limit": {
             "type": "integer"
           },
           "total": {
             "type": "integer"
           }
-        },
-        "type": "object"
+        }
       },
-      "Project": {
+      "AuthResponse": {
+        "type": "object",
         "properties": {
-          "admin_id": {
-            "example": "",
+          "access_token": {
             "type": "string"
           },
-          "category_id": {
-            "example": "",
+          "refresh_token": {
             "type": "string"
           },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "thumbnail": {
-            "format": "url",
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "visibility": {
-            "enum": ["public", "private"],
-            "type": "string"
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
-        },
-        "type": "object"
+        }
       },
-      "Reply": {
+      "ActivityLog": {
+        "type": "object",
         "properties": {
-          "content": {
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "discussion_id": {
-            "example": "",
-            "type": "string"
-          },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "parent_reply_id": {
-            "example": "",
-            "nullable": true,
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "user_id": {
-            "example": "",
-            "type": "string"
-          },
-          "user_name": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "Showcase": {
-        "properties": {
-          "category_id": {
-            "example": "",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "is_liked": {
-            "type": "boolean"
-          },
-          "likes_count": {
-            "type": "integer"
-          },
-          "media_urls": {
+          "data": {
+            "type": "array",
             "items": {
-              "type": "string"
-            },
-            "type": "array"
+              "$ref": "#/components/schemas/CommunityPoint"
+            }
           },
-          "title": {
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "user_id": {
-            "example": "",
-            "type": "string"
-          },
-          "user_name": {
-            "type": "string"
-          },
-          "visibility": {
-            "enum": ["public", "private", "friends_only"],
-            "type": "string"
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
           }
-        },
-        "type": "object"
+        }
       },
-      "User": {
+      "AdminDashboard": {
+        "type": "object",
         "properties": {
-          "avatar": {
-            "format": "url",
-            "type": "string"
-          },
-          "bio": {
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "email": {
-            "format": "email",
-            "type": "string"
-          },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "level": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "points": {
-            "type": "integer"
-          },
-          "role": {
-            "enum": ["admin", "user"],
-            "type": "string"
-          },
-          "total_points": {
-            "type": "integer"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string"
+          "message": {
+            "type": "string",
+            "example": "Welcome admin"
           }
-        },
-        "type": "object"
+        }
       },
-      "UserPublic": {
+      "UploadResponse": {
+        "type": "object",
         "properties": {
-          "avatar": {
+          "url": {
+            "type": "string",
             "format": "url",
-            "type": "string"
+            "example": "https://cdn.mohagussetiaone.my.id/jvalleyverse/courses/uuid.jpg"
           },
-          "bio": {
-            "type": "string"
+          "object_name": {
+            "type": "string",
+            "example": "courses/uuid.jpg"
           },
-          "certificate_count": {
-            "type": "integer"
+          "size": {
+            "type": "integer",
+            "example": 245760
           },
-          "id": {
-            "example": "",
-            "type": "string"
-          },
-          "level": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "points": {
-            "type": "integer"
-          },
-          "showcase_count": {
-            "type": "integer"
+          "content_type": {
+            "type": "string",
+            "example": "image/jpeg"
           }
-        },
-        "type": "object"
+        }
       },
-      "Phase": {
+      "Notification": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "example": ""
+            "example": "abc123"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "example": "new_reply"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "is_read": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "courses_in_progress": {
+            "type": "integer",
+            "example": 2
+          },
+          "courses_completed": {
+            "type": "integer",
+            "example": 3
+          },
+          "courses_dropped": {
+            "type": "integer",
+            "example": 1
+          },
+          "unread_notifications": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "url"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "user",
+              "mentor"
+            ]
+          }
+        }
+      },
+      "CategoryBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Web Development"
+          },
+          "slug": {
+            "type": "string",
+            "example": "web-dev"
+          }
+        }
+      },
+      "CourseListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string",
+            "example": "Learn Go"
+          },
+          "description": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string",
+            "format": "url"
+          },
+          "price": {
+            "type": "number",
+            "example": 0
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
+          },
+          "admin_name": {
+            "type": "string"
+          },
+          "mentors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            }
+          },
+          "hours": {
+            "type": "integer"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "section_count": {
+            "type": "integer"
+          },
+          "is_enrolled": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LessonBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string",
+            "example": "Introduction to Go"
+          },
+          "slug": {
+            "type": "string",
+            "example": "intro-to-go"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ]
+          },
+          "duration": {
+            "type": "integer"
+          },
+          "order_index": {
+            "type": "integer"
+          },
+          "video_url": {
+            "type": "string",
+            "format": "url"
+          }
+        }
+      },
+      "SectionBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
           },
           "title": {
             "type": "string"
@@ -397,12 +922,513 @@
           "description": {
             "type": "string"
           },
-          "project_id": {
+          "order_index": {
+            "type": "integer"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonBrief"
+            }
+          }
+        }
+      },
+      "SectionDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string",
-            "example": ""
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "course_id": {
+            "type": "string"
           },
           "order_index": {
             "type": "integer"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonBrief"
+            }
+          }
+        }
+      },
+      "DiscussionListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "study_case_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "view_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReplyInDiscussion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "content": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "likes": {
+            "type": "integer"
+          },
+          "is_best": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReplyListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "content": {
+            "type": "string"
+          },
+          "discussion_id": {
+            "type": "string"
+          },
+          "discussion_title": {
+            "type": "string"
+          },
+          "parent_id": {
+            "type": "string"
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "is_marked_best": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ShowcaseListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "media_urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "url"
+            }
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "views_count": {
+            "type": "integer"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ShowcaseDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "media_urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "url"
+            }
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "views_count": {
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
+          },
+          "is_liked_by_me": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CertificateItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "unique_code": {
+            "type": "string"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "lesson_name": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "achievement": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "certificate"
+              },
+              "title": {
+                "type": "string"
+              },
+              "unique_code": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "StudyCaseListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Belajar Go Basic"
+          },
+          "description": {
+            "type": "string"
+          },
+          "img_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "youtube_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "golang",
+              "beginner"
+            ]
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StudyCaseDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "img_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "youtube_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discussions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscussionBrief"
+            }
+          }
+        }
+      },
+      "DiscussionBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "views_count": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EnrolledCourseItem": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CourseListItem"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "enrolled_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "last_lesson_id": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "ReviewItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "user_avatar": {
+            "type": "string",
+            "format": "url"
+          },
+          "course_id": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "message": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BlogListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cover_img_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BlogDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "cover_img_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryBrief"
           },
           "created_at": {
             "type": "string",
@@ -414,360 +1440,1364 @@
           }
         }
       }
-    },
-    "securitySchemes": {
-      "BearerAuth": {
-        "bearerFormat": "JWT",
-        "scheme": "bearer",
-        "type": "http"
-      }
     }
   },
-  "info": {
-    "contact": {
-      "name": "JValleyVerse Team"
-    },
-    "description": "Community-driven learning platform with gamification, certification, and showcase features",
-    "license": {
-      "name": "MIT"
-    },
-    "title": "JValleyVerse API",
-    "version": "1.0.0"
-  },
-  "openapi": "3.0.0",
   "paths": {
-    "/api/projects": {
-      "get": {
-        "tags": ["Projects"],
-        "description": "Public project listing and details",
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
+          "201": {
+            "description": "User created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Project"
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "409": {
+            "description": "Email already exists"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@jvalleyverse.com"
                   },
-                  "type": "array"
+                  "password": {
+                    "type": "string",
+                    "example": "Admin@123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refresh_token"
+                ],
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "refresh_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid refresh token"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/detailed": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Detailed health check with system metrics",
+        "responses": {
+          "200": {
+            "description": "Detailed server health",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "environment": {
+                      "type": "string"
+                    },
+                    "hostname": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "system": {
+                      "type": "object",
+                      "properties": {
+                        "os": {
+                          "type": "string"
+                        },
+                        "arch": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "memory": {
+                      "type": "object",
+                      "properties": {
+                        "allocated_mb": {
+                          "type": "number"
+                        },
+                        "total_allocated_mb": {
+                          "type": "number"
+                        },
+                        "system_mb": {
+                          "type": "number"
+                        },
+                        "num_gc": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "goroutines": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leaderboard": {
+      "get": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Get top users by points",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leaderboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LeaderboardEntry"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "List all categories",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories/{slug}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "web-dev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found"
+          }
+        }
+      }
+    },
+    "/api/categories/{category_id}/courses": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "List courses in a category",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Courses in category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseListItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found"
+          }
+        }
+      }
+    },
+    "/api/courses": {
+      "get": {
+        "tags": [
+          "Courses"
+        ],
+        "summary": "List public courses",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "description": "Minimum price filter",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "description": "Maximum price filter",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of public courses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}": {
+      "get": {
+        "tags": [
+          "Courses"
+        ],
+        "summary": "Get course with sections and lessons",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course details with sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/sections": {
+      "get": {
+        "tags": [
+          "Sections"
+        ],
+        "summary": "List sections in a course",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SectionDetail"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/sections/{section_id}": {
+      "get": {
+        "tags": [
+          "Sections"
+        ],
+        "summary": "Get section with lessons",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section details with lessons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/lessons": {
+      "get": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "List lessons in a course",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lessons list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LessonBrief"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/sections/{section_id}/lessons": {
+      "get": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "List lessons in a section",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lessons in section",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LessonBrief"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Section not found"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/lessons/{slug}": {
+      "get": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "Get lesson by course and slug",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "intro-to-go"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lesson": {
+                      "$ref": "#/components/schemas/LessonBrief"
+                    },
+                    "details": {
+                      "$ref": "#/components/schemas/LessonDetail"
+                    },
+                    "progress": {
+                      "$ref": "#/components/schemas/LessonProgress"
+                    },
+                    "next_lesson": {
+                      "$ref": "#/components/schemas/LessonBrief"
+                    },
+                    "section": {
+                      "$ref": "#/components/schemas/SectionBrief"
+                    },
+                    "course": {
+                      "$ref": "#/components/schemas/CourseListItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lesson not found"
+          }
+        }
+      }
+    },
+    "/api/lessons/{id}": {
+      "get": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "Get public lesson by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lesson": {
+                      "$ref": "#/components/schemas/LessonBrief"
+                    },
+                    "details": {
+                      "$ref": "#/components/schemas/LessonDetail"
+                    },
+                    "progress": {
+                      "$ref": "#/components/schemas/LessonProgress"
+                    },
+                    "next_lesson": {
+                      "$ref": "#/components/schemas/LessonBrief"
+                    },
+                    "section": {
+                      "$ref": "#/components/schemas/SectionBrief"
+                    },
+                    "course": {
+                      "$ref": "#/components/schemas/CourseListItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lesson not found"
+          }
+        }
+      }
+    },
+    "/api/showcases": {
+      "get": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "List showcases",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "trending",
+                "most_liked"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated showcases list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShowcaseListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
                 }
               }
             }
           }
         }
       },
-      "summary": "List all projects"
-    },
-    "/api/admin/categories": {
       "post": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Create showcase",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "category_id"
+                ],
                 "properties": {
+                  "title": {
+                    "type": "string"
+                  },
                   "description": {
-                    "example": "Complete web development course",
                     "type": "string"
                   },
-                  "name": {
-                    "example": "Web Development",
+                  "media_urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "url"
+                    }
+                  },
+                  "category_id": {
                     "type": "string"
                   },
-                  "slug": {
-                    "example": "web-dev",
-                    "type": "string"
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   }
-                },
-                "required": ["name", "slug"],
-                "type": "object"
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Category"
-                }
-              }
-            },
-            "description": "Category created"
+            "description": "Showcase created"
           },
           "401": {
             "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin role required"
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Create category (Admin only)",
-        "tags": ["Admin - Categories"]
+        }
       }
     },
-    "/api/admin/categories/{id}": {
-      "delete": {
+    "/api/showcases/{id}": {
+      "get": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Get showcase details",
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
-              "example": "",
               "type": "string"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Category deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin role required"
+          "200": {
+            "description": "Showcase details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShowcaseDetail"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Category not found"
+            "description": "Showcase not found"
           }
-        },
+        }
+      },
+      "put": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Update showcase (owner only)",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Delete category (Admin only)",
-        "tags": ["Admin - Categories"]
-      },
-      "put": {
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
-              "example": "",
               "type": "string"
             }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
+                "type": "object",
                 "properties": {
+                  "title": {
+                    "type": "string"
+                  },
                   "description": {
-                    "example": "Complete web development course",
                     "type": "string"
                   },
-                  "name": {
-                    "example": "Web Development",
-                    "type": "string"
-                  },
-                  "slug": {
-                    "example": "web-dev",
+                  "visibility": {
                     "type": "string"
                   }
-                },
-                "type": "object"
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Category"
-                }
-              }
-            },
-            "description": "Category updated"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - Admin role required"
-          },
-          "404": {
-            "description": "Category not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update category (Admin only)",
-        "tags": ["Admin - Categories"]
-      }
-    },
-    "/api/admin/classes": {
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "category_id": {
-                    "example": "",
-                    "type": "string"
-                  },
-                  "content": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "difficulty": {
-                    "enum": ["beginner", "intermediate", "advanced"],
-                    "type": "string"
-                  },
-                  "duration": {
-                    "type": "integer"
-                  },
-                  "project_id": {
-                    "example": "",
-                    "type": "string"
-                  },
-                  "thumbnail": {
-                    "format": "url",
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  }
-                },
-                "required": ["title", "project_id", "category_id"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Class created"
+            "description": "Showcase updated"
           },
           "403": {
             "description": "Forbidden"
           }
-        },
+        }
+      },
+      "delete": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Delete showcase",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Create class",
-        "tags": ["Admin - Classes"]
-      }
-    },
-    "/api/admin/classes/{id}": {
-      "delete": {
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
-              "example": "",
               "type": "string"
             }
           }
         ],
         "responses": {
           "204": {
-            "description": "Class deleted"
+            "description": "Showcase deleted"
           },
           "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Class not found"
+            "description": "Forbidden"
           }
-        },
+        }
+      }
+    },
+    "/api/showcases/{id}/like": {
+      "post": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Like showcase",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Delete class",
-        "tags": ["Admin - Classes"]
-      },
-      "put": {
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
-              "example": "",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Showcase liked"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Showcases"
+        ],
+        "summary": "Unlike showcase",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Like removed"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/discussions": {
+      "get": {
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "List discussions",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          },
+          {
+            "name": "lesson_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "oldest",
+                "most_replies"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discussions list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DiscussionListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "Create discussion",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "content",
+                  "category_id"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "lesson_id": {
+                    "type": "string"
+                  },
+                  "category_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Discussion created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/discussions/{id}": {
+      "get": {
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "Get discussion with replies",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discussion details with threaded replies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscussionDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Discussion not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "Update discussion (owner only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
               "type": "string"
             }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
+                "type": "object",
                 "properties": {
-                  "content": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "difficulty": {
-                    "enum": ["beginner", "intermediate", "advanced"],
-                    "type": "string"
-                  },
-                  "duration": {
-                    "type": "integer"
-                  },
                   "title": {
                     "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
                   }
-                },
-                "type": "object"
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "Class updated"
+            "description": "Discussion updated"
           },
           "403": {
-            "description": "Forbidden - Admin only"
+            "description": "Forbidden"
           },
           "404": {
-            "description": "Class not found"
+            "description": "Not found"
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Discussions"
         ],
-        "summary": "Update class",
-        "tags": ["Admin - Classes"]
-      }
-    },
-    "/api/admin/classes/{id}/details": {
-      "post": {
-        "summary": "Create class detail",
-        "tags": ["Admin - Classes"],
+        "summary": "Delete discussion",
         "security": [
           {
             "BearerAuth": []
@@ -779,10 +2809,1562 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "description": "Class ID"
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Discussion deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/discussions/{id}/close": {
+      "post": {
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "Close discussion (owner only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discussion closed"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Discussion not found"
+          }
+        }
+      }
+    },
+    "/api/discussions/{id}/replies": {
+      "post": {
+        "tags": [
+          "Replies"
+        ],
+        "summary": "Reply to discussion",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "Parent reply ID for nested replies"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reply created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/replies/{id}": {
+      "put": {
+        "tags": [
+          "Replies"
+        ],
+        "summary": "Update reply",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reply updated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Reply not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Replies"
+        ],
+        "summary": "Delete reply",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reply deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Reply not found"
+          }
+        }
+      }
+    },
+    "/api/replies/{id}/like": {
+      "post": {
+        "tags": [
+          "Replies"
+        ],
+        "summary": "Like reply",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reply liked"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/replies/{id}/best": {
+      "post": {
+        "tags": [
+          "Replies"
+        ],
+        "summary": "Mark reply as best answer",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reply marked as best"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Reply not found"
+          }
+        }
+      }
+    },
+    "/api/levels": {
+      "get": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Get level progression info",
+        "responses": {
+          "200": {
+            "description": "Level information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserLevel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get current user profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "format": "url"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/activity": {
+      "get": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Get user activity log",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityLog"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get public user profile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserBrief"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/users/{id}/points": {
+      "get": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Get user points and level",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User points info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
+                    },
+                    "level": {
+                      "type": "integer"
+                    },
+                    "badge": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/lessons/{id}/start": {
+      "post": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "Start a lesson",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Lesson started!"
+                    },
+                    "progress": {
+                      "$ref": "#/components/schemas/LessonProgress"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/lessons/{id}/progress": {
+      "put": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "Update lesson progress",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "progress_percentage": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progress updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/lessons/{id}/complete": {
+      "post": {
+        "tags": [
+          "Lessons"
+        ],
+        "summary": "Complete a lesson",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "certificate": {
+                      "$ref": "#/components/schemas/CertificateItem"
+                    },
+                    "progress": {
+                      "$ref": "#/components/schemas/LessonProgress"
+                    },
+                    "achievement": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "example": "certificate"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "unique_code": {
+                          "type": "string"
+                        },
+                        "issued_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "next_lesson": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "points_awarded": {
+                      "type": "integer",
+                      "example": 50
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not started or already completed"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Admin dashboard",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboard"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/courses/{course_id}/reviews": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "List reviews for a course",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course reviews list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReviewItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/lessons/{id}/reviews": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "List reviews for a lesson",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lesson reviews list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReviewItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lesson not found"
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Create a review (authenticated)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rating",
+                  "message"
+                ],
+                "properties": {
+                  "course_id": {
+                    "type": "string",
+                    "description": "Required if reviewing a course"
+                  },
+                  "lesson_id": {
+                    "type": "string",
+                    "description": "Required if reviewing a lesson"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Update review (owner only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Review not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Delete review (owner only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Review not found"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin - Users"
+        ],
+        "summary": "List all users (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/User"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/courses": {
+      "post": {
+        "tags": [
+          "Admin - Courses"
+        ],
+        "summary": "Create course (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "category_id"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "category_id": {
+                    "type": "string"
+                  },
+                  "mentor_id": {
+                    "type": "string",
+                    "description": "Optional mentor user ID"
+                  },
+                  "learning_objectives": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of learning objectives for the course"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "abc123"
+                    },
+                    "title": {
+                      "type": "string",
+                      "example": "Learn Go"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "thumbnail": {
+                      "type": "string",
+                      "format": "url"
+                    },
+                    "category_id": {
+                      "type": "string"
+                    },
+                    "admin_id": {
+                      "type": "string"
+                    },
+                    "mentor_id": {
+                      "type": "string"
+                    },
+                    "visibility": {
+                      "type": "string",
+                      "enum": [
+                        "public",
+                        "private"
+                      ]
+                    },
+                    "price": {
+                      "type": "number",
+                      "example": 0
+                    },
+                    "hours": {
+                      "type": "integer"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/courses/{id}": {
+      "put": {
+        "tags": [
+          "Admin - Courses"
+        ],
+        "summary": "Update course (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
+                  },
+                  "learning_objectives": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of learning objectives for the course"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Course updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Courses"
+        ],
+        "summary": "Delete course (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Course deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/admin/courses/{course_id}/sections": {
+      "post": {
+        "tags": [
+          "Admin - Sections"
+        ],
+        "summary": "Create section (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Section created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Course not found"
+          }
+        }
+      }
+    },
+    "/api/admin/sections/{section_id}": {
+      "put": {
+        "tags": [
+          "Admin - Sections"
+        ],
+        "summary": "Update section (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Section updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Section not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Sections"
+        ],
+        "summary": "Delete section (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Section deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Section not found"
+          }
+        }
+      }
+    },
+    "/api/admin/lessons": {
+      "post": {
+        "tags": [
+          "Admin - Lessons"
+        ],
+        "summary": "Create lesson (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "course_id",
+                  "section_id"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "duration": {
+                    "type": "integer"
+                  },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced"
+                    ]
+                  },
+                  "course_id": {
+                    "type": "string"
+                  },
+                  "section_id": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lesson created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Course or section not found"
+          }
+        }
+      }
+    },
+    "/api/admin/lessons/{id}": {
+      "put": {
+        "tags": [
+          "Admin - Lessons"
+        ],
+        "summary": "Update lesson (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "duration": {
+                    "type": "integer"
+                  },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced"
+                    ]
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lesson updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Lesson not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Lessons"
+        ],
+        "summary": "Delete lesson (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Lesson deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Lesson not found"
+          }
+        }
+      }
+    },
+    "/api/admin/lessons/{id}/details": {
+      "post": {
+        "tags": [
+          "Admin - Lessons"
+        ],
+        "summary": "Create lesson detail (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -799,16 +4381,16 @@
                     "type": "string"
                   },
                   "tools": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "object"
                   },
                   "resource_media": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "object"
                   },
                   "resources": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
                   }
                 }
               }
@@ -817,542 +4399,510 @@
         },
         "responses": {
           "201": {
-            "description": "Class detail created"
-          },
-          "400": {
-            "description": "Invalid class id or request body"
+            "description": "Lesson detail created"
           },
           "403": {
             "description": "Forbidden - Admin only"
           },
           "404": {
-            "description": "Class not found"
+            "description": "Lesson not found"
           }
         }
       }
     },
-    "/api/admin/dashboard": {
-      "get": {
+    "/api/admin/categories": {
+      "post": {
+        "tags": [
+          "Admin - Categories"
+        ],
+        "summary": "Create category (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "slug"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Web Development"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "example": "web-dev"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "Welcome to admin dashboard"
+          "201": {
+            "description": "Category created"
           },
           "403": {
             "description": "Forbidden - Admin only"
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Admin dashboard",
-        "tags": ["Admin"]
+        }
       }
     },
-    "/api/admin/projects": {
-      "get": {
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer"
-            }
-          }
+    "/api/admin/categories/{id}": {
+      "put": {
+        "tags": [
+          "Admin - Categories"
         ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "data": {
-                      "items": {
-                        "$ref": "#/components/schemas/Project"
-                      },
-                      "type": "array"
-                    },
-                    "pagination": {
-                      "$ref": "#/components/schemas/Pagination"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Projects list"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
+        "summary": "Update category (Admin only)",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "List all projects (Admin view)",
-        "tags": ["Admin - Projects"]
-      },
-      "post": {
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
+                "type": "object",
                 "properties": {
-                  "category_id": {
-                    "example": "",
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
                     "type": "string"
                   },
                   "description": {
                     "type": "string"
-                  },
-                  "thumbnail": {
-                    "format": "url",
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  },
-                  "visibility": {
-                    "enum": ["public", "private"],
-                    "type": "string"
                   }
-                },
-                "required": ["title", "category_id"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Project"
                 }
               }
-            },
-            "description": "Project created"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated"
           },
           "403": {
             "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Category not found"
           }
-        },
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Categories"
+        ],
+        "summary": "Delete category (Admin only)",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Create project (Admin only)",
-        "tags": ["Admin - Projects"]
-      }
-    },
-    "/api/admin/projects/{id}": {
-      "delete": {
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
-              "example": "",
               "type": "string"
             }
           }
         ],
         "responses": {
           "204": {
-            "description": "Project deleted"
+            "description": "Category deleted"
           },
           "403": {
-            "description": "Forbidden"
+            "description": "Forbidden - Admin only"
           },
           "404": {
-            "description": "Project not found"
+            "description": "Category not found"
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
+        }
+      }
+    },
+    "/api/study-cases": {
+      "get": {
+        "tags": [
+          "Study Cases"
         ],
-        "summary": "Delete project",
-        "tags": ["Admin - Projects"]
-      },
-      "put": {
+        "summary": "List study cases",
         "parameters": [
           {
-            "in": "path",
-            "name": "id",
-            "required": true,
+            "name": "page",
+            "in": "query",
             "schema": {
-              "example": "",
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
               "type": "string"
             }
           }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "description": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  },
-                  "visibility": {
-                    "enum": ["public", "private"],
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Project updated"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update project",
-        "tags": ["Admin - Projects"]
-      }
-    },
-    "/api/admin/users": {
-      "get": {
-        "parameters": [
-          {
-            "description": "Page number",
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Items per page (max: 100)",
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "default": 20,
-              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
+            "description": "Paginated list of study cases",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "object",
                   "properties": {
                     "data": {
+                      "type": "array",
                       "items": {
-                        "properties": {
-                          "avatar": {
-                            "format": "url",
-                            "type": "string"
-                          },
-                          "created_at": {
-                            "format": "date-time",
-                            "type": "string"
-                          },
-                          "email": {
-                            "format": "email",
-                            "type": "string"
-                          },
-                          "id": {
-                            "example": "",
-                            "type": "string"
-                          },
-                          "is_active": {
-                            "type": "boolean"
-                          },
-                          "level": {
-                            "maximum": 5,
-                            "minimum": 1,
-                            "type": "integer"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "role": {
-                            "enum": ["admin", "user"],
-                            "type": "string"
-                          },
-                          "total_points": {
-                            "type": "integer"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
+                        "$ref": "#/components/schemas/StudyCaseListItem"
+                      }
                     },
                     "pagination": {
                       "$ref": "#/components/schemas/Pagination"
                     }
-                  },
-                  "type": "object"
+                  }
                 }
               }
-            },
-            "description": "Users list with pagination"
-          },
-          "401": {
-            "description": "Unauthorized - Missing or invalid token"
-          },
-          "403": {
-            "description": "Forbidden - Admin role required"
+            }
           }
-        },
+        }
+      }
+    },
+    "/api/study-cases/{id}": {
+      "get": {
+        "tags": [
+          "Study Cases"
+        ],
+        "summary": "Get study case details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Study case details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyCaseDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Study case not found"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Upload file to MinIO",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "List all users with pagination (Admin only)",
-        "tags": ["Admin - Users"]
-      }
-    },
-    "/api/auth/login": {
-      "post": {
         "requestBody": {
+          "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "folder"
+                ],
                 "properties": {
-                  "email": {
-                    "format": "email",
-                    "type": "string"
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload (max 10MB, allowed: jpg,png,gif,webp,svg,mp4,pdf,zip)"
                   },
-                  "password": {
-                    "type": "string"
+                  "folder": {
+                    "type": "string",
+                    "description": "Target folder: courses, lessons, avatars, showcases, study-cases"
                   }
-                },
-                "required": ["email", "password"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "access_token": {
-                      "type": "string"
-                    },
-                    "refresh_token": {
-                      "type": "string"
-                    },
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    }
-                  },
-                  "type": "object"
                 }
               }
-            },
-            "description": "Login successful"
-          },
-          "401": {
-            "description": "Invalid credentials"
-          }
-        },
-        "summary": "Login user",
-        "tags": ["Authentication"]
-      }
-    },
-    "/api/auth/register": {
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "email": {
-                    "format": "email",
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "minLength": 6,
-                    "type": "string"
-                  }
-                },
-                "required": ["email", "password", "name"],
-                "type": "object"
-              }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
+            "description": "File uploaded successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/UploadResponse"
                 }
               }
-            },
-            "description": "User created successfully"
+            }
           },
           "400": {
-            "description": "Invalid input"
+            "description": "Invalid file or folder"
           },
-          "409": {
-            "description": "Email already exists"
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
-        },
-        "summary": "Register new user",
-        "tags": ["Authentication"]
+        }
       }
     },
-    "/api/categories": {
+    "/api/users/me/dashboard": {
       "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Category"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "List of categories"
-          }
-        },
-        "summary": "List all categories",
-        "tags": ["Categories"]
-      }
-    },
-    "/api/categories/{category_id}/projects": {
-      "get": {
-        "parameters": [
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get user dashboard widgets",
+        "security": [
           {
-            "in": "path",
-            "name": "category_id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
+            "BearerAuth": []
           }
         ],
         "responses": {
           "200": {
+            "description": "Dashboard widgets",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Project"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/Dashboard"
                 }
               }
-            },
-            "description": "List of projects in category"
-          },
-          "404": {
-            "description": "Category not found"
-          }
-        },
-        "summary": "List projects in a category",
-        "tags": ["Categories"]
-      }
-    },
-    "/api/categories/{slug}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "slug",
-            "required": true,
-            "schema": {
-              "example": "web-dev",
-              "type": "string"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Category"
-                }
-              }
-            },
-            "description": "Category details"
-          },
-          "404": {
-            "description": "Category not found"
-          }
-        },
-        "summary": "Get category detail by slug",
-        "tags": ["Categories"]
-      }
-    },
-    "/api/certificates": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "User certificates"
           },
           "401": {
             "description": "Unauthorized"
           }
-        },
+        }
+      }
+    },
+    "/api/courses/{id}/enroll": {
+      "post": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "Enroll in a course",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Get user certificates",
-        "tags": ["Certificates"]
-      }
-    },
-    "/api/certificates/{code}": {
-      "get": {
         "parameters": [
           {
+            "name": "id",
             "in": "path",
-            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successfully enrolled"
+          },
+          "400": {
+            "description": "Already enrolled"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/mentors": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List all mentors",
+        "responses": {
+          "200": {
+            "description": "Mentors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MentorItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List user notifications",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Notification"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/notifications/count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Count unread notifications",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark notification as read",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string"
@@ -1361,1179 +4911,441 @@
         ],
         "responses": {
           "200": {
-            "description": "Certificate details"
+            "description": "Marked as read"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/api/users/me/notifications/read-all": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark all notifications as read",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All marked as read"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/notifications/{id}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Delete notification",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Notification deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/api/admin/study-cases": {
+      "post": {
+        "tags": [
+          "Admin - Study Cases"
+        ],
+        "summary": "Create study case (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "img_url": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "youtube_url": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Study case created"
           },
           "403": {
-            "description": "Forbidden - Not your certificate"
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/study-cases/{id}": {
+      "put": {
+        "tags": [
+          "Admin - Study Cases"
+        ],
+        "summary": "Update study case (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "img_url": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "youtube_url": {
+                    "type": "string",
+                    "format": "url"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Study case updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Study case not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Study Cases"
+        ],
+        "summary": "Delete study case (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Study case deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Study case not found"
+          }
+        }
+      }
+    },
+    "/api/users/me/certificates": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "My certificates",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User certificates list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CertificateItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/certificates/{code}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Certificate by code",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateItem"
+                }
+              }
+            }
           },
           "404": {
             "description": "Certificate not found"
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "View certificate (Private - Owner only)",
-        "tags": ["Certificates"]
+        }
       }
     },
-    "/api/classes/{id}/complete": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Class marked as completed"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Class not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Mark class as completed",
-        "tags": ["Classes"]
-      }
-    },
-    "/api/discussions": {
+    "/api/users/me/courses": {
       "get": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "My enrolled courses",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "in": "query",
             "name": "page",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
             "in": "query",
-            "name": "class_id",
             "schema": {
-              "example": "",
-              "type": "string"
+              "type": "integer",
+              "default": 1
             }
           },
           {
-            "in": "query",
-            "name": "category_id",
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Discussions list"
-          }
-        },
-        "summary": "List discussions",
-        "tags": ["Discussions"]
-      },
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "category_id": {
-                    "example": "",
-                    "type": "string"
-                  },
-                  "class_id": {
-                    "example": "",
-                    "type": "string"
-                  },
-                  "content": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  }
-                },
-                "required": ["title", "content"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Discussion created"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Create discussion",
-        "tags": ["Discussions"]
-      }
-    },
-    "/api/discussions/{id}": {
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Discussion deleted"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Delete discussion",
-        "tags": ["Discussions"]
-      },
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Discussion details with replies"
-          },
-          "404": {
-            "description": "Discussion not found"
-          }
-        },
-        "summary": "Get discussion with threaded replies",
-        "tags": ["Discussions"]
-      },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "content": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Discussion updated"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update discussion",
-        "tags": ["Discussions"]
-      }
-    },
-    "/api/discussions/{id}/replies": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Replies list"
-          }
-        },
-        "summary": "Get discussion replies",
-        "tags": ["Replies"]
-      },
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "content": {
-                    "type": "string"
-                  }
-                },
-                "required": ["content"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Reply created"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Reply to discussion",
-        "tags": ["Replies"]
-      }
-    },
-    "/api/health": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "status": {
-                      "example": "ok",
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Server is healthy"
-          }
-        },
-        "summary": "Health check endpoint",
-        "tags": ["Health"]
-      }
-    },
-    "/api/leaderboard": {
-      "get": {
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "schema": {
-              "default": 50,
-              "type": "integer"
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
             }
           }
         ],
         "responses": {
           "200": {
+            "description": "Enrolled courses list",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "object",
                   "properties": {
                     "data": {
+                      "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/LeaderboardEntry"
-                      },
-                      "type": "array"
+                        "$ref": "#/components/schemas/EnrolledCourseItem"
+                      }
                     },
                     "pagination": {
                       "$ref": "#/components/schemas/Pagination"
                     }
-                  },
-                  "type": "object"
+                  }
                 }
               }
-            },
-            "description": "Leaderboard"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        },
-        "summary": "Get top users by points",
-        "tags": ["Gamification"]
+        }
       }
     },
-    "/api/levels": {
+    "/api/users/me/discussions": {
       "get": {
-        "responses": {
-          "200": {
-            "description": "Level information"
-          }
-        },
-        "summary": "Get level progression info",
-        "tags": ["Gamification"]
-      }
-    },
-    "/api/replies/{id}": {
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
+        "tags": [
+          "Users"
         ],
-        "responses": {
-          "204": {
-            "description": "Reply deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Reply not found"
-          }
-        },
+        "summary": "My discussions",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "summary": "Delete reply",
-        "tags": ["Replies"]
-      },
-      "put": {
         "parameters": [
           {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "content": {
-                    "type": "string"
-                  }
-                },
-                "required": ["content"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Reply updated"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Reply not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update reply",
-        "tags": ["Replies"]
-      }
-    },
-    "/api/replies/{id}/replies": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "content": {
-                    "type": "string"
-                  }
-                },
-                "required": ["content"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Nested reply created"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Reply to a reply (nested)",
-        "tags": ["Replies"]
-      }
-    },
-    "/api/showcases": {
-      "get": {
-        "parameters": [
-          {
-            "in": "query",
             "name": "page",
+            "in": "query",
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "default": 1
             }
           },
           {
+            "name": "limit",
             "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
             "name": "category_id",
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          },
-          {
             "in": "query",
-            "name": "sort",
+            "description": "Filter by category ID",
             "schema": {
-              "enum": ["newest", "trending", "most_liked"],
               "type": "string"
+            }
+          }
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Showcases list"
-          }
-        },
-        "summary": "List showcases",
-        "tags": ["Showcases"]
-      },
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "category_id": {
-                    "example": "",
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "media_urls": {
-                    "items": {
-                      "format": "url",
-                      "type": "string"
-                    },
-                    "type": "array"
-                  },
-                  "title": {
-                    "type": "string"
-                  },
-                  "visibility": {
-                    "enum": ["public", "private", "friends_only"],
-                    "type": "string"
-                  }
-                },
-                "required": ["title", "category_id"],
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Showcase created"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Create showcase",
-        "tags": ["Showcases"]
-      }
-    },
-    "/api/showcases/{id}": {
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Showcase deleted"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Delete showcase",
-        "tags": ["Showcases"]
-      },
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Showcase details"
-          },
-          "404": {
-            "description": "Showcase not found"
-          }
-        },
-        "summary": "Get showcase details",
-        "tags": ["Showcases"]
-      },
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "description": {
-                    "type": "string"
-                  },
-                  "title": {
-                    "type": "string"
-                  },
-                  "visibility": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Showcase updated"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update showcase (Owner only)",
-        "tags": ["Showcases"]
-      }
-    },
-    "/api/showcases/{id}/like": {
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Like removed"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Unlike showcase",
-        "tags": ["Showcases"]
-      },
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Showcase liked"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Like showcase",
-        "tags": ["Showcases"]
-      }
-    },
-    "/api/users/me": {
-      "get": {
-        "responses": {
-          "200": {
+            "description": "List of user discussions",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            },
-            "description": "User profile"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get current user profile",
-        "tags": ["Users"]
-      },
-      "put": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "avatar": {
-                    "format": "url",
-                    "type": "string"
-                  },
-                  "bio": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            },
-            "description": "Profile updated"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Update user profile",
-        "tags": ["Users"]
-      }
-    },
-    "/api/users/me/activity": {
-      "get": {
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Activity log"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get user activity log",
-        "tags": ["Gamification"]
-      }
-    },
-    "/api/users/{id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserPublic"
-                }
-              }
-            },
-            "description": "User profile"
-          },
-          "404": {
-            "description": "User not found"
-          }
-        },
-        "summary": "Get public user profile",
-        "tags": ["Users"]
-      }
-    },
-    "/api/users/{id}/points": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "example": "",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User points info"
-          }
-        },
-        "summary": "Get user points and level",
-        "tags": ["Gamification"]
-      }
-    },
-    "/api/projects/{project_id}": {
-      "get": {
-        "summary": "Get project with phases and classes",
-        "tags": ["Projects"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Project details with phases"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        }
-      }
-    },
-    "/api/projects/{project_id}/phases": {
-      "get": {
-        "summary": "List phases by project",
-        "tags": ["Phases"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
+                  "type": "object",
                   "properties": {
                     "data": {
+                      "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Phase"
-                      },
-                      "type": "array"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Phases list"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        }
-      }
-    },
-    "/api/projects/{project_id}/phases/{phase_id}": {
-      "get": {
-        "summary": "Get phase with classes",
-        "tags": ["Phases"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          },
-          {
-            "name": "phase_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Phase"
-                }
-              }
-            },
-            "description": "Phase details"
-          },
-          "404": {
-            "description": "Phase not found"
-          }
-        }
-      }
-    },
-    "/api/projects/{project_id}/phases/{phase_id}/classes": {
-      "get": {
-        "summary": "List classes in a phase",
-        "tags": ["Classes"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          },
-          {
-            "name": "phase_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "total": {
-                      "type": "integer"
+                        "$ref": "#/components/schemas/DiscussionListItem"
+                      }
                     },
-                    "data": {
-                      "items": {
-                        "$ref": "#/components/schemas/Class"
-                      },
-                      "type": "array"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Classes list"
-          },
-          "404": {
-            "description": "Phase not found"
-          }
-        }
-      }
-    },
-    "/api/projects/{project_id}/classes": {
-      "get": {
-        "summary": "List classes in a project",
-        "tags": ["Classes"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "default": 20,
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
                     "pagination": {
                       "$ref": "#/components/schemas/Pagination"
-                    },
-                    "data": {
-                      "items": {
-                        "$ref": "#/components/schemas/Class"
-                      },
-                      "type": "array"
                     }
-                  },
-                  "type": "object"
+                  }
                 }
               }
-            },
-            "description": "Classes list"
+            }
           },
-          "404": {
-            "description": "Project not found"
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
     },
-    "/api/projects/{project_id}/classes/{slug}": {
+    "/api/users/me/showcases": {
       "get": {
-        "summary": "Get class by project and slug",
-        "tags": ["Classes"],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          },
-          {
-            "name": "slug",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": "intro-to-go"
-            },
-            "required": true
-          }
+        "tags": [
+          "Users"
         ],
-        "responses": {
-          "200": {
-            "description": "Class details"
-          },
-          "404": {
-            "description": "Class not found"
-          }
-        }
-      }
-    },
-    "/api/admin/projects/{project_id}/phases": {
-      "post": {
-        "summary": "Create phase (Admin only)",
-        "tags": ["Admin - Phases"],
+        "summary": "My showcases",
         "security": [
           {
             "BearerAuth": []
@@ -2541,229 +5353,335 @@
         ],
         "parameters": [
           {
-            "name": "project_id",
-            "in": "path",
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user showcases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShowcaseListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/study-cases": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "My study cases",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user study cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StudyCaseListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/blogs": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "My blogs",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
             "schema": {
               "type": "string",
-              "example": ""
-            },
-            "required": true
+              "enum": [
+                "draft",
+                "published"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user blogs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BlogListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/replies": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "My replies",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user replies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReplyListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/courses/{id}/last-lesson": {
+      "put": {
+        "tags": [
+          "Enrollment"
+        ],
+        "summary": "Update last lesson studied",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "order_index": {
-                    "type": "integer"
-                  }
-                },
                 "type": "object",
-                "required": ["title"]
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Phase"
-                }
-              }
-            },
-            "description": "Phase created"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Project not found"
-          }
-        }
-      }
-    },
-    "/api/admin/phases/{phase_id}": {
-      "put": {
-        "summary": "Update phase (Admin only)",
-        "tags": ["Admin - Phases"],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "phase_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
+                "required": [
+                  "lesson_id"
+                ],
                 "properties": {
-                  "title": {
+                  "lesson_id": {
                     "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "order_index": {
-                    "type": "integer"
                   }
-                },
-                "type": "object"
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Phase"
-                }
-              }
-            },
-            "description": "Phase updated"
+            "description": "Last lesson updated"
           },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Phase not found"
+          "401": {
+            "description": "Unauthorized"
           }
         }
-      },
-      "delete": {
-        "summary": "Delete phase (Admin only)",
-        "tags": ["Admin - Phases"],
+      }
+    },
+    "/api/notifications/stream": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "SSE real-time notification stream",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "parameters": [
-          {
-            "name": "phase_id",
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "example": ""
-            },
-            "required": true
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Phase deleted"
+            "description": "SSE stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Phase not found"
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
     }
-  },
-  "security": [
-    {
-      "BearerAuth": []
-    }
-  ],
-  "servers": [
-    {
-      "description": "Local development",
-      "url": "http://localhost:3000"
-    },
-    {
-      "description": "Production",
-      "url": "https://jvalleyverse.mohagussetiaone.my.id"
-    }
-  ],
-  "tags": [
-    {
-      "description": "User authentication endpoints",
-      "name": "Authentication"
-    },
-    {
-      "description": "User profile management",
-      "name": "Users"
-    },
-    {
-      "description": "Admin dashboard and management",
-      "name": "Admin"
-    },
-    {
-      "description": "Admin project management",
-      "name": "Admin - Projects"
-    },
-    {
-      "description": "Admin class management",
-      "name": "Admin - Classes"
-    },
-    {
-      "description": "Public class access",
-      "name": "Classes"
-    },
-    {
-      "description": "Certificate endpoints (private access)",
-      "name": "Certificates"
-    },
-    {
-      "description": "Discussion management",
-      "name": "Discussions"
-    },
-    {
-      "description": "Discussion replies (nested)",
-      "name": "Replies"
-    },
-    {
-      "description": "User portfolio items",
-      "name": "Showcases"
-    },
-    {
-      "description": "Points, levels, leaderboard",
-      "name": "Gamification"
-    },
-    {
-      "description": "Server health check",
-      "name": "Health"
-    },
-    {
-      "description": "Category list and browsing",
-      "name": "Categories"
-    },
-    {
-      "description": "Admin category management",
-      "name": "Admin - Categories"
-    },
-    {
-      "name": "Phases",
-      "description": "Public phase access within projects"
-    },
-    {
-      "name": "Admin - Phases",
-      "description": "Admin phase management"
-    }
-  ]
+  }
 }

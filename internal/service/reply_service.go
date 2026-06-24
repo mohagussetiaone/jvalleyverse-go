@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"jvalleyverse/internal/domain"
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
 )
 
@@ -13,6 +14,7 @@ type IReplyService interface {
 	DeleteReply(ctx context.Context, replyID, userID string, isAdmin bool) error
 	LikeReply(ctx context.Context, userID, replyID string) error
 	MarkBestReply(ctx context.Context, replyID, discussionID, userID string) error
+	ListRepliesByUser(ctx context.Context, userID string, page, limit int) ([]dto.ReplyListItem, int64, error)
 }
 
 type ReplyService struct {
@@ -31,6 +33,35 @@ func NewReplyService(
 		discussionRepo: discussionRepo,
 		userService:    userService,
 	}
+}
+
+// ListRepliesByUser returns paginated replies by a user
+func (s *ReplyService) ListRepliesByUser(ctx context.Context, userID string, page, limit int) ([]dto.ReplyListItem, int64, error) {
+	replies, total, err := s.replyRepo.ListByUserID(ctx, userID, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]dto.ReplyListItem, len(replies))
+	for i, r := range replies {
+		discussionTitle := ""
+		if r.Discussion.ID != "" {
+			discussionTitle = r.Discussion.Title
+		}
+
+		result[i] = dto.ReplyListItem{
+			ID:              r.ID,
+			Content:         r.Content,
+			DiscussionID:    r.DiscussionID,
+			DiscussionTitle: discussionTitle,
+			ParentID:        r.ParentID,
+			LikesCount:      r.LikesCount,
+			IsMarkedBest:    r.IsMarkedBest,
+			CreatedAt:       r.CreatedAt,
+		}
+	}
+
+	return result, total, nil
 }
 
 // CreateReply creates new reply (can be nested)
@@ -53,6 +84,18 @@ func (s *ReplyService) CreateReply(ctx context.Context, userID, discussionID str
 		"discussion_id": discussionID,
 		"reply_id":      reply.ID,
 	})
+
+	// Notify discussion owner (if replier is not the owner)
+	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
+	if err == nil && discussion.UserID != userID {
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			notifSvc.CreateNotification(ctx, discussion.UserID, "new_reply",
+				"Diskusi Anda Dibalas",
+				"Seseorang membalas diskusi Anda: "+discussion.Title,
+				"/discussions/"+discussionID,
+			)
+		}
+	}
 
 	return reply, nil
 }
@@ -103,6 +146,14 @@ func (s *ReplyService) LikeReply(ctx context.Context, userID, replyID string) er
 			"reply_id":  replyID,
 			"from_user": userID,
 		})
+		// Notify reply creator
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			notifSvc.CreateNotification(ctx, reply.UserID, "reply_like",
+				"Balasan Anda Disukai",
+				"Seseorang menyukai balasan Anda dalam diskusi.",
+				"/discussions/"+reply.DiscussionID,
+			)
+		}
 	}
 
 	return nil
@@ -134,6 +185,15 @@ func (s *ReplyService) MarkBestReply(ctx context.Context, replyID, discussionID,
 		"reply_id":      replyID,
 		"discussion_id": discussionID,
 	})
+
+	// Notify reply creator
+	if notifSvc := GetNotificationService(); notifSvc != nil {
+		notifSvc.CreateNotification(ctx, reply.UserID, "best_answer",
+			"Jawaban Anda Terpilih sebagai Terbaik",
+			"Jawaban Anda dipilih sebagai jawaban terbaik dalam diskusi: "+discussion.Title,
+			"/discussions/"+discussionID,
+		)
+	}
 
 	return nil
 }

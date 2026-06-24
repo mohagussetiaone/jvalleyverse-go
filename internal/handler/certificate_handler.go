@@ -20,9 +20,9 @@ func (h *CertificateHandler) ListCertificates(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 20)
 
-	certs, err := h.certificateSvc.ListUserCertificates(c.UserContext(), userID, page, limit)
+	certs, total, err := h.certificateSvc.ListUserCertificates(c.UserContext(), userID, page, limit)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return safeError(c, 500, err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -30,7 +30,7 @@ func (h *CertificateHandler) ListCertificates(c *fiber.Ctx) error {
 		"pagination": fiber.Map{
 			"page":  page,
 			"limit": limit,
-			"total": len(certs),
+			"total": total,
 		},
 	})
 }

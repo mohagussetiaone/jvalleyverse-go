@@ -77,6 +77,23 @@ func (r *UserRepository) ListAll(ctx context.Context, page, limit int) ([]domain
 	return users, total, nil
 }
 
+// ListByRole returns paginated users filtered by role
+func (r *UserRepository) ListByRole(ctx context.Context, role string, page, limit int) ([]domain.User, int64, error) {
+	var users []domain.User
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.User{}).Where("role = ?", role).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if err := r.db.WithContext(ctx).Where("role = ?", role).Offset(offset).Limit(limit).Order("name ASC").Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
+}
+
 // GetTopByPoints returns top N active users ordered by total_points descending
 func (r *UserRepository) GetTopByPoints(ctx context.Context, limit int) ([]domain.User, error) {
 	var users []domain.User
