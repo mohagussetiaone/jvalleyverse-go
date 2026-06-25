@@ -18,9 +18,6 @@ go.work
 # Dependency directories
 vendor/
 
-# Go mod cache
-go.sum
-
 # IDE specific files
 .idea/
 .vscode/

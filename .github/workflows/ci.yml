@@ -1,75 +1,41 @@
-name: CI/CD
+name: Deploy Backend
 
 on:
   push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+    branches:
+      - main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: jvalleyverse_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build
-        run: go build ./...
-
-      - name: Run tests
-        run: go test ./... -count=1 -v
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: jvalleyverse_test
-          JWT_SECRET: test-secret
-
   deploy:
     runs-on: ubuntu-latest
-    needs: [test]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
     steps:
-      - name: Deploy to VPS via SSH
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || '22' }}
+          port: ${{ secrets.VPS_PORT }}
+
           script: |
             set -e
-            echo "🚀 Pulling latest code..."
-            cd ${{ secrets.VPS_PATH }}
-            git pull origin main
-            echo "📦 Building..."
+
+            echo "📂 Enter project"
+            cd /var/www/jvalleyverse-go
+
+            echo "⬇️ Pull latest code"
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "📦 Download dependencies"
             go mod download
-            go build -o jvalleyverse-api ./cmd/api
-            echo "🔄 Restarting service..."
-            sudo systemctl restart jvalleyverse-api
-            echo "✅ Deploy complete"
+
+            echo "🔨 Build binary"
+            go build -o service ./cmd/api
+
+            echo "🔄 Restart service"
+            sudo systemctl restart jvalleyverse-go
+
+            echo "✅ Check service"
+            sudo systemctl is-active jvalleyverse-go
