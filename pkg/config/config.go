@@ -10,28 +10,28 @@ import (
 )
 
 type Config struct {
-	Port        string
-	JWTSecret   string
-	JWTExpiry   time.Duration
-	DBHost      string
-	DBPort      string
-	DBUser      string
-	DBPassword  string
-	DBName      string
-	DBSSLMode   string
-	RedisHost   string
-	RedisPass   string
-	RedisDB     int
-	AdminEmail  string
-	AdminPass   string
+	Port           string
+	JWTSecret      string
+	JWTExpiry      time.Duration
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPassword     string
+	DBName         string
+	DBSSLMode      string
+	RedisHost      string
+	RedisPass      string
+	RedisDB        int
+	AdminEmail     string
+	AdminPass      string
 	GoogleClientID string
-	CORSOrigins string
-	MinioEndpoint string
+	CORSOrigins    string
+	MinioEndpoint  string
 	MinioAccessKey string
 	MinioSecretKey string
-	MinioBucket string
-	MinioCDNURL string
-	MinioUseSSL bool
+	MinioBucket    string
+	MinioCDNURL    string
+	MinioUseSSL    bool
 }
 
 var AppConfig *Config
@@ -53,22 +53,22 @@ func LoadConfig() {
 	}
 
 	AppConfig = &Config{
-		Port:       getEnv("PORT", "3000"),
-		JWTSecret:  jwtSecret,
-		JWTExpiry:  expiry,
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:     getEnv("DB_NAME", "jvalleyverse"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		RedisHost:  getEnv("REDIS_HOST", "localhost:6379"),
-		RedisPass:  getEnv("REDIS_PASSWORD", ""),
-		RedisDB:    getEnvInt("REDIS_DB", 0),
-		AdminEmail:  getEnv("ADMIN_EMAIL", "admin@example.com"),
-		AdminPass:   getEnv("ADMIN_PASSWORD", "admin123"),
+		Port:           getEnv("PORT", "3000"),
+		JWTSecret:      jwtSecret,
+		JWTExpiry:      expiry,
+		DBHost:         getEnv("DB_HOST", "localhost"),
+		DBPort:         getEnv("DB_PORT", "5432"),
+		DBUser:         getEnv("DB_USER", "postgres"),
+		DBPassword:     getEnv("DB_PASSWORD", ""),
+		DBName:         getEnv("DB_NAME", "jvalleyverse"),
+		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
+		RedisHost:      getEnv("REDIS_HOST", "localhost:6379"),
+		RedisPass:      getEnv("REDIS_PASSWORD", ""),
+		RedisDB:        getEnvInt("REDIS_DB", 0),
+		AdminEmail:     getEnv("ADMIN_EMAIL", "admin@example.com"),
+		AdminPass:      getEnv("ADMIN_PASSWORD", "admin123"),
 		GoogleClientID: getEnv("GOOGLE_CLIENT_ID", ""),
-		CORSOrigins:    getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,https://jvalleyverse.vercel.app"),
+		CORSOrigins:    getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,https://jvalleyverse.web.id"),
 		MinioEndpoint:  getEnv("MINIO_ENDPOINT", "minio.mohagussetiaone.my.id"),
 		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", ""),
 		MinioSecretKey: getEnv("MINIO_SECRET_KEY", ""),

@@ -16,7 +16,7 @@ import (
 func SetupCORS() fiber.Handler {
 	origins := config.AppConfig.CORSOrigins
 	if origins == "" {
-		origins = "http://localhost:3000"
+		origins = "http://localhost:3000,http://localhost:5173,https://jvalleyverse.web.id"
 	}
 	return cors.New(cors.Config{
 		AllowOrigins:     origins,
@@ -29,11 +29,10 @@ func SetupCORS() fiber.Handler {
 // ── rate limit tiers (requests per IP per minute) ─────────────────────
 
 const (
-	RateLimitGlobal   = 200 // General browsing — looser than before
-	RateLimitAuth     = 10  // Login / register — brute force protection
-	RateLimitContent  = 60  // Public content endpoints — anti-scraping
+	RateLimitGlobal  = 200 // General browsing — looser than before
+	RateLimitAuth    = 10  // Login / register — brute force protection
+	RateLimitContent = 60  // Public content endpoints — anti-scraping
 )
-
 
 // ==================== RATE LIMITER (global) ====================
 func RateLimiter() fiber.Handler {
