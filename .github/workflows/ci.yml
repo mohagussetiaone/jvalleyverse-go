@@ -3,7 +3,7 @@ name: Deploy Backend
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -26,7 +26,7 @@ jobs:
 
             echo "⬇️ Pull latest code"
             git fetch origin
-            git reset --hard origin/main
+            git reset --hard origin/master
 
             echo "📦 Download dependencies"
             go mod download
