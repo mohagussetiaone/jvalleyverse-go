@@ -16,7 +16,7 @@ import (
 func SetupCORS() fiber.Handler {
 	origins := config.AppConfig.CORSOrigins
 	if origins == "" {
-		origins = "http://localhost:3000,http://localhost:5173,https://jvalleyverse.web.id"
+		origins = "http://localhost:3000,http://localhost:5173,https://localhost:5174,https://jvalleyverse.web.id"
 	}
 	return cors.New(cors.Config{
 		AllowOrigins:     origins,
