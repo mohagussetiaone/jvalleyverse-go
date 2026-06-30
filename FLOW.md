@@ -19,6 +19,8 @@
 | Mengelola course sbg mentor (terbatas)                   | -      | -    | ✓      | ✓            |
 | Browse study cases & diskusi                             | ✓      | ✓    | ✓      | ✓            |
 | CRUD categories                                          | -      | -    | -      | ✓            |
+| CRUD FAQs                                                | -      | -    | -      | ✓            |
+| Company Profile (single)                                   | ✓      | -    | -      | ✓            |
 | CRUD courses                                             | -      | -    | -      | ✓            |
 | CRUD sections                                            | -      | -    | -      | ✓            |
 | CRUD lessons                                             | -      | -    | -      | ✓            |
@@ -1012,6 +1014,26 @@ GET /api/users/me (JWT)
 
 PUT /api/users/me (JWT)
   Request: { name, bio, avatar }
+  Note: Semua field opsional — hanya field yang dikirim yang akan diupdate
+
+POST /api/users/me/avatar (JWT)
+  Request: multipart/form-data dengan field "avatar" (file)
+  Proses:
+    1. Cek MinIO availability
+    2. Upload file ke MinIO folder "avatars"
+    3. Simpan URL hasil upload ke field avatar di DB
+  Response: { message, url, object_name }
+  Note: File max 10MB, format: jpg/jpeg/png/gif/webp/svg
+
+POST /api/users/me/change-password (JWT)
+  Request: { current_password, new_password }
+  Proses:
+    1. Load user dari DB
+    2. Validasi current_password dengan bcrypt (skip jika user Google dgn password kosong)
+    3. Hash new_password dengan bcrypt
+    4. Update password di DB
+  Response: { message: "Password changed successfully" }
+  Error 401: { error: "unauthorized" } jika current_password salah
 
 GET /api/users/me/activity (JWT)
   Response: paginated CommunityPoint records
@@ -1409,7 +1431,35 @@ Semua response menyertakan:
 
 ### XSRF Protection
 
-Mutation endpoints (POST/PUT/DELETE) di protected `/api` mewajibkan header `X-XSRF-TOKEN` yang cocok dengan cookie.
+**XSRF hanya diterapkan ke endpoint berbahaya (content mutation):**
+
+| Group           | Middleware                       | Endpoints                                                                 |
+| --------------- | -------------------------------- | ------------------------------------------------------------------------- |
+| **Safe**        | JWT + Idempotency                | Enrollment, progress, notifications, upload, certificates, my-items, dll |
+| **Dangerous**   | JWT + XSRF + Idempotency         | Showcases (CRUD/like), Discussions (CRUD/close), Replies, Reviews         |
+| **Admin**       | JWT + XSRF + Idempotency + admin | Admin CRUD: courses, sections, lessons, study-cases, categories, blogs    |
+
+Mutation endpoints (POST/PUT/DELETE) di group **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang cocok dengan cookie.
+
+Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`, `POST /api/users/me/change-password`) **tidak perlu XSRF token** — hanya JWT.
+
+Contoh request enroll (tanpa XSRF):
+```bash
+curl -X POST http://localhost:3000/api/courses/:id/enroll \
+  -H "Authorization: Bearer <token>" \
+  -H "Idempotency-Key: <uuid>"
+```
+
+Contoh request create showcase (dengan XSRF):
+```bash
+curl -X POST http://localhost:3000/api/showcases \
+  -H "Authorization: Bearer <token>" \
+  -H "X-XSRF-TOKEN: <xsrf_token>" \
+  -H "Cookie: XSRF-TOKEN=<xsrf_token>" \
+  -H "Idempotency-Key: <uuid>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"My Project","category_id":"..."}'
+```
 
 ### CORS
 
@@ -1486,7 +1536,7 @@ Semua upload file menggunakan endpoint terpusat `POST /api/upload` yang menyimpa
 
 | Method | Path          | Auth | Middleware         |
 | ------ | ------------- | ---- | ------------------ |
-| POST   | `/api/upload` | JWT  | XSRF + Idempotency |
+| POST   | `/api/upload` | JWT  | Idempotency (no XSRF) |
 
 **Request:** `multipart/form-data` dengan field:
 

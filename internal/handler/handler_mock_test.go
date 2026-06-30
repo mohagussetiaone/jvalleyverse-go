@@ -124,6 +124,22 @@ func (m *mockUserService) RevokeAllUserTokens(_ context.Context, userID string) 
 	return nil
 }
 
+func (m *mockUserService) ChangePassword(_ context.Context, userID, currentPassword, newPassword string) error {
+	user, ok := m.users[userID]
+	if !ok {
+		return domain.ErrUserNotFound
+	}
+	// Google users with no password can set a new one without current password
+	if user.Password != "" {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(currentPassword)); err != nil {
+			return domain.ErrUnauthorized
+		}
+	}
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	user.Password = string(hashed)
+	return nil
+}
+
 func (m *mockUserService) ListMentors(_ context.Context, page, limit int) ([]dto.MentorItem, int64, error) {
 	return m.mentors, int64(len(m.mentors)), nil
 }
@@ -1526,6 +1542,7 @@ func setupAdminApp(adminID string) *fiber.App {
 var _ interface {
 	GetProfile(context.Context, string) (*domain.User, error)
 	UpdateProfile(context.Context, string, string, string, string) error
+	ChangePassword(context.Context, string, string, string) error
 	AddPoints(context.Context, string, string, int, map[string]interface{}) error
 	GetUserActivityLog(context.Context, string, int, int) ([]dto.ActivityItem, int64, error)
 	CreateUser(context.Context, *domain.User) error

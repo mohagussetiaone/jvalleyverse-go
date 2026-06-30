@@ -62,6 +62,14 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/api/health", healthHandler.Health)
 	app.Get("/api/health/detailed", healthHandler.HealthDetailed)
 
+	// --- Public Company Profile (no auth) ---
+	companyHandler := handler.NewCompanyHandler(service.GetCompanyService())
+	app.Get("/api/company", companyHandler.GetCompany)
+
+	// --- Public FAQs (no auth) ---
+	faqHandler := handler.NewFaqHandler(service.GetFaqService())
+	app.Get("/api/faqs", faqHandler.ListPublic)
+
 	// --- Blogs ---
 	blogHandler := handler.NewBlogHandler(service.GetBlogService())
 
@@ -77,78 +85,93 @@ func SetupRoutes(app *fiber.App) {
 	discussions := app.Group("/api/discussions", contentGuard, contentRateLimit, middleware.OptionalJWTAuth())
 	discussions.Get("/", discussionHandler.ListDiscussions)
 	discussions.Get("/:id", discussionHandler.GetDiscussion)
-	// ==================== PROTECTED ROUTES ====================
+	// ==================== PROTECTED ROUTES (JWT only — safe, no XSRF) ====================
 
 	userHandler := handler.NewUserHandler(service.GetUserService(), service.GetDashboardService())
 	app.Get("/api/mentors", userHandler.ListMentors)
 	app.Get("/api/users/me", middleware.JWTAuth(), userHandler.GetProfile)
 	app.Put("/api/users/me", middleware.JWTAuth(), userHandler.UpdateProfile)
+	app.Post("/api/users/me/change-password", middleware.JWTAuth(), userHandler.ChangePassword)
+	app.Post("/api/users/me/avatar", middleware.JWTAuth(), userHandler.UpdateProfilePicture)
 	app.Get("/api/users/me/activity", middleware.JWTAuth(), userHandler.GetActivityLog)
 	app.Get("/api/users/me/dashboard", middleware.JWTAuth(), userHandler.GetDashboard)
 	app.Get("/api/users/:id", userHandler.GetPublicProfile)
 
-	api := app.Group("/api", middleware.JWTAuth(), middleware.XSRFProtection(), middleware.IdempotencyMiddleware())
-	// --- My Blogs ---
-	api.Get("/users/me/blogs", blogHandler.ListMyBlogs)
+	// Safe group — JWT only (no XSRF) for non-dangerous operations
+	safe := app.Group("/api", middleware.JWTAuth(), middleware.IdempotencyMiddleware())
 
-	api.Post("/showcases", showcaseHandler.Create)
-	api.Put("/showcases/:id", showcaseHandler.Update)
-	api.Delete("/showcases/:id", showcaseHandler.Delete)
-	api.Post("/showcases/:id/like", showcaseHandler.Like)
-	api.Delete("/showcases/:id/like", showcaseHandler.Unlike)
-	api.Get("/users/me/showcases", showcaseHandler.ListMyShowcases)
-
+	// Certificates
 	certificateHandler := handler.NewCertificateHandler()
-	api.Get("/users/me/certificates", certificateHandler.ListCertificates)
-	api.Get("/users/me/certificates/:code", certificateHandler.GetCertificate)
-	api.Get("/users/me/discussions", discussionHandler.ListMyDiscussions)
-	api.Post("/discussions", discussionHandler.CreateDiscussion)
-	api.Put("/discussions/:id", discussionHandler.UpdateDiscussion)
-	api.Delete("/discussions/:id", discussionHandler.DeleteDiscussion)
-	api.Post("/discussions/:id/close", discussionHandler.CloseDiscussion)
-	replyHandler = handler.NewReplyHandler()
-	api.Post("/discussions/:id/replies", replyHandler.CreateReply)
-	api.Put("/replies/:id", replyHandler.UpdateReply)
-	api.Delete("/replies/:id", replyHandler.DeleteReply)
-	api.Post("/replies/:id/like", replyHandler.LikeReply)
-	api.Post("/replies/:id/best", replyHandler.MarkBestReply)
-	api.Get("/users/me/replies", replyHandler.GetMyReplies)
-	api.Get("/users/me/study-cases", studyCaseHandler.ListMyStudyCases)
+	safe.Get("/users/me/certificates", certificateHandler.ListCertificates)
+	safe.Get("/users/me/certificates/:code", certificateHandler.GetCertificate)
 
-	api.Post("/courses/:id/enroll", courseHandler.EnrollCourse)
-	api.Put("/courses/:id/last-lesson", courseHandler.SetLastLesson)
-	api.Get("/users/me/courses", courseHandler.ListEnrolledCourses)
+	// Enrollment & Courses
+	safe.Post("/courses/:id/enroll", courseHandler.EnrollCourse)
+	safe.Put("/courses/:id/last-lesson", courseHandler.SetLastLesson)
+	safe.Get("/users/me/courses", courseHandler.ListEnrolledCourses)
 
-	// Notification routes
+	// Learning Progress
+	lessonProgressHandler := handler.NewLessonHandler(service.GetLessonService())
+	safe.Post("/lessons/:id/start", lessonProgressHandler.StartLesson)
+	safe.Put("/lessons/:id/progress", lessonProgressHandler.UpdateProgress)
+	safe.Post("/lessons/:id/complete", lessonProgressHandler.CompleteLesson)
+
+	// Notifications
 	notifHandler := handler.NewNotificationHandler(service.GetNotificationService())
 	sseHandler := handler.NewSSEHandler()
-	api.Get("/notifications/stream", sseHandler.StreamNotifications)
-	api.Get("/users/me/notifications", notifHandler.ListNotifications)
-	api.Get("/users/me/notifications/count", notifHandler.CountUnread)
-	api.Put("/users/me/notifications/:id/read", notifHandler.MarkAsRead)
-	api.Put("/users/me/notifications/read-all", notifHandler.MarkAllAsRead)
-	api.Delete("/users/me/notifications/:id", notifHandler.DeleteNotification)
+	safe.Get("/notifications/stream", sseHandler.StreamNotifications)
+	safe.Get("/users/me/notifications", notifHandler.ListNotifications)
+	safe.Get("/users/me/notifications/count", notifHandler.CountUnread)
+	safe.Put("/users/me/notifications/:id/read", notifHandler.MarkAsRead)
+	safe.Put("/users/me/notifications/read-all", notifHandler.MarkAllAsRead)
+	safe.Delete("/users/me/notifications/:id", notifHandler.DeleteNotification)
 
+	// My Items (read)
+	safe.Get("/users/me/discussions", discussionHandler.ListMyDiscussions)
+	safe.Get("/users/me/replies", replyHandler.GetMyReplies)
+	safe.Get("/users/me/study-cases", studyCaseHandler.ListMyStudyCases)
+	safe.Get("/users/me/showcases", showcaseHandler.ListMyShowcases)
+	safe.Get("/users/me/blogs", blogHandler.ListMyBlogs)
+
+	// Gamification
 	gamificationHandler := handler.NewGamificationHandler()
-	api.Get("/levels", gamificationHandler.GetLevels)
-	api.Get("/users/:id/points", gamificationHandler.GetUserPoints)
+	safe.Get("/levels", gamificationHandler.GetLevels)
+	safe.Get("/users/:id/points", gamificationHandler.GetUserPoints)
 
-	api.Post("/reviews", reviewHandler.CreateReview)
-	api.Put("/reviews/:id", reviewHandler.UpdateReview)
-
-	api.Delete("/reviews/:id", reviewHandler.DeleteReview)
-
-	lessonProgressHandler := handler.NewLessonHandler(service.GetLessonService())
-	api.Post("/lessons/:id/start", lessonProgressHandler.StartLesson)
-	api.Put("/lessons/:id/progress", lessonProgressHandler.UpdateProgress)
-	api.Post("/lessons/:id/complete", lessonProgressHandler.CompleteLesson)
-
-	// ==================== ADMIN ROUTES ====================
-
+	// File Upload
 	uploadHandler := handler.NewUploadHandler()
-	api.Post("/upload", uploadHandler.Upload)
+	safe.Post("/upload", uploadHandler.Upload)
 
-	admin := api.Group("/admin", middleware.RequireRole("admin"))
+	// ==================== DANGEROUS ROUTES (JWT + XSRF + Idempotency) ====================
+	// Only content-modifying operations that need XSRF protection
+
+	dangerous := app.Group("/api", middleware.JWTAuth(), middleware.XSRFProtection(), middleware.IdempotencyMiddleware())
+
+	dangerous.Post("/showcases", showcaseHandler.Create)
+	dangerous.Put("/showcases/:id", showcaseHandler.Update)
+	dangerous.Delete("/showcases/:id", showcaseHandler.Delete)
+	dangerous.Post("/showcases/:id/like", showcaseHandler.Like)
+	dangerous.Delete("/showcases/:id/like", showcaseHandler.Unlike)
+
+	dangerous.Post("/discussions", discussionHandler.CreateDiscussion)
+	dangerous.Put("/discussions/:id", discussionHandler.UpdateDiscussion)
+	dangerous.Delete("/discussions/:id", discussionHandler.DeleteDiscussion)
+	dangerous.Post("/discussions/:id/close", discussionHandler.CloseDiscussion)
+
+	replyHandler = handler.NewReplyHandler()
+	dangerous.Post("/discussions/:id/replies", replyHandler.CreateReply)
+	dangerous.Put("/replies/:id", replyHandler.UpdateReply)
+	dangerous.Delete("/replies/:id", replyHandler.DeleteReply)
+	dangerous.Post("/replies/:id/like", replyHandler.LikeReply)
+	dangerous.Post("/replies/:id/best", replyHandler.MarkBestReply)
+
+	dangerous.Post("/reviews", reviewHandler.CreateReview)
+	dangerous.Put("/reviews/:id", reviewHandler.UpdateReview)
+	dangerous.Delete("/reviews/:id", reviewHandler.DeleteReview)
+
+	// ==================== ADMIN ROUTES (JWT + XSRF + Idempotency + admin role) ====================
+
+	admin := app.Group("/api/admin", middleware.JWTAuth(), middleware.XSRFProtection(), middleware.IdempotencyMiddleware(), middleware.RequireRole("admin"))
 	// --- Admin Blogs (CRUD) ---
 	blogAdmin := admin.Group("/blogs")
 	blogAdmin.Post("/", blogHandler.Create)
@@ -184,4 +207,13 @@ func SetupRoutes(app *fiber.App) {
 	admin.Put("/categories/:id", categoryHandler.UpdateCategory)
 	admin.Delete("/categories/:id", categoryHandler.DeleteCategory)
 
+	// --- Admin Company Profile ---
+	admin.Put("/company", companyHandler.UpdateCompany)
+
+	// --- Admin FAQ CRUD ---
+	admin.Get("/faqs", faqHandler.ListAll)
+	admin.Get("/faqs/:id", faqHandler.GetByID)
+	admin.Post("/faqs", faqHandler.Create)
+	admin.Put("/faqs/:id", faqHandler.Update)
+	admin.Delete("/faqs/:id", faqHandler.Delete)
 }

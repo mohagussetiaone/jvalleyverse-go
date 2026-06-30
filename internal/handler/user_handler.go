@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"jvalleyverse/internal/minio"
 	"jvalleyverse/internal/service"
 
 	"github.com/gofiber/fiber/v2"
@@ -48,6 +49,67 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"message": "Profile updated"})
+}
+
+// ChangePassword changes current user password (must be logged in)
+func (h *UserHandler) ChangePassword(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	var input struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	if input.NewPassword == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "new_password is required"})
+	}
+
+	if err := h.userSvc.ChangePassword(c.UserContext(), userID, input.CurrentPassword, input.NewPassword); err != nil {
+		return safeError(c, mapServiceErrorToStatus(err), err)
+	}
+
+	return c.JSON(fiber.Map{"message": "Password changed successfully"})
+}
+
+// UpdateProfilePicture uploads avatar to MinIO and saves URL to DB
+func (h *UserHandler) UpdateProfilePicture(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	if !minio.IsAvailable() {
+		return c.Status(503).JSON(fiber.Map{
+			"error": "Avatar upload is not available (MinIO not configured)",
+		})
+	}
+
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "avatar file is required"})
+	}
+
+	// Validate file size (max 10MB)
+	if fileHeader.Size > 10<<20 {
+		return c.Status(400).JSON(fiber.Map{"error": "file too large, maximum size is 10 MB"})
+	}
+
+	// Upload to MinIO
+	result, err := minio.DefaultClient.UploadFile(c.UserContext(), fileHeader, "avatars")
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "file upload failed"})
+	}
+
+	// Update user avatar in DB
+	if err := h.userSvc.UpdateProfile(c.UserContext(), userID, "", "", result.URL); err != nil {
+		return safeError(c, mapServiceErrorToStatus(err), err)
+	}
+
+	return c.JSON(fiber.Map{
+		"message":     "Avatar updated",
+		"url":         result.URL,
+		"object_name": result.ObjectName,
+	})
 }
 
 // GetDashboard returns dashboard widgets and stats

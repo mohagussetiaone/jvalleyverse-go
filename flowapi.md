@@ -70,7 +70,7 @@ Go 1.25 + Fiber v2 + GORM + PostgreSQL + Redis
 
 ## API Route Table
 
-### Public (32 routes, some with optional JWT)
+### Public (33 routes, some with optional JWT)
 
 Catatan: Route yang ditandai `(Opt.JWT)` menggunakan middleware `OptionalJWTAuth` — response akan menyertakan `is_enrolled` jika user membawa token.
 
@@ -106,38 +106,54 @@ GET    /api/study-cases/:id            — Study case detail
 GET    /api/health                     — Health check
 GET    /api/health/detailed            — Detailed health + metrics
 GET    /api/users/:id                  — Public profile
+GET    /api/company                    — Company profile (no auth)
 ```
 
-### User (JWT required — tanpa api group XSRF)
+### User (JWT required — no XSRF needed)
 
 ```
 GET    /api/users/me                   — My profile
 PUT    /api/users/me                   — Update profile
+POST   /api/users/me/change-password   — Change password
+POST   /api/users/me/avatar            — Update profile picture (multipart upload to MinIO)
 GET    /api/users/me/activity          — My activity log
 GET    /api/users/me/dashboard         — Dashboard widgets
 ```
 
-### Protected — /api (40 routes, JWT + XSRF + Idempotency)
+### Safe — /api (JWT + Idempotency, no XSRF)
+
+Endpoint-endpoint ini **tidak berbahaya** dan tidak memerlukan XSRF token. Cukup JWT.
 
 ```
-POST   /api/lessons/:id/start             — Start lesson
-PUT    /api/lessons/:id/progress          — Update progress
-POST   /api/lessons/:id/complete          — Complete lesson
-GET    /api/users/me/certificates           — My certificates
-GET    /api/users/me/certificates/:code     — Certificate by code
 POST   /api/courses/:id/enroll           — Enroll ke course
 PUT    /api/courses/:id/last-lesson       — Update lesson terakhir dipelajari
 GET    /api/users/me/courses              — Course yang sudah dienroll
-GET    /api/users/me/discussions          — My discussions
-GET    /api/users/me/showcases            — My showcases
-GET    /api/users/me/study-cases          — My study cases
-GET    /api/users/me/replies              — My replies
-GET    /api/users/me/blogs                — My blogs (?status=draft|published)
+POST   /api/lessons/:id/start             — Start lesson
+PUT    /api/lessons/:id/progress          — Update progress
+POST   /api/lessons/:id/complete          — Complete lesson
+GET    /api/users/me/certificates         — My certificates
+GET    /api/users/me/certificates/:code   — Certificate by code
 GET    /api/users/me/notifications        — My notifications
 GET    /api/users/me/notifications/count  — Unread notification count
 PUT    /api/users/me/notifications/:id/read — Mark notif as read
 PUT    /api/users/me/notifications/read-all — Mark all as read
 DELETE /api/users/me/notifications/:id    — Delete notification
+GET    /api/notifications/stream          — SSE real-time notification stream
+GET    /api/users/me/discussions          — My discussions
+GET    /api/users/me/replies              — My replies
+GET    /api/users/me/study-cases          — My study cases
+GET    /api/users/me/showcases            — My showcases
+GET    /api/users/me/blogs                — My blogs (?status=draft|published)
+GET    /api/levels                        — Level info
+GET    /api/users/:id/points              — User points & rank
+POST   /api/upload                        — File upload (multipart)
+```
+
+### Dangerous — /api (JWT + XSRF + Idempotency)
+
+Endpoint-endpoint ini **mengubah konten** dan memerlukan XSRF token tambahan.
+
+```
 POST   /api/showcases                     — Create showcase
 PUT    /api/showcases/:id                 — Update showcase
 DELETE /api/showcases/:id                 — Delete showcase
@@ -155,13 +171,9 @@ POST   /api/replies/:id/best              — Mark as best answer
 POST   /api/reviews                       — Create review
 PUT    /api/reviews/:id                   — Update review
 DELETE /api/reviews/:id                   — Delete review
-POST   /api/upload                        — File upload (multipart)
-GET    /api/notifications/stream           — SSE real-time notification stream
-GET    /api/levels                        — Level info
-GET    /api/users/:id/points              — User points & rank
 ```
 
-### Admin — /api/admin (24 routes, JWT + XSRF + Idempotency + role=admin)
+### Admin — /api/admin (JWT + XSRF + Idempotency + role=admin)
 
 ```
 GET    /api/admin/dashboard                     — Admin dashboard
@@ -189,7 +201,29 @@ PUT    /api/admin/categories/:id                — Update category
 DELETE /api/admin/categories/:id                — Delete category
 ```
 
-**Total: 96 endpoint definitions**
+### Company Profile (Public + Admin Update)
+
+```
+GET  /api/company (public)            — Get company profile (no auth)
+
+Admin:
+  PUT  /api/admin/company             — Update company profile
+```
+
+### FAQ (Public + Admin CRUD)
+
+```
+GET  /api/faqs (public)              — List active FAQs (no auth)
+
+Admin:
+  GET    /api/admin/faqs              — List all FAQs (paginated)
+  GET    /api/admin/faqs/:id          — Get single FAQ
+  POST   /api/admin/faqs              — Create FAQ
+  PUT    /api/admin/faqs/:id          — Update FAQ
+  DELETE /api/admin/faqs/:id          — Delete FAQ
+```
+
+**Total: 105 endpoint definitions** (+ change-password, avatar, 5 FAQ routes, company public + admin)
 
 ### Notification Flow
 
@@ -703,7 +737,17 @@ Semua response dilengkapi security headers berikut:
 
 ### XSRF Protection
 
-Semua mutation endpoint (POST/PUT/DELETE) di bawah `/api` mewajibkan header `X-XSRF-TOKEN` yang dicocokkan dengan cookie `XSRF-TOKEN`. Token di-generate saat login.
+**XSRF hanya diterapkan ke endpoint berbahaya** (bukan semua endpoint).
+
+| Group        | Middleware                       | Endpoints                                                                 |
+| ------------ | -------------------------------- | ------------------------------------------------------------------------- |
+| **Safe**     | JWT + Idempotency                | Enrollment, progress, notifications, upload, certificates, my-items, dll |
+| **Dangerous**| JWT + XSRF + Idempotency         | Showcases (CRUD/like), Discussions (CRUD/close), Replies, Reviews         |
+| **Admin**    | JWT + XSRF + Idempotency + admin | Admin CRUD: courses, sections, lessons, study-cases, categories, blogs    |
+
+Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`) **tidak perlu XSRF token** — cukup JWT.
+
+Endpoint **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang dicocokkan dengan cookie `XSRF-TOKEN`. Token di-generate saat login.
 
 ```
 Cookie: XSRF-TOKEN=abc123
@@ -781,7 +825,7 @@ Semua upload file (thumbnail course/lesson, avatar user, media showcase, img stu
 ### Endpoint Upload
 
 ```
-POST /api/upload (JWT + XSRF + Idempotency)
+POST /api/upload (JWT + Idempotency — no XSRF)
 ```
 
 **Request (multipart/form-data):**

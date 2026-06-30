@@ -60,6 +60,14 @@ func (r *UserRepository) UpdateLevel(ctx context.Context, userID string, level i
 		Error
 }
 
+// UpdatePassword updates user password
+func (r *UserRepository) UpdatePassword(ctx context.Context, userID, hashedPassword string) error {
+	return r.db.WithContext(ctx).Model(&domain.User{}).
+		Where("id = ?", userID).
+		Update("password", hashedPassword).
+		Error
+}
+
 // ListAll lists all users with pagination
 func (r *UserRepository) ListAll(ctx context.Context, page, limit int) ([]domain.User, int64, error) {
 	var users []domain.User

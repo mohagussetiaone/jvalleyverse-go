@@ -11,6 +11,7 @@ import (
 	"jvalleyverse/internal/repository"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -19,6 +20,7 @@ import (
 type IUserService interface {
 	GetProfile(ctx context.Context, userID string) (*domain.User, error)
 	UpdateProfile(ctx context.Context, userID string, name, bio, avatar string) error
+	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
 	AddPoints(ctx context.Context, userID string, category string, points int, metadata map[string]interface{}) error
 	GetUserActivityLog(ctx context.Context, userID string, page, limit int) ([]dto.ActivityItem, int64, error)
 	CreateUser(ctx context.Context, user *domain.User) error
@@ -59,11 +61,43 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID string, name, bi
 		return err
 	}
 
-	user.Name = name
-	user.Bio = bio
-	user.Avatar = avatar
+	if name != "" {
+		user.Name = name
+	}
+	if bio != "" {
+		user.Bio = bio
+	}
+	if avatar != "" {
+		user.Avatar = avatar
+	}
 
 	return s.userRepo.Update(ctx, user)
+}
+
+// ChangePassword changes user password (validates current password first)
+func (s *UserService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
+	if newPassword == "" {
+		return domain.ErrInvalidInput
+	}
+
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// User registered via Google may have empty password
+	if user.Password != "" {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(currentPassword)); err != nil {
+			return domain.ErrUnauthorized
+		}
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.UpdatePassword(ctx, userID, string(hashed))
 }
 
 // AddPoints adds points to user and updates level if threshold reached
@@ -482,6 +516,8 @@ var (
 	categorySvc     ICategoryService
 	sectionSvc      ISectionService
 	reviewSvc       IReviewService
+	faqSvc          IFaqService
+	companySvc      ICompanyService
 	auditSvc        *AuditService
 	notifSvc        INotificationService
 	dashboardSvc    IDashboardService
@@ -538,6 +574,14 @@ func InitServices(db *gorm.DB) {
 
 	// Dashboard service
 	dashboardSvc = NewDashboardService(lessonRepo, classProgressRepo, notifSvc)
+
+	// FAQ service
+	faqRepo := repository.NewFAQRepository(db)
+	faqSvc = NewFaqService(faqRepo)
+
+	// Company service
+	companyRepo := repository.NewCompanyRepository(db)
+	companySvc = NewCompanyService(companyRepo)
 }
 
 func GetUserService() IUserService {
@@ -602,4 +646,12 @@ func GetNotificationService() INotificationService {
 
 func GetDashboardService() IDashboardService {
 	return dashboardSvc
+}
+
+func GetFaqService() IFaqService {
+	return faqSvc
+}
+
+func GetCompanyService() ICompanyService {
+	return companySvc
 }

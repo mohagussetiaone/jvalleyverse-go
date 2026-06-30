@@ -426,6 +426,44 @@ func (p *Course) CanUserCreateCourse(user *User) bool {
 	return user.Role == "admin"
 }
 
+// FAQ represents a frequently asked question
+type FAQ struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Question  string         `gorm:"type:text;not null" json:"question"`
+	Answer    string         `gorm:"type:text;not null" json:"answer"`
+	Category  string         `gorm:"default:'general'" json:"category"`
+	OrderIndex int           `gorm:"default:0" json:"order_index"`
+	IsActive  bool           `gorm:"default:true" json:"is_active"`
+}
+
+// Company represents JValleyVerse company profile (singleton — only one row)
+type Company struct {
+	ID        string    `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	BrandName string `gorm:"not null" json:"brand_name"`
+	Tagline   string `json:"tagline"`
+	Vision    string `gorm:"type:text" json:"vision"`
+	Mission   string `gorm:"type:text" json:"mission"`
+	LogoURL   string `json:"logo_url"`
+
+	Domain     string `json:"domain"`
+	Email      string `json:"email"`
+	Facebook   string `json:"facebook"`
+	Instagram  string `json:"instagram"`
+	Twitter    string `json:"twitter"`
+	TikTok     string `json:"tiktok"`
+	Youtube    string `json:"youtube"`
+	LinkedIn   string `json:"linkedin"`
+	WhatsApp   string `json:"whatsapp"`
+	Address    string `gorm:"type:text" json:"address"`
+	Phone      string `json:"phone"`
+}
+
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&Blog{},
@@ -450,5 +488,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&AdminAuditLog{},
 		&CourseEnrollment{},
 		&Notification{},
+		&FAQ{},
+		&Company{},
 	)
 }

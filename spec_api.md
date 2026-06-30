@@ -36,7 +36,7 @@
 | **Rate Limit Auth**    | 10 req/min/IP          | Login & register                                                                                     |
 | **Anti-Scraping**      | User-Agent block       | ScraperGuard: blokir curl, python-requests, Postman, wget, dll                                       |
 | **Security Headers**   | 6 headers              | X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS |
-| **XSRF Protection**    | Double submit cookie   | Cookie `XSRF-TOKEN` + Header `X-XSRF-TOKEN`                                                          |
+| **XSRF Protection**    | Double submit cookie   | Cookie `XSRF-TOKEN` + Header `X-XSRF-TOKEN` (hanya untuk grup Dangerous & Admin)                     |
 | **CORS**               | Origin whitelist       | Dikonfigurasi via `CORS_ORIGINS`                                                                     |
 | **Idempotency**        | Idempotency-Key (UUID) | Safe retry untuk semua POST/PUT/DELETE                                                               |
 
@@ -947,6 +947,65 @@ Idempotency-Key: <uuid>
 }
 ```
 
+### Company Profile (Public)
+
+| Method | Path          | Middleware |
+| ------ | ------------- | ---------- |
+| GET    | /api/company  | —          |
+
+#### GET /api/company
+
+```json
+// Response 200
+{
+  "id": "cmqer18kq027hgcujg8lyhhzc",
+  "created_at": "2026-06-18T10:00:00.000Z",
+  "updated_at": "2026-06-18T10:00:00.000Z",
+  "brand_name": "JValleyVerse",
+  "tagline": "Learn, Build, Grow Together",
+  "vision": "Menjadi platform edukasi teknologi terdepan di Indonesia yang mencetak talenta digital berkualitas dan siap bersaing di era global.",
+  "mission": "Menyediakan materi pembelajaran berkualitas tinggi yang mudah diakses\nMembangun komunitas belajar yang kolaboratif dan suportif\nMenjembatani kesenjangan antara pendidikan formal dan kebutuhan industri\nMemberikan pengalaman belajar interaktif dengan gamifikasi dan sertifikasi",
+  "logo_url": "https://cdn.mohagussetiaone.my.id/jvalleyverse/logo.png",
+  "domain": "https://jvalleyverse.com",
+  "email": "hello@jvalleyverse.com",
+  "facebook": "https://facebook.com/jvalleyverse",
+  "instagram": "https://instagram.com/jvalleyverse",
+  "twitter": "https://x.com/jvalleyverse",
+  "tiktok": "https://tiktok.com/@jvalleyverse",
+  "youtube": "https://youtube.com/@jvalleyverse",
+  "linkedin": "https://linkedin.com/company/jvalleyverse",
+  "whatsapp": "https://wa.me/6281234567890",
+  "address": "Jakarta, Indonesia",
+  "phone": "+62 812-3456-7890"
+}
+```
+
+### FAQs (Public)
+
+| Method | Path       | Middleware |
+| ------ | ---------- | ---------- |
+| GET    | /api/faqs  | —          |
+
+#### GET /api/faqs
+
+```json
+// Response 200
+{
+  "data": [
+    {
+      "id": "cmqer18kq026hgcujg8lyhhzb",
+      "question": "Apa itu JValleyverse?",
+      "answer": "JValleyverse adalah platform belajar coding online dengan sistem gamifikasi, sertifikat, dan showcase.",
+      "category": "general",
+      "order_index": 1,
+      "is_active": true,
+      "created_at": "2026-06-18T10:00:00.000Z",
+      "updated_at": "2026-06-18T10:00:00.000Z"
+    }
+  ]
+}
+```
+
 ### Other Public
 
 | Method | Path                 | Middleware               |
@@ -958,6 +1017,8 @@ Idempotency-Key: <uuid>
 | GET    | /api/health          | — (no guard)             |
 | GET    | /api/health/detailed | — (no guard)             |
 | GET    | /api/users/:id       | —                        |
+| GET    | /api/faqs            | — (no guard)             |
+| GET    | /api/company         | — (no guard)             |
 
 #### GET /api/leaderboard
 
@@ -1142,12 +1203,14 @@ Idempotency-Key: <uuid>
 
 ### User Profile & Dashboard (JWT only — no XSRF)
 
-| Method | Path                    | Middleware |
-| ------ | ----------------------- | ---------- |
-| GET    | /api/users/me           | JWTAuth    |
-| PUT    | /api/users/me           | JWTAuth    |
-| GET    | /api/users/me/activity  | JWTAuth    |
-| GET    | /api/users/me/dashboard | JWTAuth    |
+| Method | Path                          | Middleware |
+| ------ | ----------------------------- | ---------- |
+| GET    | /api/users/me                 | JWTAuth    |
+| PUT    | /api/users/me                 | JWTAuth    |
+| POST   | /api/users/me/change-password | JWTAuth    |
+| POST   | /api/users/me/avatar          | JWTAuth    |
+| GET    | /api/users/me/activity        | JWTAuth    |
+| GET    | /api/users/me/dashboard       | JWTAuth    |
 
 #### GET /api/users/me
 
@@ -1244,24 +1307,66 @@ Authorization: Bearer <access_token>
 }
 ```
 
-### Protected Group (JWT + XSRF + Idempotency)
+### Safe Group (JWT + Idempotency — no XSRF)
 
-Group `/api` — Semua route di bawah ini perlu **JWT + XSRF Token + Idempotency-Key**.
+Group `/api` — Endpoint **aman** yang tidak perlu XSRF. Cukup JWT + Idempotency-Key.
 
-### Learning & Progress
+#### Change Password
 
-| Method | Path                      | Middleware           |
-| ------ | ------------------------- | -------------------- |
-| POST   | /api/lessons/:id/start    | JWT+XSRF+Idempotency |
-| PUT    | /api/lessons/:id/progress | JWT+XSRF+Idempotency |
-| POST   | /api/lessons/:id/complete | JWT+XSRF+Idempotency |
+| Method | Path                          | Middleware      |
+| ------ | ----------------------------- | --------------- |
+| POST   | /api/users/me/change-password | JWTAuth         |
+
+```json
+// Request
+{
+  "current_password": "OldPass123",
+  "new_password": "NewPass456!"
+}
+// Response 200
+{
+  "message": "Password changed successfully"
+}
+// Response 401
+{
+  "error": "unauthorized"
+}
+```
+
+#### Update Avatar (multipart upload to MinIO)
+
+| Method | Path                   | Middleware |
+| ------ | ---------------------- | ---------- |
+| POST   | /api/users/me/avatar   | JWTAuth    |
+
+**Request:** `multipart/form-data` dengan field `avatar` (file)
+
+```json
+// Response 200
+{
+  "message": "Avatar updated",
+  "url": "https://cdn.mohagussetiaone.my.id/jvalleyverse/avatars/uuid.jpg",
+  "object_name": "avatars/uuid.jpg"
+}
+// Response 503
+{
+  "error": "Avatar upload is not available (MinIO not configured)"
+}
+```
+
+#### Learning & Progress
+
+| Method | Path                      | Middleware        |
+| ------ | ------------------------- | ----------------- |
+| POST   | /api/lessons/:id/start    | JWT + Idempotency |
+| PUT    | /api/lessons/:id/progress | JWT + Idempotency |
+| POST   | /api/lessons/:id/complete | JWT + Idempotency |
 
 #### POST /api/lessons/:id/start
 
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -1286,7 +1391,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Request
@@ -1314,7 +1418,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -1354,17 +1457,16 @@ Idempotency-Key: <uuid>
 
 ### Certificates
 
-| Method | Path                             | Middleware           |
-| ------ | -------------------------------- | -------------------- |
-| GET    | /api/users/me/certificates       | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/certificates/:code | JWT+XSRF+Idempotency |
+| Method | Path                             | Middleware                |
+| ------ | -------------------------------- | ------------------------- |
+| GET    | /api/users/me/certificates       | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/certificates/:code | JWT + Idempotency (no XSRF) |
 
 #### GET /api/users/me/certificates
 
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Query: ?page=1&limit=20
@@ -1397,7 +1499,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -1427,14 +1528,14 @@ Idempotency-Key: <uuid>
 
 ### Showcases
 
-| Method | Path                    | Middleware           |
-| ------ | ----------------------- | -------------------- |
-| POST   | /api/showcases          | JWT+XSRF+Idempotency |
-| PUT    | /api/showcases/:id      | JWT+XSRF+Idempotency |
-| DELETE | /api/showcases/:id      | JWT+XSRF+Idempotency |
-| POST   | /api/showcases/:id/like | JWT+XSRF+Idempotency |
-| DELETE | /api/showcases/:id/like | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/showcases | JWT+XSRF+Idempotency |
+| Method | Path                    | Middleware                |
+| ------ | ----------------------- | ------------------------- |
+| POST   | /api/showcases          | JWT+XSRF+Idempotency      |
+| PUT    | /api/showcases/:id      | JWT+XSRF+Idempotency      |
+| DELETE | /api/showcases/:id      | JWT+XSRF+Idempotency      |
+| POST   | /api/showcases/:id/like | JWT+XSRF+Idempotency      |
+| DELETE | /api/showcases/:id/like | JWT+XSRF+Idempotency      |
+| GET    | /api/users/me/showcases | JWT + Idempotency (no XSRF) |
 
 #### POST /api/showcases
 
@@ -1886,18 +1987,17 @@ Idempotency-Key: <uuid>
 
 ### Enrollment & My Courses
 
-| Method | Path                           | Middleware           |
-| ------ | ------------------------------ | -------------------- |
-| POST   | /api/courses/:id/enroll        | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/courses          | JWT+XSRF+Idempotency |
-| PUT    | /api/courses/:id/last-lesson   | JWT+XSRF+Idempotency |
+| Method | Path                           | Middleware                |
+| ------ | ------------------------------ | ------------------------- |
+| POST   | /api/courses/:id/enroll        | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/courses          | JWT + Idempotency (no XSRF) |
+| PUT    | /api/courses/:id/last-lesson   | JWT + Idempotency (no XSRF) |
 
 #### POST /api/courses/:id/enroll
 
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 201
@@ -1911,7 +2011,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Query: ?page=1&limit=10
@@ -1969,12 +2068,12 @@ Idempotency-Key: <uuid>
 
 ### My Items
 
-| Method | Path                      | Middleware           |
-| ------ | ------------------------- | -------------------- |
-| GET    | /api/users/me/study-cases | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/blogs       | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/replies     | JWT+XSRF+Idempotency |
-| GET    | /api/users/me/discussions | JWT+XSRF+Idempotency |
+| Method | Path                      | Middleware                |
+| ------ | ------------------------- | ------------------------- |
+| GET    | /api/users/me/study-cases | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/blogs       | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/replies     | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/discussions | JWT + Idempotency (no XSRF) |
 
 #### GET /api/users/me/study-cases
 
@@ -2085,9 +2184,9 @@ Idempotency-Key: <uuid>
 
 ### File Upload
 
-| Method | Path        | Middleware           |
-| ------ | ----------- | -------------------- |
-| POST   | /api/upload | JWT+XSRF+Idempotency |
+| Method | Path        | Middleware                |
+| ------ | ----------- | ------------------------- |
+| POST   | /api/upload | JWT + Idempotency (no XSRF) |
 
 **Request:** `multipart/form-data`
 
@@ -2103,7 +2202,6 @@ fetch("/api/upload", {
   method: "POST",
   headers: {
     Authorization: "Bearer <token>",
-    "X-XSRF-TOKEN": "<xsrf-token>",
     "Idempotency-Key": crypto.randomUUID(),
   },
   body: formData,
@@ -2130,14 +2228,14 @@ fetch("/api/upload", {
 
 ### Notifications
 
-| Method | Path                                 | Middleware                 |
-| ------ | ------------------------------------ | -------------------------- |
-| GET    | /api/notifications/stream            | JWT+XSRF+Idempotency (SSE) |
-| GET    | /api/users/me/notifications          | JWT+XSRF+Idempotency       |
-| GET    | /api/users/me/notifications/count    | JWT+XSRF+Idempotency       |
-| PUT    | /api/users/me/notifications/:id/read | JWT+XSRF+Idempotency       |
-| PUT    | /api/users/me/notifications/read-all | JWT+XSRF+Idempotency       |
-| DELETE | /api/users/me/notifications/:id      | JWT+XSRF+Idempotency       |
+| Method | Path                                 | Middleware                |
+| ------ | ------------------------------------ | ------------------------- |
+| GET    | /api/notifications/stream            | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/notifications          | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/me/notifications/count    | JWT + Idempotency (no XSRF) |
+| PUT    | /api/users/me/notifications/:id/read | JWT + Idempotency (no XSRF) |
+| PUT    | /api/users/me/notifications/read-all | JWT + Idempotency (no XSRF) |
+| DELETE | /api/users/me/notifications/:id      | JWT + Idempotency (no XSRF) |
 
 #### Tipe Notifikasi (Otomatis Oleh Sistem)
 
@@ -2177,7 +2275,6 @@ data: {"type":"showcase_like","title":"Showcase Anda Mendapat Like","message":"S
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Query: ?page=1&limit=20
@@ -2208,7 +2305,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2222,7 +2318,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2236,7 +2331,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2250,7 +2344,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2261,17 +2354,16 @@ Idempotency-Key: <uuid>
 
 ### Gamification
 
-| Method | Path                  | Middleware           |
-| ------ | --------------------- | -------------------- |
-| GET    | /api/levels           | JWT+XSRF+Idempotency |
-| GET    | /api/users/:id/points | JWT+XSRF+Idempotency |
+| Method | Path                  | Middleware                |
+| ------ | --------------------- | ------------------------- |
+| GET    | /api/levels           | JWT + Idempotency (no XSRF) |
+| GET    | /api/users/:id/points | JWT + Idempotency (no XSRF) |
 
 #### GET /api/levels
 
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2316,7 +2408,6 @@ Idempotency-Key: <uuid>
 ```json
 // Headers
 Authorization: Bearer <access_token>
-X-XSRF-TOKEN: <xsrf_token>
 Idempotency-Key: <uuid>
 
 // Response 200
@@ -2955,6 +3046,118 @@ Idempotency-Key: <uuid>
 // Response 404
 {
   "error": "Study case not found"
+}
+```
+
+### FAQs
+
+| Method | Path                |
+| ------ | ------------------- |
+| GET    | /api/admin/faqs     |
+| GET    | /api/admin/faqs/:id |
+| POST   | /api/admin/faqs     |
+| PUT    | /api/admin/faqs/:id |
+| DELETE | /api/admin/faqs/:id |
+
+#### GET /api/admin/faqs
+
+```json
+// Headers
+Authorization: Bearer <admin_token>
+X-XSRF-TOKEN: <xsrf_token>
+Idempotency-Key: <uuid>
+
+// Query: ?page=1&limit=20
+// Response 200
+{
+  "data": [
+    {
+      "id": "cmqer18kq026hgcujg8lyhhzb",
+      "question": "Apa itu JValleyverse?",
+      "answer": "JValleyverse adalah platform belajar coding online dengan sistem gamifikasi...",
+      "category": "general",
+      "order_index": 1,
+      "is_active": true,
+      "created_at": "2026-06-18T10:00:00.000Z",
+      "updated_at": "2026-06-18T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5
+  }
+}
+```
+
+#### POST /api/admin/faqs
+
+```json
+// Headers
+Authorization: Bearer <admin_token>
+X-XSRF-TOKEN: <xsrf_token>
+Idempotency-Key: <uuid>
+
+// Request
+{
+  "question": "Bagaimana cara mendaftar?",
+  "answer": "Klik tombol Daftar di pojok kanan atas, isi email dan password, lalu verifikasi.",
+  "category": "account",
+  "order_index": 2
+}
+// Response 201
+{
+  "id": "cmqer18kq026hgcujg8lyhhzb",
+  "question": "Bagaimana cara mendaftar?",
+  "answer": "Klik tombol Daftar di pojok kanan atas, isi email dan password, lalu verifikasi.",
+  "category": "account",
+  "order_index": 2,
+  "is_active": true,
+  "created_at": "2026-06-18T10:00:00.000Z",
+  "updated_at": "2026-06-18T10:00:00.000Z"
+}
+```
+
+#### PUT /api/admin/faqs/:id
+
+```json
+// Headers
+Authorization: Bearer <admin_token>
+X-XSRF-TOKEN: <xsrf_token>
+Idempotency-Key: <uuid>
+
+// Request (all fields optional)
+{
+  "question": "Updated question",
+  "answer": "Updated answer",
+  "category": "general",
+  "order_index": 1,
+  "is_active": false
+}
+// Response 200 — returns updated FAQItem
+{
+  "id": "cmqer18kq026hgcujg8lyhhzb",
+  "question": "Updated question",
+  "answer": "Updated answer",
+  "category": "general",
+  "order_index": 1,
+  "is_active": false,
+  "created_at": "2026-06-18T10:00:00.000Z",
+  "updated_at": "2026-06-18T10:00:00.000Z"
+}
+```
+
+#### DELETE /api/admin/faqs/:id
+
+```json
+// Headers
+Authorization: Bearer <admin_token>
+X-XSRF-TOKEN: <xsrf_token>
+Idempotency-Key: <uuid>
+
+// Response 200
+{
+  "message": "FAQ deleted"
 }
 ```
 

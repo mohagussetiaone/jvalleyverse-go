@@ -129,6 +129,14 @@ func SeedInitialData(db *gorm.DB) error {
 	if err := seedBlogs(db, users, categories); err != nil {
 		return fmt.Errorf("failed to seed blogs: %w", err)
 	}
+	// =========================================================================
+	// 13. SEED COMPANY PROFILE
+	// =========================================================================
+	fmt.Println("  → Seeding company profile...")
+	if err := seedCompany(db); err != nil {
+		return fmt.Errorf("failed to seed company: %w", err)
+	}
+
 	fmt.Println("🌱 Seeding completed!")
 	return nil
 }
@@ -1375,5 +1383,44 @@ func seedBlogs(db *gorm.DB, users map[string]*domain.User, categories map[string
 	}
 
 	fmt.Println("  ✓ Blogs seeded successfully!")
+	return nil
+}
+
+// ============================================================================
+// 13. SEED COMPANY PROFILE
+// ============================================================================
+
+func seedCompany(db *gorm.DB) error {
+	var existing domain.Company
+	result := db.First(&existing)
+	if result.RowsAffected > 0 {
+		fmt.Printf("    ✓ Company already exists: %s\n", existing.BrandName)
+		return nil
+	}
+
+	company := domain.Company{
+		BrandName: "JValleyVerse",
+		Tagline:   "Learn, Build, Grow Together",
+		Vision:    "Menjadi platform edukasi teknologi terdepan di Indonesia yang mencetak talenta digital berkualitas dan siap bersaing di era global.",
+		Mission:   "Menyediakan materi pembelajaran berkualitas tinggi yang mudah diakses\nMembangun komunitas belajar yang kolaboratif dan suportif\nMenjembatani kesenjangan antara pendidikan formal dan kebutuhan industri\nMemberikan pengalaman belajar interaktif dengan gamifikasi dan sertifikasi",
+		LogoURL:   "https://cdn.mohagussetiaone.my.id/jvalleyverse/logo.png",
+		Domain:    "https://jvalleyverse.com",
+		Email:     "hello@jvalleyverse.com",
+		Facebook:  "https://facebook.com/jvalleyverse",
+		Instagram: "https://instagram.com/jvalleyverse",
+		Twitter:   "https://x.com/jvalleyverse",
+		TikTok:    "https://tiktok.com/@jvalleyverse",
+		Youtube:   "https://youtube.com/@jvalleyverse",
+		LinkedIn:  "https://linkedin.com/company/jvalleyverse",
+		WhatsApp:  "https://wa.me/6281234567890",
+		Address:   "Jakarta, Indonesia",
+		Phone:     "+62 812-3456-7890",
+	}
+
+	if err := db.Create(&company).Error; err != nil {
+		return fmt.Errorf("failed to create company: %w", err)
+	}
+
+	fmt.Printf("    ✓ Company created: %s (ID: %s)\n", company.BrandName, company.ID)
 	return nil
 }
