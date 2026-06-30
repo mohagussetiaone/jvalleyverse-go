@@ -68,7 +68,7 @@ func LoadConfig() {
 		AdminEmail:     getEnv("ADMIN_EMAIL", "admin@example.com"),
 		AdminPass:      getEnv("ADMIN_PASSWORD", "admin123"),
 		GoogleClientID: getEnv("GOOGLE_CLIENT_ID", ""),
-		CORSOrigins:    getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,https://jvalleyverse.web.id"),
+		CORSOrigins:    getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,https://localhost:5174,https://jvalleyverse.web.id"),
 		MinioEndpoint:  getEnv("MINIO_ENDPOINT", "minio.mohagussetiaone.my.id"),
 		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", ""),
 		MinioSecretKey: getEnv("MINIO_SECRET_KEY", ""),
