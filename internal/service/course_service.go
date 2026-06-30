@@ -29,10 +29,10 @@ type ICourseService interface {
 }
 
 type CourseService struct {
-	courseRepo   *repository.CourseRepository
-	lessonRepo   *repository.LessonRepository
-	userRepo     *repository.UserRepository
-	enrollRepo   *repository.EnrollmentRepository
+	courseRepo *repository.CourseRepository
+	lessonRepo *repository.LessonRepository
+	userRepo   *repository.UserRepository
+	enrollRepo *repository.EnrollmentRepository
 }
 
 func NewCourseService(
@@ -77,8 +77,6 @@ func (s *CourseService) CreateCourse(ctx context.Context, adminID string, title,
 
 	return course, nil
 }
-
-
 
 func toCourseFilter(f *CourseListFilter) *repository.CourseListFilter {
 	if f == nil {
@@ -196,7 +194,31 @@ func (s *CourseService) EnrollCourse(ctx context.Context, userID, courseID strin
 		CourseID: courseID,
 	}
 
-	return s.enrollRepo.Create(ctx, enrollment)
+	if err := s.enrollRepo.Create(ctx, enrollment); err != nil {
+		return err
+	}
+
+	// Notify course admin about new enrollment
+	course, err := s.courseRepo.FindByID(ctx, courseID)
+	if err == nil {
+		notifSvc := GetNotificationService()
+		if notifSvc != nil {
+			// Notify admin
+			notifSvc.CreateNotification(ctx, course.AdminID, "course_enrollment",
+				"Pendaftar Baru",
+				"Seseorang telah mendaftar di kursus: "+course.Title,
+				"/courses/"+courseID,
+			)
+			// Notify enrolled user
+			notifSvc.CreateNotification(ctx, userID, "enrollment_success",
+				"Pendaftaran Berhasil",
+				"Selamat! Anda berhasil mendaftar di kursus: "+course.Title,
+				"/courses/"+courseID,
+			)
+		}
+	}
+
+	return nil
 }
 
 func (s *CourseService) SetLastLesson(ctx context.Context, userID, courseID, lessonID string) error {

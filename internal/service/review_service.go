@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
@@ -17,10 +18,11 @@ type IReviewService interface {
 
 type ReviewService struct {
 	reviewRepo *repository.ReviewRepository
+	courseRepo *repository.CourseRepository
 }
 
-func NewReviewService(reviewRepo *repository.ReviewRepository) *ReviewService {
-	return &ReviewService{reviewRepo: reviewRepo}
+func NewReviewService(reviewRepo *repository.ReviewRepository, courseRepo *repository.CourseRepository) *ReviewService {
+	return &ReviewService{reviewRepo: reviewRepo, courseRepo: courseRepo}
 }
 
 func (s *ReviewService) CreateReview(ctx context.Context, userID, courseID, lessonID string, rating int, message string) (*domain.Review, error) {
@@ -43,7 +45,22 @@ func (s *ReviewService) CreateReview(ctx context.Context, userID, courseID, less
 		return nil, err
 	}
 
-	return s.reviewRepo.FindByID(ctx, review.ID)
+	created, err := s.reviewRepo.FindByID(ctx, review.ID)
+	if err == nil {
+		// Notify course admin about new review
+		if notifSvc := GetNotificationService(); notifSvc != nil && courseID != "" {
+			course, courseErr := s.courseRepo.FindByID(ctx, courseID)
+			if courseErr == nil && course.AdminID != userID {
+				notifSvc.CreateNotification(ctx, course.AdminID, "new_review",
+					"Review Baru",
+					"Ada review baru untuk kursus: "+course.Title+" (rating: "+fmt.Sprintf("%d", rating)+"/5)",
+					"/courses/"+courseID,
+				)
+			}
+		}
+	}
+
+	return created, nil
 }
 
 func (s *ReviewService) UpdateReview(ctx context.Context, reviewID, userID string, rating int, message string) (*domain.Review, error) {

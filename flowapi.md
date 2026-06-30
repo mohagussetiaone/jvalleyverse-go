@@ -193,12 +193,49 @@ DELETE /api/admin/categories/:id                — Delete category
 
 ### Notification Flow
 
-Notifikasi dikirim otomatis oleh backend ketika:
+Notifikasi dikirim **otomatis** oleh backend setiap ada event yang membutuhkan pemberitahuan. Berikut daftar lengkap semua tipe notifikasi:
 
-1. **Reply baru** di diskusi → Owner diskusi mendapat notifikasi "new_reply"
-2. **Like pada reply** → Creator reply mendapat notifikasi "reply_like"
-3. **Jawaban terbaik** (best answer) → Creator reply mendapat notifikasi "best_answer"
-4. **Like pada showcase** → Owner showcase mendapat notifikasi "showcase_like"
+#### Daftar Tipe Notifikasi
+
+| Tipe                 | Pemicu                                           | Diterima Oleh         | Link                       | File Service          |
+| -------------------- | ------------------------------------------------ | --------------------- | -------------------------- | --------------------- |
+| `new_reply`          | Reply baru di diskusi                            | Owner diskusi         | `/discussions/:id`         | `reply_service.go`    |
+| `nested_reply`       | Balasan nested ke reply                          | Parent reply owner    | `/discussions/:id`         | `reply_service.go`    |
+| `reply_like`         | Reply seseorang di-like                          | Creator reply         | `/discussions/:id`         | `reply_service.go`    |
+| `best_answer`        | Reply ditandai sebagai jawaban terbaik           | Creator reply         | `/discussions/:id`         | `reply_service.go`    |
+| `showcase_like`      | Showcase di-like                                 | Owner showcase        | `/showcases/:id`           | `service.go`          |
+| `course_enrollment`  | User baru mendaftar ke kursus                    | Admin course          | `/courses/:id`             | `course_service.go`   |
+| `enrollment_success` | Pendaftaran kursus berhasil                      | User yang mendaftar   | `/courses/:id`             | `course_service.go`   |
+| `new_review`         | Review baru untuk kursus                         | Admin course          | `/courses/:id`             | `review_service.go`   |
+| `lesson_completed`   | Pelajaran selesai + sertifikat didapat           | User yang belajar     | `/courses/:id/lessons/:slug` | `lesson_service.go`  |
+| `level_up`           | Level naik (dengan badge dari user_levels)       | User yang naik level  | `/users/:id/points`        | `service.go`          |
+| `blog_published`     | Blog diterbitkan                                 | Author blog           | `/blogs/:id`               | `blog_service.go`     |
+| `discussion_created` | Diskusi baru dibuat (terkait lesson)             | Creator diskusi       | `/discussions/:id`         | `discussion_service.go` |
+
+#### Anti Self-Notifikasi
+
+Sistem **tidak** mengirim notifikasi jika aktor == penerima untuk mencegah spam notifikasi ke diri sendiri:
+
+- Reply baru: dilewati jika replier == discussion owner
+- Nested reply: dilewati jika replier == parent reply owner
+- Like reply: dilewati jika liker == reply creator (self-like)
+- Like showcase: dilewati jika liker == showcase owner (self-like)
+- Review baru: dilewati jika reviewer == course admin (self-review)
+
+#### Badge Level Up
+
+Saat level naik, notifikasi `level_up` menyertakan badge dari tabel `user_levels`:
+
+```json
+{
+  "type": "level_up",
+  "title": "Level Naik! 🏆",
+  "message": "Selamat! Anda naik ke level Expert ⭐ — Badge: Expert",
+  "link": "/users/user123/points"
+}
+```
+
+Badge diambil dari database `user_levels.badge_name` dan `user_levels.badge_icon`. Jika tidak ada data, fallback ke hardcoded (🌱 Beginner, 🌿 Intermediate, 🌳 Advanced, ⭐ Expert, 👑 Master).
 
 ---
 

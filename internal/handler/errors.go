@@ -18,8 +18,11 @@ func mapServiceErrorToStatus(err error) int {
 	case errors.Is(err, domain.ErrNotFound),
 		errors.Is(err, domain.ErrCourseNotFound),
 		errors.Is(err, domain.ErrLessonNotFound),
-		errors.Is(err, domain.ErrUserNotFound):
+		errors.Is(err, domain.ErrUserNotFound),
+		errors.Is(err, domain.ErrStudyCaseNotFound):
 		return 404
+	case errors.Is(err, domain.ErrEmailExists):
+		return 409
 	default:
 		return 500
 	}

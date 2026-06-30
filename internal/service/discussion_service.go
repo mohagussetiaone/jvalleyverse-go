@@ -52,6 +52,17 @@ func (s *DiscussionService) CreateDiscussion(ctx context.Context, userID string,
 		return nil, err
 	}
 
+	// Notify lesson admin if discussion is related to a lesson
+	if lessonID != nil && *lessonID != "" {
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			notifSvc.CreateNotification(ctx, userID, "discussion_created",
+				"Diskusi Baru Dibuat",
+				"Diskusi '"+title+"' telah dibuat.",
+				"/discussions/"+discussion.ID,
+			)
+		}
+	}
+
 	return discussion, nil
 }
 

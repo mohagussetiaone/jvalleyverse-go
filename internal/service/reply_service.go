@@ -97,6 +97,20 @@ func (s *ReplyService) CreateReply(ctx context.Context, userID, discussionID str
 		}
 	}
 
+	// Notify parent reply owner for nested replies
+	if parentID != nil && *parentID != "" {
+		parentReply, err := s.replyRepo.FindByID(ctx, *parentID)
+		if err == nil && parentReply.UserID != userID && parentReply.UserID != discussion.UserID {
+			if notifSvc := GetNotificationService(); notifSvc != nil {
+				notifSvc.CreateNotification(ctx, parentReply.UserID, "nested_reply",
+					"Balasan Anda Dibalas",
+					"Seseorang membalas komentar Anda dalam diskusi: "+discussion.Title,
+					"/discussions/"+discussionID,
+				)
+			}
+		}
+	}
+
 	return reply, nil
 }
 

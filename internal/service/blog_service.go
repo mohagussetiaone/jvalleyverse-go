@@ -96,6 +96,17 @@ func (s *BlogService) CreateBlog(ctx context.Context, userID string, req CreateB
 		return nil, fmt.Errorf("find created blog: %w", err)
 	}
 
+	// Notify admin when blog is published
+	if req.Status == "published" || req.Status == "" {
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			notifSvc.CreateNotification(ctx, userID, "blog_published",
+				"Blog Dipublikasikan",
+				"Blog '"+req.Title+"' telah diterbitkan.",
+				"/blogs/"+blog.ID,
+			)
+		}
+	}
+
 	return dto.ToBlogDetail(created), nil
 }
 

@@ -230,6 +230,15 @@ func (s *LessonService) CompleteLesson(ctx context.Context, userID, lessonID str
 		return nil, err
 	}
 
+	// Notify user about lesson completion and certificate
+	if notifSvc := GetNotificationService(); notifSvc != nil {
+		notifSvc.CreateNotification(ctx, userID, "lesson_completed",
+			"Pelajaran Selesai!",
+			"Selamat! Anda telah menyelesaikan '"+lesson.Title+"' dan mendapat sertifikat.",
+			"/courses/"+lesson.CourseID+"/lessons/"+lesson.Slug,
+		)
+	}
+
 	return map[string]interface{}{
 		"message":     "Lesson completed!",
 		"certificate": cert,
@@ -239,9 +248,9 @@ func (s *LessonService) CompleteLesson(ctx context.Context, userID, lessonID str
 			"unique_code": cert.UniqueCode,
 			"issued_at":   cert.IssuedAt,
 		},
-		"progress":        progress,
-		"next_lesson":     lesson.NextLesson,
-		"points_awarded":  50,
+		"progress":       progress,
+		"next_lesson":    lesson.NextLesson,
+		"points_awarded": 50,
 	}, nil
 }
 

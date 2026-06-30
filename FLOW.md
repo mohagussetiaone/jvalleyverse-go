@@ -871,6 +871,91 @@ Notifikasi dibuat otomatis oleh sistem:
 - Saat reply ditandai sebagai best answer → creator reply mendapat notif "best_answer"
 - Saat showcase di-like → owner showcase mendapat notif "showcase_like"
 
+### Notifications
+
+Notifikasi dibuat **otomatis oleh sistem** setiap ada event yang membutuhkan pemberitahuan ke user terkait. Semua notifikasi memiliki tipe yang berbeda-beda.
+
+#### Daftar Lengkap Tipe Notifikasi
+
+| Tipe                 | Pemicu                                           | Diterima Oleh         | Link                       |
+| -------------------- | ------------------------------------------------ | --------------------- | -------------------------- |
+| `new_reply`          | Reply baru di diskusi                            | Owner diskusi         | `/discussions/:id`         |
+| `nested_reply`       | Balasan nested ke reply                          | Parent reply owner    | `/discussions/:id`         |
+| `reply_like`         | Reply seseorang di-like                          | Creator reply         | `/discussions/:id`         |
+| `best_answer`        | Reply ditandai sebagai jawaban terbaik           | Creator reply         | `/discussions/:id`         |
+| `showcase_like`      | Showcase di-like                                 | Owner showcase        | `/showcases/:id`           |
+| `course_enrollment`  | User baru mendaftar ke kursus                    | Admin course          | `/courses/:id`             |
+| `enrollment_success` | Pendaftaran kursus berhasil                      | User yang mendaftar   | `/courses/:id`             |
+| `new_review`         | Review baru untuk kursus                         | Admin course          | `/courses/:id`             |
+| `lesson_completed`   | Pelajaran selesai + sertifikat didapat           | User yang belajar     | `/courses/:id/lessons/:slug` |
+| `level_up`           | Level naik (dengan badge)                        | User yang naik level  | `/users/:id/points`        |
+| `blog_published`     | Blog diterbitkan                                 | Author blog           | `/blogs/:id`               |
+| `discussion_created` | Diskusi baru dibuat (terkait lesson)             | Creator diskusi       | `/discussions/:id`         |
+
+#### Alur Notifikasi (Lengkap)
+
+```mermaid
+graph TD
+    A[Event Terjadi] --> B{Cek Notifikasi}
+    B -->|Reply baru| C1[new_reply → Discussion Owner]
+    B -->|Nested reply| C2[nested_reply → Parent Reply Owner]
+    B -->|Like reply| C3[reply_like → Reply Creator]
+    B -->|Best answer| C4[best_answer → Reply Creator]
+    B -->|Like showcase| C5[showcase_like → Showcase Owner]
+    B -->|Enroll course| C6[course_enrollment → Course Admin]
+    B -->|Enroll success| C7[enrollment_success → Enrolled User]
+    B -->|New review| C8[new_review → Course Admin]
+    B -->|Complete lesson| C9[lesson_completed → User]
+    B -->|Level up| C10[level_up + badge → User]
+    B -->|Blog published| C11[blog_published → Author]
+    B -->|Discussion created| C12[discussion_created → Creator]
+    
+    C1 --> D[CreateNotification DB]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    C5 --> D
+    C6 --> D
+    C7 --> D
+    C8 --> D
+    C9 --> D
+    C10 --> D
+    C11 --> D
+    C12 --> D
+    
+    D --> E[SSE Hub.Publish userID]
+    E --> F[Real-time ke client browser]
+```
+
+#### Anti Self-Notifikasi
+
+Sistem **tidak** mengirim notifikasi jika aktor == penerima:
+
+| Event                        | Yang Dicek                                    |
+| ---------------------------- | --------------------------------------------- |
+| Reply baru                   | replier != discussion owner                   |
+| Nested reply                 | replier != parent reply owner                 |
+| Like reply                   | liker != reply creator                        |
+| Like showcase                | liker != showcase owner                       |
+| Review baru                  | reviewer != course admin                      |
+
+#### Badge pada Level Up
+
+Saat user naik level, notifikasi `level_up` menyertakan info badge dari tabel `user_levels`:
+
+```json
+{
+  "type": "level_up",
+  "title": "Level Naik! 🏆",
+  "message": "Selamat! Anda naik ke level Expert ⭐ — Badge: Expert",
+  "link": "/users/user123/points"
+}
+```
+
+Badge diambil dari:
+1. Database `user_levels` (field `badge_name`, `badge_icon`) — jika ada data
+2. Fallback hardcoded: Level 1-5 dengan nama & icon default
+
 ### Real-time Notifications via SSE
 
 Notifikasi real-time menggunakan **Server-Sent Events (SSE)** — protokol HTTP long-lived connection satu arah (server → client).

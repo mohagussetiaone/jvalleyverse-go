@@ -2139,6 +2139,27 @@ fetch("/api/upload", {
 | PUT    | /api/users/me/notifications/read-all | JWT+XSRF+Idempotency       |
 | DELETE | /api/users/me/notifications/:id      | JWT+XSRF+Idempotency       |
 
+#### Tipe Notifikasi (Otomatis Oleh Sistem)
+
+Sistem membuat notifikasi secara otomatis untuk 12 event berbeda:
+
+| Tipe                 | Pemicu                                           | Diterima Oleh         |
+| -------------------- | ------------------------------------------------ | --------------------- |
+| `new_reply`          | Reply baru di diskusi                            | Owner diskusi         |
+| `nested_reply`       | Balasan nested ke reply                          | Parent reply owner    |
+| `reply_like`         | Reply seseorang di-like                          | Creator reply         |
+| `best_answer`        | Reply ditandai sebagai jawaban terbaik           | Creator reply         |
+| `showcase_like`      | Showcase di-like                                 | Owner showcase        |
+| `course_enrollment`  | User baru mendaftar ke kursus                    | Admin course          |
+| `enrollment_success` | Pendaftaran kursus berhasil                      | User yang mendaftar   |
+| `new_review`         | Review baru untuk kursus                         | Admin course          |
+| `lesson_completed`   | Pelajaran selesai + sertifikat didapat           | User yang belajar     |
+| `level_up`           | Level naik (dengan badge dari user_levels)       | User yang naik level  |
+| `blog_published`     | Blog diterbitkan                                 | Author blog           |
+| `discussion_created` | Diskusi baru dibuat (terkait lesson)             | Creator diskusi       |
+
+**Anti Self-Notifikasi:** Sistem tidak mengirim notifikasi jika aktor == penerima (self-reply, self-like, self-review dilewati).
+
 #### GET /api/notifications/stream (SSE)
 
 ```text

@@ -159,6 +159,7 @@ func (h *AuthHandler) generateAuthResponse(c *fiber.Ctx, user *domain.User) erro
 		HTTPOnly: false,
 		Secure:   false,
 		SameSite: "Lax",
+		MaxAge:   int(config.AppConfig.JWTExpiry.Seconds()),
 	})
 
 	return c.JSON(fiber.Map{
@@ -203,9 +204,21 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		newAccessToken, _ = utils.GenerateJWT(user.ID, user.Role)
 	}
 
+	// Generate new XSRF token on refresh so cookie stays in sync with session
+	xsrfToken := utils.GenerateXSRFToken()
+	c.Cookie(&fiber.Cookie{
+		Name:     "XSRF-TOKEN",
+		Value:    xsrfToken,
+		HTTPOnly: false,
+		Secure:   false,
+		SameSite: "Lax",
+		MaxAge:   int(config.AppConfig.JWTExpiry.Seconds()),
+	})
+
 	return c.JSON(fiber.Map{
 		"access_token": newAccessToken,
 		"expires_in":   int(config.AppConfig.JWTExpiry.Seconds()),
+		"xsrf_token":   xsrfToken,
 	})
 }
 

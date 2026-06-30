@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
@@ -97,6 +98,40 @@ func (s *UserService) AddPoints(ctx context.Context, userID string, category str
 	if oldLevel != newLevel {
 		if err := s.userRepo.UpdateLevel(ctx, userID, newLevel); err != nil {
 			return err
+		}
+		// Notify user about level up with badge info
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			// Try to get badge from user_levels table
+			badgeName := ""
+			badgeIcon := ""
+			levelDef, err := s.levelRepo.FindByLevel(ctx, newLevel)
+			if err == nil && levelDef != nil {
+				badgeName = levelDef.BadgeName
+				badgeIcon = levelDef.BadgeIcon
+			}
+			// Fallback to hardcoded names
+			if badgeName == "" {
+				levelNames := map[int]string{1: "Beginner", 2: "Intermediate", 3: "Advanced", 4: "Expert", 5: "Master"}
+				badgeName = levelNames[newLevel]
+				if badgeName == "" {
+					badgeName = fmt.Sprintf("Level %d", newLevel)
+				}
+			}
+			if badgeIcon == "" {
+				levelIcons := map[int]string{1: "🌱", 2: "🌿", 3: "🌳", 4: "⭐", 5: "👑"}
+				badgeIcon = levelIcons[newLevel]
+			}
+
+			message := fmt.Sprintf("Selamat! Level Anda naik ke %s %s — Badge: %s", badgeName, badgeIcon, badgeName)
+			if badgeIcon == "" {
+				message = fmt.Sprintf("Selamat! Level Anda naik ke %s!", badgeName)
+			}
+
+			notifSvc.CreateNotification(ctx, userID, "level_up",
+				"Level Naik! 🏆",
+				message,
+				"/users/"+userID+"/points",
+			)
 		}
 	}
 
@@ -488,7 +523,7 @@ func InitServices(db *gorm.DB) {
 	blogSvc = NewBlogService(blogRepo)
 	// Review service
 	reviewRepo := repository.NewReviewRepository(db)
-	reviewSvc = NewReviewService(reviewRepo)
+	reviewSvc = NewReviewService(reviewRepo, courseRepo)
 
 	// Category service
 	categoryRepo := repository.NewCategoryRepository(db)

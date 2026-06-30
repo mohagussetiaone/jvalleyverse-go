@@ -26,7 +26,7 @@ vendor/
 *~
 .DS_Store
 *.iml
-
+.VSCodeCounter
 # Environment variables
 .env
 .env.local
