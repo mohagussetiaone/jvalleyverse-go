@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "JValleyVerse API",
-    "description": "Community-driven learning platform with gamification, certification, showcase, and file upload features. Protected by rate limiting (Global 200/min, Content 60/min, Auth 10/min), anti-scraping (ScraperGuard), XSRF double-submit cookie (SameSite=None, Secure=true), security headers, and idempotency keys for safe retry.",
+    "description": "Community-driven learning platform with gamification, certification, showcase, and file upload features. Protected by rate limiting (Global 200/min, Content 60/min, Auth 10/min), anti-scraping (ScraperGuard), XSRF double-submit cookie + Origin/Referer fallback (SameSite=None, Secure=true), security headers, and idempotency keys for safe retry. Exposes Prometheus metrics at /metrics for monitoring with Grafana + Prometheus + Node Exporter.",
     "version": "1.0.0",
     "contact": {
       "name": "JValleyVerse Team"

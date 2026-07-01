@@ -12,6 +12,7 @@ import (
 	"jvalleyverse/pkg/swagger"
 	"log"
 
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -45,6 +46,11 @@ func main() {
 	app.Use(middleware.SetupCORS())
 	app.Use(middleware.SecurityHeaders())
 	app.Use(middleware.RateLimiter())
+
+	// ==================== PROMETHEUS METRICS ====================
+	prometheus := fiberprometheus.New("jvalleyverse")
+	prometheus.RegisterAt(app, "/metrics")
+	app.Use(prometheus.Middleware)
 
 	// ==================== SWAGGER DOCUMENTATION ====================
 	app.Get("/docs", swagger.SwaggerHandler)

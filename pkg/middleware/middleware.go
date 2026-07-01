@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
@@ -11,6 +12,44 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// allowedOriginsSet is a quick-lookup set of allowed origins (from CORS config).
+// Rebuilt on every call so it picks up ENV changes without restart.
+func getAllowedOrigins() []string {
+	raw := config.AppConfig.CORSOrigins
+	if raw == "" {
+		raw = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,https://jvalleyverse.web.id"
+	}
+	return strings.Split(raw, ",")
+}
+
+// originIsAllowed checks if the given Origin or Referer matches any configured CORS origin.
+// Referer URLs may include paths (e.g. "http://localhost:3000/some-page"),
+// so we parse them and compare only the origin (scheme + host + port).
+func originIsAllowed(origin string) bool {
+	if origin == "" {
+		return false
+	}
+
+	// If the value looks like a full URL (contains a path), parse out just the origin.
+	// Origin header never has a path, but Referer does.
+	if strings.Contains(origin, "//") && strings.Count(origin, "/") >= 3 {
+		if parsed, err := url.Parse(origin); err == nil {
+			origin = parsed.Scheme + "://" + parsed.Host
+		}
+	}
+
+	// Strip trailing slash for comparison
+	origin = strings.TrimRight(origin, "/")
+
+	for _, allowed := range getAllowedOrigins() {
+		allowed = strings.TrimSpace(allowed)
+		if strings.EqualFold(origin, allowed) {
+			return true
+		}
+	}
+	return false
+}
 
 // ==================== CORS ====================
 func SetupCORS() fiber.Handler {
@@ -213,20 +252,42 @@ func SecurityHeaders() fiber.Handler {
 	}
 }
 
-// XSRF Protection sederhana (cek header X-XSRF-TOKEN)
-// Untuk production lebih baik gunakan double submit cookie pattern
+// XSRF Protection with Origin/Referer fallback.
+//
+// Strategy:
+//  1. Standard double-submit cookie check: X-XSRF-TOKEN header must match XSRF-TOKEN cookie.
+//  2. If cookie check fails, fall back to verifying the Origin (or Referer) header
+//     matches the configured CORS origins.  This is a well-known CSRF defence for SPAs
+//     because the browser will not allow JavaScript on another origin to spoof this header.
+//
+// This means SPA clients that cannot reliably read the XSRF-TOKEN cookie will still get
+// protection through the Same-Origin policy.
 func XSRFProtection() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Abaikan untuk method GET/HEAD/OPTIONS
 		if c.Method() == "GET" || c.Method() == "HEAD" || c.Method() == "OPTIONS" {
 			return c.Next()
 		}
+
 		token := c.Get("X-XSRF-TOKEN")
-		// Bandingkan dengan cookie "XSRF-TOKEN" (harus dikirim client)
 		cookieToken := c.Cookies("XSRF-TOKEN")
-		if token == "" || cookieToken == "" || token != cookieToken {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "XSRF token invalid"})
+
+		// ── Check 1: Double-submit cookie ──
+		if token != "" && cookieToken != "" && token == cookieToken {
+			return c.Next() // XSRF token valid
 		}
-		return c.Next()
+
+		// ── Check 2: Origin / Referer fallback ──
+		origin := c.Get("Origin")
+		if origin == "" {
+			origin = c.Get("Referer")
+		}
+		if origin != "" && originIsAllowed(origin) {
+			// Origin matches configured CORS origins → allowed
+			return c.Next()
+		}
+
+		// Both checks failed → reject
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "XSRF token invalid"})
 	}
 }

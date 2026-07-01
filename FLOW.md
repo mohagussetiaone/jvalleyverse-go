@@ -1439,9 +1439,16 @@ Semua response menyertakan:
 | **Dangerous**   | JWT + XSRF + Idempotency         | Showcases (CRUD/like), Discussions (CRUD/close), Replies, Reviews         |
 | **Admin**       | JWT + XSRF + Idempotency + admin | Admin CRUD: courses, sections, lessons, study-cases, categories, blogs    |
 
-Mutation endpoints (POST/PUT/DELETE) di group **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang cocok dengan cookie.
+### Strategi XSRF: Double-Submit Cookie + Origin/Referer Fallback
 
-Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`, `POST /api/users/me/change-password`) **tidak perlu XSRF token** — hanya JWT.
+Mutation endpoints (POST/PUT/DELETE) di group **Dangerous** dan **Admin** dilindungi oleh **2 lapis validasi**:
+
+1. **Lapis 1 — Double-Submit Cookie:** Header `X-XSRF-TOKEN` harus cocok dengan cookie `XSRF-TOKEN`. Jika cocok → izinkan.
+2. **Lapis 2 — Origin/Referer Fallback:** Jika lapis 1 gagal (cookie tidak tersedia), sistem memeriksa header `Origin` (atau `Referer`). Jika origin cocok dengan daftar CORS origins yang diizinkan → izinkan.
+
+Dengan strategi ini, **SPA client yang tidak bisa membaca cookie XSRF** tetap mendapat perlindungan melalui Same-Origin Policy. Browser tidak mengizinkan JavaScript dari domain lain memalsukan header Origin.
+
+**Urutan prioritas:** Cookie > Origin > Referer > Blokir (403).
 
 **Cookie Attributes:**
 - `SameSite: "None"` — mengizinkan pengiriman cookie dari frontend (`jvalleyverse.web.id`) ke API (`api.jvalleyverse.web.id`) pada cross-origin POST request
@@ -1815,6 +1822,79 @@ GET /api/certificates/:code/verify (public, no auth)
 Endpoint untuk mengecek status seluruh sistem operasional secara real-time. Bisa di-fetch oleh frontend untuk menampilkan dashboard "All Systems Operational".
 
 **Endpoint:** `GET /api/system/status` (public, no auth)
+
+## 22. Prometheus Metrics & Monitoring (Grafana)
+
+### Prometheus Metrics Endpoint
+
+**Endpoint:** `GET /metrics` (no auth)
+
+Semua metrik aplikasi Go (request count, latency, status codes, goroutines, memory, GC) diekspos dalam format Prometheus melalui endpoint `/metrics`.
+
+**Metrik yang tersedia:**
+
+| Metric | Type | Label | Keterangan |
+| ------ | ---- | ----- | ---------- |
+| `http_requests_total` | Counter | `method`, `status`, `path` | Total HTTP request |
+| `http_request_duration_seconds` | Histogram | `method`, `status`, `path` | Durasi request |
+| `http_requests_in_progress` | Gauge | `method` | Request aktif saat ini |
+| `go_goroutines` | Gauge | — | Jumlah goroutine |
+| `go_memstats_heap_alloc_bytes` | Gauge | — | Heap memory teralokasi |
+| `go_memstats_sys_bytes` | Gauge | — | Total memory sistem |
+| `go_gc_duration_seconds` | Summary | — | Durasi GC |
+| `process_start_time_seconds` | Gauge | — | Waktu mulai aplikasi |
+
+### Monitoring Stack
+
+Sistem monitoring menggunakan **Grafana + Prometheus + Node Exporter** untuk visualisasi real-time:
+
+| Komponen | Fungsi | Port |
+| -------- | ------ | ---- |
+| **Prometheus** | Scrape & store metrics | `:9090` |
+| **Grafana** | Dashboard visualisasi | `:3000` |
+| **Node Exporter** | System metrics (CPU, RAM, Disk, Network) | `:9100` |
+
+### Setup di VPS
+
+```bash
+# 1. Jalankan script installer
+chmod +x scripts/setup-monitoring.sh
+sudo ./scripts/setup-monitoring.sh
+
+# 2. Deploy konfigurasi Prometheus
+cp deploy/monitoring/prometheus.yml /etc/prometheus/
+systemctl restart prometheus
+
+# 3. Buka Grafana → http://<VPS_IP>:3000 (admin/admin)
+#    - Add data source → Prometheus (URL: http://localhost:9090)
+#    - Import → upload deploy/monitoring/grafana-dashboard.json
+```
+
+### Grafana Dashboard
+
+Dashboard JSON tersedia di `deploy/monitoring/grafana-dashboard.json` dengan panel:
+
+- **API Uptime** — Lama server berjalan
+- **HTTP Requests/sec** — Rate request per method & status
+- **HTTP Request Duration (p95)** — Latency percentil ke-95
+- **HTTP Status Codes** — Rate 2xx vs 4xx vs 5xx
+- **CPU Usage** — Persentase CPU (dari node_exporter)
+- **Memory Usage** — Persentase RAM (dari node_exporter)
+- **Disk Usage** — Persentase disk dengan threshold (70% orange, 90% red)
+- **Go Goroutines** — Jumlah goroutine aktif
+- **Go Memory (Heap)** — Heap Alloc, Heap In Use, Sys
+- **Go GC Pause Duration** — Rata-rata durasi GC
+- **Network I/O** — RX/TX bytes per device
+- **Open Connections** — Active HTTP requests
+
+### File Struktur
+
+| File | Fungsi |
+| ---- | ------ |
+| `deploy/monitoring/prometheus.yml` | Konfigurasi Prometheus scrape targets |
+| `deploy/monitoring/grafana-dashboard.json` | Grafana dashboard (impor via UI) |
+| `scripts/setup-monitoring.sh` | Script instalasi otomatis Prometheus + Grafana + Node Exporter |
+| `cmd/api/main.go` | Inisialisasi fiberprometheus + register `/metrics` |
 
 ### Services yang Dicek
 

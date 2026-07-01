@@ -712,6 +712,34 @@ Jika limit terlampaui, server mengembalikan:
 }
 ```
 
+### Prometheus Metrics & Monitoring
+
+**Endpoint:** `GET /metrics` (public, no auth)
+
+Aplikasi mengekspos metrik Prometheus melalui endpoint `/metrics` menggunakan package `fiberprometheus`. Metrik ini di-scrape oleh Prometheus server setiap 15 detik.
+
+**Metrik yang tersedia:**
+- `http_requests_total` — Total request per method, status, path
+- `http_request_duration_seconds` — Histogram durasi request
+- `http_requests_in_progress` — Request aktif saat ini
+- `go_goroutines` — Jumlah goroutine
+- `go_memstats_heap_alloc_bytes` — Alokasi heap
+- `go_gc_duration_seconds` — Durasi garbage collection
+- `process_start_time_seconds` — Waktu mulai aplikasi
+
+**Monitoring Stack (Grafana + Prometheus + Node Exporter):**
+
+| Komponen   | Endpoint              | Port   |
+| ---------- | --------------------- | ------ |
+| Prometheus | http://localhost:9090 | `:9090` |
+| Grafana    | http://localhost:3000 | `:3000` |
+| Node Exp.  | http://localhost:9100 | `:9100` |
+
+Konfigurasi dan dashboard tersedia di:
+- `deploy/monitoring/prometheus.yml` — Konfigurasi scrape targets
+- `deploy/monitoring/grafana-dashboard.json` — Dashboard JSON (import via Grafana UI)
+- `scripts/setup-monitoring.sh` — Script instalasi otomatis untuk VPS
+
 ### Anti-Scraping (ScraperGuard)
 
 Semua public content endpoint (`/api/courses/*`, `/api/lessons/*`, `/api/showcases/*`, `/api/categories/*`, `/api/study-cases/*`) dilindungi oleh **ScraperGuard** — middleware yang memblokir request berdasarkan User-Agent.
@@ -763,7 +791,17 @@ Semua response dilengkapi security headers berikut:
 
 Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`) **tidak perlu XSRF token** — cukup JWT.
 
-Endpoint **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang dicocokkan dengan cookie `XSRF-TOKEN`. Token di-generate saat login.
+### Strategi: Double-Submit Cookie + Origin/Referer Fallback
+
+Endpoint **Dangerous** dan **Admin** dilindungi oleh **2 lapis validasi berurutan**:
+
+1. **Lapis 1 — Cookie Match:** Header `X-XSRF-TOKEN` harus sama dengan cookie `XSRF-TOKEN`. Jika cocok → izinkan.
+2. **Lapis 2 — Origin/Referer Fallback:** Jika cookie check gagal, periksa header `Origin`. Jika tidak ada, pakai `Referer`. Jika origin termasuk dalam daftar CORS yang diizinkan → izinkan.
+3. **Blokir (403):** Jika kedua lapis gagal.
+
+Ini memastikan SPA client yang tidak bisa membaca XSRF cookie tetap aman karena browser tidak mengizinkan JavaScript dari domain lain memalsukan Origin header.
+
+**Urutan prioritas:** `X-XSRF-TOKEN` header == cookie > Origin match > Referer match > 403 Forbidden.
 
 **Cookie Attributes:**
 - `SameSite: "None"` — mengizinkan pengiriman cookie dari frontend ke API pada cross-origin POST request
@@ -773,6 +811,9 @@ Endpoint **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang dicoc
 ```
 Cookie: XSRF-TOKEN=abc123
 Header: X-XSRF-TOKEN: abc123
+
+# Atau tanpa cookie — cukup Origin header:
+Origin: https://jvalleyverse.web.id
 ```
 
 ### CORS

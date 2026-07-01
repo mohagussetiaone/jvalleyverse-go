@@ -1,0 +1,272 @@
+{
+  "title": "JValleyVerse — System Health",
+  "uid": "jvalleyverse-health",
+  "version": 1,
+  "tags": ["jvalleyverse", "go", "monitoring"],
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "refresh": "15s",
+  "panels": [
+    {
+      "title": "API Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{job=\"jvalleyverse-api\"}",
+          "format": "time_series",
+          "legendFormat": "uptime"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "values": false
+        },
+        "textMode": "auto",
+        "unit": "s"
+      }
+    },
+    {
+      "title": "HTTP Requests/sec",
+      "type": "graph",
+      "gridPos": { "h": 4, "w": 6, "x": 3, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"jvalleyverse-api\"}[1m])",
+          "legendFormat": "{{method}} {{status}}"
+        }
+      ],
+      "options": {
+        "legend": { "show": true }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        }
+      }
+    },
+    {
+      "title": "HTTP Request Duration (p95)",
+      "type": "graph",
+      "gridPos": { "h": 4, "w": 7, "x": 9, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"jvalleyverse-api\"}[5m]))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        }
+      }
+    },
+    {
+      "title": "HTTP Status Codes (rate)",
+      "type": "graph",
+      "gridPos": { "h": 4, "w": 5, "x": 16, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"jvalleyverse-api\",status=~\"2..\"}[1m])",
+          "legendFormat": "2xx"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"jvalleyverse-api\",status=~\"4..\"}[1m])",
+          "legendFormat": "4xx"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"jvalleyverse-api\",status=~\"5..\"}[1m])",
+          "legendFormat": "5xx"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0
+        }
+      }
+    },
+
+    {
+      "title": "CPU Usage (node)",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance)(rate(node_cpu_seconds_total{mode=\"idle\",job=\"node\"}[1m])) * 100)",
+          "legendFormat": "CPU %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "Memory Usage (node)",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes{job=\"node\"} / node_memory_MemTotal_bytes{job=\"node\"}))",
+          "legendFormat": "RAM %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "Disk Usage",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"node\",fstype!=\"tmpfs\",mountpoint=\"/\"} / node_filesystem_size_bytes{job=\"node\",fstype!=\"tmpfs\",mountpoint=\"/\"}))",
+          "legendFormat": "Disk %"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "go_goroutines{job=\"jvalleyverse-api\"}",
+          "legendFormat": "goroutines"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        }
+      }
+    },
+
+    {
+      "title": "Go Memory (Heap)",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "go_memstats_heap_alloc_bytes{job=\"jvalleyverse-api\"}",
+          "legendFormat": "Heap Alloc"
+        },
+        {
+          "expr": "go_memstats_heap_inuse_bytes{job=\"jvalleyverse-api\"}",
+          "legendFormat": "Heap In Use"
+        },
+        {
+          "expr": "go_memstats_sys_bytes{job=\"jvalleyverse-api\"}",
+          "legendFormat": "Sys"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0
+        }
+      }
+    },
+    {
+      "title": "Go GC Pause Duration",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(go_gc_duration_seconds_sum{job=\"jvalleyverse-api\"}[1m]) / rate(go_gc_duration_seconds_count{job=\"jvalleyverse-api\"}[1m])",
+          "legendFormat": "avg GC pause"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0
+        }
+      }
+    },
+    {
+      "title": "Network I/O",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total{job=\"node\",device!=\"lo\"}[1m])",
+          "legendFormat": "rx {{device}}"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total{job=\"node\",device!=\"lo\"}[1m])",
+          "legendFormat": "tx {{device}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "min": 0
+        }
+      }
+    },
+    {
+      "title": "Open Connections (Go)",
+      "type": "graph",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 9 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(http_requests_active{job=\"jvalleyverse-api\"}[1m])",
+          "legendFormat": "Active Requests"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        }
+      }
+    }
+  ]
+}

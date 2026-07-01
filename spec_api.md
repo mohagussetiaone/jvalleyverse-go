@@ -36,7 +36,7 @@
 | **Rate Limit Auth**    | 10 req/min/IP          | Login & register                                                                                     |
 | **Anti-Scraping**      | User-Agent block       | ScraperGuard: blokir curl, python-requests, Postman, wget, dll                                       |
 | **Security Headers**   | 6 headers              | X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS |
-| **XSRF Protection**    | Double submit cookie   | Cookie `XSRF-TOKEN` (SameSite=None, Secure=true, HttpOnly=false) + Header `X-XSRF-TOKEN` (hanya untuk grup Dangerous & Admin)                     |
+| **XSRF Protection**    | Double submit cookie + Origin/Referer fallback | Cookie `XSRF-TOKEN` (SameSite=None, Secure=true, HttpOnly=false) + Header `X-XSRF-TOKEN`. Jika cookie check gagal, fallback ke Origin/Referer header (hanya untuk grup Dangerous & Admin)                     |
 | **CORS**               | Origin whitelist       | Dikonfigurasi via `CORS_ORIGINS`                                                                     |
 | **Idempotency**        | Idempotency-Key (UUID) | Safe retry untuk semua POST/PUT/DELETE                                                               |
 
