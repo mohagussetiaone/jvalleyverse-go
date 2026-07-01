@@ -136,6 +136,9 @@ func SeedInitialData(db *gorm.DB) error {
 	if err := seedCompany(db); err != nil {
 		return fmt.Errorf("failed to seed company: %w", err)
 	}
+	if err := seedFAQs(db); err != nil {
+		return fmt.Errorf("failed to seed faqs: %w", err)
+	}
 
 	fmt.Println("🌱 Seeding completed!")
 	return nil
@@ -1422,5 +1425,81 @@ func seedCompany(db *gorm.DB) error {
 	}
 
 	fmt.Printf("    ✓ Company created: %s (ID: %s)\n", company.BrandName, company.ID)
+	return nil
+}
+
+func seedFAQs(db *gorm.DB) error {
+	var existing domain.FAQ
+	if result := db.First(&existing); result.RowsAffected > 0 {
+		fmt.Println("    ✓ FAQs already exist, skipping...")
+		return nil
+	}
+
+	faqs := []domain.FAQ{
+		{
+			Question:   "Apa itu JValleyverse?",
+			Answer:     "JValleyverse adalah platform belajar coding online gratis dengan sistem gamifikasi, sertifikat, dan komunitas yang saling mendukung. Kami menyediakan kursus berkualitas tinggi untuk membantu developer Indonesia berkembang.",
+			Category:   "general",
+			OrderIndex: 1,
+			IsActive:   true,
+		},
+		{
+			Question:   "Apakah kursus di JValleyverse benar-benar gratis?",
+			Answer:     "Ya, semua course yang tersedia di JValleyverse dapat diakses secara gratis tanpa biaya. Kami ingin menciptakan akses belajar yang inklusif untuk semua kalangan.",
+			Category:   "general",
+			OrderIndex: 2,
+			IsActive:   true,
+		},
+		{
+			Question:   "Bagaimana cara mendaftar akun?",
+			Answer:     "Klik tombol Daftar di pojok kanan atas halaman utama, isi email dan password Anda, lalu klik Daftar. Anda juga bisa mendaftar menggunakan akun Google untuk proses yang lebih cepat.",
+			Category:   "account",
+			OrderIndex: 1,
+			IsActive:   true,
+		},
+		{
+			Question:   "Bagaimana cara bergabung dengan komunitas?",
+			Answer:     "Anda bisa bergabung dengan komunitas kami melalui tautan yang tersedia di halaman utama, atau mengikuti media sosial resmi JValleyverse untuk info terbaru dan undangan ke grup diskusi.",
+			Category:   "general",
+			OrderIndex: 3,
+			IsActive:   true,
+		},
+		{
+			Question:   "Siapa saja yang bisa berkontribusi?",
+			Answer:     "Semua orang! Baik Anda developer, content creator, maupun enthusiast, Anda bisa berkontribusi dalam bentuk course, artikel, mentoring, atau sekadar berbagi pengalaman di komunitas.",
+			Category:   "general",
+			OrderIndex: 4,
+			IsActive:   true,
+		},
+		{
+			Question:   "Apakah saya bisa membuat course sendiri?",
+			Answer:     "Tentu! Jika Anda ingin berbagi ilmu dan pengalaman, silakan hubungi tim kami melalui halaman Kontak atau DM sosial media kami untuk mulai berdiskusi soal pembuatan course.",
+			Category:   "course",
+			OrderIndex: 1,
+			IsActive:   true,
+		},
+		{
+			Question:   "Apakah ada event atau workshop?",
+			Answer:     "Ya! Kami rutin mengadakan event seperti webinar, coding challenge, dan workshop online yang bisa diikuti secara gratis oleh anggota komunitas.",
+			Category:   "general",
+			OrderIndex: 5,
+			IsActive:   true,
+		},
+		{
+			Question:   "Bagaimana cara mendapatkan update terbaru?",
+			Answer:     "Anda bisa berlangganan newsletter kami atau follow sosial media resmi JValleyverse untuk update course baru, event, dan konten komunitas lainnya.",
+			Category:   "general",
+			OrderIndex: 6,
+			IsActive:   true,
+		},
+	}
+
+	for _, faq := range faqs {
+		if err := db.Create(&faq).Error; err != nil {
+			return fmt.Errorf("failed to seed FAQ: %w", err)
+		}
+	}
+
+	fmt.Printf("    ✓ %d FAQs seeded successfully\n", len(faqs))
 	return nil
 }

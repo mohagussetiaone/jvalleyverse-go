@@ -24,6 +24,7 @@ type DiscussionListItem struct {
 	StudyCaseID *string   `json:"study_case_id,omitempty"`
 	Status      string    `json:"status"`
 	ViewsCount  int       `json:"view_count"`
+	RepliesCount int       `json:"replies_count"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

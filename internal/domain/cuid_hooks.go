@@ -143,3 +143,10 @@ func (a *AdminAuditLog) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+func (f *FAQ) BeforeCreate(tx *gorm.DB) error {
+	if f.ID == "" {
+		f.ID = cuid.New()
+	}
+	return nil
+}
