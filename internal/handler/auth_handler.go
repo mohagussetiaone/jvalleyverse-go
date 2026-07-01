@@ -157,8 +157,8 @@ func (h *AuthHandler) generateAuthResponse(c *fiber.Ctx, user *domain.User) erro
 		Name:     "XSRF-TOKEN",
 		Value:    xsrfToken,
 		HTTPOnly: false,
-		Secure:   false,
-		SameSite: "Lax",
+		Secure:   true,
+		SameSite: "None",
 		MaxAge:   int(config.AppConfig.JWTExpiry.Seconds()),
 	})
 
@@ -210,8 +210,8 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		Name:     "XSRF-TOKEN",
 		Value:    xsrfToken,
 		HTTPOnly: false,
-		Secure:   false,
-		SameSite: "Lax",
+		Secure:   true,
+		SameSite: "None",
 		MaxAge:   int(config.AppConfig.JWTExpiry.Seconds()),
 	})
 
@@ -239,6 +239,8 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HTTPOnly: false,
+		Secure:   true,
+		SameSite: "None",
 	})
 
 	return c.JSON(fiber.Map{"message": "Logged out successfully"})

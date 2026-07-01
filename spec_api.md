@@ -36,7 +36,7 @@
 | **Rate Limit Auth**    | 10 req/min/IP          | Login & register                                                                                     |
 | **Anti-Scraping**      | User-Agent block       | ScraperGuard: blokir curl, python-requests, Postman, wget, dll                                       |
 | **Security Headers**   | 6 headers              | X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS |
-| **XSRF Protection**    | Double submit cookie   | Cookie `XSRF-TOKEN` + Header `X-XSRF-TOKEN` (hanya untuk grup Dangerous & Admin)                     |
+| **XSRF Protection**    | Double submit cookie   | Cookie `XSRF-TOKEN` (SameSite=None, Secure=true, HttpOnly=false) + Header `X-XSRF-TOKEN` (hanya untuk grup Dangerous & Admin)                     |
 | **CORS**               | Origin whitelist       | Dikonfigurasi via `CORS_ORIGINS`                                                                     |
 | **Idempotency**        | Idempotency-Key (UUID) | Safe retry untuk semua POST/PUT/DELETE                                                               |
 
@@ -465,6 +465,10 @@ Idempotency-Key: <uuid>
 
 #### GET /api/courses/:course_id/reviews
 
+```
+// Query: ?page=1&limit=20
+```
+
 ```json
 // Response 200
 {
@@ -480,7 +484,12 @@ Idempotency-Key: <uuid>
       "message": "Kursusnya sangat bagus dan mudah dipahami",
       "created_at": "2026-06-15T12:04:44.714Z"
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 3
+  }
 }
 ```
 
@@ -569,6 +578,10 @@ Idempotency-Key: <uuid>
 
 #### GET /api/lessons/:id/reviews
 
+```
+// Query: ?page=1&limit=20
+```
+
 ```json
 // Response 200
 {
@@ -584,7 +597,12 @@ Idempotency-Key: <uuid>
       "message": "Materinya bagus, tapi butuh lebih banyak contoh",
       "created_at": "2026-06-15T12:04:44.714Z"
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2
+  }
 }
 ```
 
@@ -988,6 +1006,10 @@ Idempotency-Key: <uuid>
 
 #### GET /api/faqs
 
+```
+// Query: ?page=1&limit=20
+```
+
 ```json
 // Response 200
 {
@@ -1002,7 +1024,12 @@ Idempotency-Key: <uuid>
       "created_at": "2026-06-18T10:00:00.000Z",
       "updated_at": "2026-06-18T10:00:00.000Z"
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5
+  }
 }
 ```
 
@@ -1016,6 +1043,7 @@ Idempotency-Key: <uuid>
 | GET    | /api/showcases/:id   | ScraperGuard + ContentRL |
 | GET    | /api/health          | — (no guard)             |
 | GET    | /api/health/detailed | — (no guard)             |
+| GET    | /api/system/status   | — (no guard)             |
 | GET    | /api/users/:id       | —                        |
 | GET    | /api/faqs            | — (no guard)             |
 | GET    | /api/company         | — (no guard)             |
@@ -1197,6 +1225,137 @@ Idempotency-Key: <uuid>
 }
 ```
 
+#### GET /api/users/:id/portfolio
+
+```
+// No auth required (public)
+// Aggregates certificates, showcases, and study cases for a shareable portfolio
+```
+
+```json
+// Response 200
+{
+  "user": {
+    "id": "cmqer18kq009hgcujg8lyhhyh",
+    "name": "John Doe",
+    "avatar": "https://cdn.mohagussetiaone.my.id/jvalleyverse/avatars/user.jpg"
+  },
+  "total_points": 850,
+  "level": 3,
+  "items": [
+    {
+      "id": "cmqer18kq023hgcujg8lyhhyz",
+      "title": "Go Basics",
+      "description": "Certificate of completion",
+      "type": "certificate",
+      "url": "https://jvalleyverse.com/certificates/verify/CERT-abc12345",
+      "created_at": "2026-06-15T12:00:00.000Z",
+      "tags": ["certificate"]
+    },
+    {
+      "id": "cmqer18kq018hgcujg8lyhhyq",
+      "title": "My Portfolio Website",
+      "description": "Built with React & Next.js",
+      "type": "showcase",
+      "image_url": "https://cdn.mohagussetiaone.my.id/jvalleyverse/showcases/img1.jpg",
+      "created_at": "2026-06-15T12:04:44.714Z",
+      "tags": ["showcase"]
+    },
+    {
+      "id": "cmqer18kq016hgcujg8lyhhyo",
+      "title": "Belajar Go Basic",
+      "description": "Studi kasus fundamental Go",
+      "type": "study_case",
+      "image_url": "https://cdn.mohagussetiaone.my.id/jvalleyverse/study-cases/img.jpg",
+      "created_at": "2026-06-15T12:04:44.714Z",
+      "tags": ["golang", "beginner"]
+    }
+  ],
+  "cert_count": 5,
+  "showcase_count": 3,
+  "study_case_count": 2
+}
+// Response 404
+{
+  "error": "User not found"
+}
+```
+
+#### GET /api/certificates/:code/verify
+
+```
+// No auth required (public)
+// Verify a certificate by its unique code
+```
+
+```json
+// Response 200
+{
+  "id": "cmqer18kq023hgcujg8lyhhyz",
+  "unique_code": "CERT-abc12345",
+  "issued_at": "2026-06-15T12:00:00.000Z",
+  "user_id": "cmqer18kq009hgcujg8lyhhyh",
+  "lesson_id": "cmqer18kq005hgcujg8lyhhyc",
+  "lesson_name": "Go Basics",
+  "user_name": "John Doe",
+  "verification_url": "https://jvalleyverse.com/certificates/verify/CERT-abc12345",
+  "qr_code_url": "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fjvalleyverse.com%2Fcertificates%2Fverify%2FCERT-abc12345",
+  "achievement": {
+    "type": "certificate",
+    "title": "Go Basics",
+    "unique_code": "CERT-abc12345"
+  }
+}
+// Response 404
+{
+  "error": "Certificate not found"
+}
+```
+
+#### GET /api/system/status
+
+```
+// No auth required (public)
+// Returns real-time operational status of all system dependencies
+```
+
+```json
+// Response 200
+{
+  "status": "all_operational",
+  "uptime": "72h15m30s",
+  "version": "1.0.0",
+  "environment": "production",
+  "timestamp": "2026-07-01T10:00:00.000Z",
+  "services": [
+    {
+      "name": "database",
+      "status": "operational",
+      "message": "PostgreSQL connected",
+      "latency": "2.5ms"
+    },
+    {
+      "name": "redis",
+      "status": "operational",
+      "message": "Redis connected",
+      "latency": "1.2ms"
+    },
+    {
+      "name": "minio",
+      "status": "operational",
+      "message": "MinIO connected",
+      "latency": "0.5ms"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "operational": 3,
+    "degraded": 0,
+    "down": 0
+  }
+}
+```
+
 ---
 
 ## PROTECTED ROUTES (JWT)
@@ -1303,7 +1462,30 @@ Authorization: Bearer <access_token>
   "courses_in_progress": 2,
   "courses_completed": 3,
   "courses_dropped": 1,
-  "unread_notifications": 5
+  "unread_notifications": 5,
+  "streak_count": 5
+}
+```
+
+#### GET /api/users/me/streak
+
+| Method | Path                | Middleware |
+| ------ | ------------------- | ---------- |
+| GET    | /api/users/me/streak | JWTAuth    |
+
+```json
+// Headers
+Authorization: Bearer <access_token>
+
+// Response 200
+{
+  "streak_count": 5,
+  "longest_streak": 12,
+  "last_activity_date": "2026-06-20T10:00:00.000Z"
+}
+// Response 401
+{
+  "error": "Missing or invalid JWT token"
 }
 ```
 

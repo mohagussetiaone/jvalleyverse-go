@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 
 	"jvalleyverse/internal/domain"
@@ -40,8 +38,8 @@ func (h *BlogHandler) Create(c *fiber.Ctx) error {
 
 // GET /api/blogs
 func (h *BlogHandler) List(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultBlogLimit), DefaultBlogLimit)
 	search := c.Query("search", "")
 	categoryID := c.Query("category_id", "")
 	tag := c.Query("tag", "")
@@ -99,8 +97,8 @@ func (h *BlogHandler) AdminDelete(c *fiber.Ctx) error {
 // GET /api/users/me/blogs
 func (h *BlogHandler) ListMyBlogs(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultBlogLimit), DefaultBlogLimit)
 	status := c.Query("status", "")
 
 	items, pagination, err := h.blogSvc.ListMyBlogs(c.UserContext(), userID, page, limit, status)

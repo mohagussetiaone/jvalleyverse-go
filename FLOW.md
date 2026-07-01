@@ -11,8 +11,8 @@
 | Buat/kelola discussion & reply                           | -      | ✓    | ✓      | ✓            |
 | Buat/kelola showcase                                     | -      | ✓    | ✓      | ✓            |
 | Like/unlike showcase & reply                             | -      | ✓    | ✓      | ✓            |
-| Lihat certificate sendiri                                | -      | ✓    | ✓      | ✓            |
-| Dashboard (widget stats)                                 | -      | ✓    | ✓      | ✓            |
+| Lihat certificate sendiri (dengan QR Code & verifikasi) | -      | ✓    | ✓      | ✓            |
+| Dashboard (widget stats + streak)                       | -      | ✓    | ✓      | ✓            |
 | Lihat notifikasi sendiri                                 | -      | ✓    | ✓      | ✓            |
 | Enroll course & enrolled-courses (lihat dgn is_enrolled) | -      | ✓    | ✓      | ✓            |
 | My Courses / My Study Cases / My Certificates            | -      | ✓    | ✓      | ✓            |
@@ -1443,6 +1443,11 @@ Mutation endpoints (POST/PUT/DELETE) di group **Dangerous** dan **Admin** mewaji
 
 Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`, `POST /api/users/me/change-password`) **tidak perlu XSRF token** — hanya JWT.
 
+**Cookie Attributes:**
+- `SameSite: "None"` — mengizinkan pengiriman cookie dari frontend (`jvalleyverse.web.id`) ke API (`api.jvalleyverse.web.id`) pada cross-origin POST request
+- `Secure: true` — cookie hanya dikirim via HTTPS (wajib untuk SameSite=None)
+- `HTTPOnly: false` — JavaScript frontend dapat membaca cookie (untuk double-submit pattern)
+
 Contoh request enroll (tanpa XSRF):
 ```bash
 curl -X POST http://localhost:3000/api/courses/:id/enroll \
@@ -1642,7 +1647,263 @@ await fetch("/api/admin/courses", {
 
 ---
 
-## 18. Blog Feature
+## 18. Learning Streak (🔥)
+
+Setiap kali user **menyelesaikan sebuah lesson**, sistem otomatis mencatat aktivitas harian dan menghitung streak belajar.
+
+### Rules
+
+| Kondisi                                                        | Hasil                          |
+| -------------------------------------------------------------- | ------------------------------ |
+| Hari ini adalah hari pertama belajar                           | `streak_count = 1`             |
+| Belajar lagi besok (hari berikutnya)                           | `streak_count += 1`            |
+| Belajar lagi di hari yang sama                                  | `streak_count` tidak berubah   |
+| Melewatkan 1+ hari (streak putus)                               | `streak_count = 1` (reset)     |
+| `streak_count > longest_streak`                                 | `longest_streak = streak_count` |
+
+### Endpoints
+
+```
+GET /api/users/me/streak (JWT) — Current learning streak
+```
+
+### Response
+
+```json
+{
+  "streak_count": 5,
+  "longest_streak": 12,
+  "last_activity_date": "2026-06-20T10:00:00Z"
+}
+```
+
+### Dashboard
+
+Dashboard widget sekarang mencakup `streak_count`:
+```json
+{
+  "courses_in_progress": 2,
+  "courses_completed": 5,
+  "courses_dropped": 1,
+  "unread_notifications": 3,
+  "streak_count": 5
+}
+```
+
+## 19. Portfolio Generator (★★★★★)
+
+Semua project yang pernah dibuat user otomatis menjadi portfolio yang bisa dibagikan.
+
+**URL:** `https://jvalleyverse.com/u/{user_id}` (frontend) atau `GET /api/users/:id/portfolio` (API)
+
+### Portfolio Items
+
+Portfolio mengagregasi 3 tipe konten:
+
+| Tipe         | Sumber Data                    | Field Portfolio                    |
+| ------------ | ------------------------------ | ---------------------------------- |
+| Certificate  | `certificates` per user        | title, type, verification_url      |
+| Showcase     | `showcases` per user           | title, description, image_url, type |
+| Study Case   | `study_cases` per user         | title, description, image_url, type |
+
+### Public Endpoint
+
+```
+GET /api/users/:id/portfolio
+```
+
+**Response 200:**
+```json
+{
+  "user": {
+    "id": "cmqer18kq009hgcujg8lyhhyh",
+    "name": "John Doe",
+    "avatar": "https://cdn..."
+  },
+  "total_points": 850,
+  "level": 3,
+  "items": [
+    {
+      "id": "...",
+      "title": "Go Basics",
+      "description": "Certificate of completion",
+      "type": "certificate",
+      "url": "https://jvalleyverse.com/certificates/verify/CERT-abc12345",
+      "created_at": "2026-06-15T12:00:00Z",
+      "tags": ["certificate"]
+    },
+    {
+      "id": "...",
+      "title": "My Portfolio Website",
+      "description": "Built with React & Next.js",
+      "type": "showcase",
+      "image_url": "https://cdn.../showcase.jpg",
+      "created_at": "2026-06-15T12:00:00Z",
+      "tags": ["showcase"]
+    },
+    {
+      "id": "...",
+      "title": "Belajar Go Basic",
+      "description": "Studi kasus fundamental Go",
+      "type": "study_case",
+      "image_url": "https://cdn.../study-case.jpg",
+      "created_at": "2026-06-15T12:00:00Z",
+      "tags": ["golang", "beginner"]
+    }
+  ],
+  "cert_count": 5,
+  "showcase_count": 3,
+  "study_case_count": 2
+}
+```
+
+**Response 404:**
+```json
+{ "error": "User not found" }
+```
+
+## 20. Certificate QR Code & Verification
+
+Setiap certificate memiliki:
+- **QR Code** — Gambar QR yang bisa di-scan
+- **Verification URL** — Link publik untuk verifikasi
+
+### QR Code Generation
+
+QR code digenerate menggunakan `https://api.qrserver.com/v1/create-qr-code/` dengan data verification URL.
+
+### Certificate Fields (Baru)
+
+| Field             | Tipe   | Contoh                                                    |
+| ----------------- | ------ | --------------------------------------------------------- |
+| `verification_url` | string | `https://jvalleyverse.com/certificates/verify/CERT-abc123` |
+| `qr_code_url`      | string | `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=...` |
+
+### Public Verification Endpoint
+
+```
+GET /api/certificates/:code/verify (public, no auth)
+```
+
+**Response 200:**
+```json
+{
+  "id": "...",
+  "unique_code": "CERT-abc12345",
+  "issued_at": "2026-06-15T12:00:00Z",
+  "user_id": "...",
+  "lesson_id": "...",
+  "lesson_name": "Go Basics",
+  "user_name": "John Doe",
+  "verification_url": "https://jvalleyverse.com/certificates/verify/CERT-abc12345",
+  "qr_code_url": "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=...",
+  "achievement": {
+    "type": "certificate",
+    "title": "Go Basics",
+    "unique_code": "CERT-abc12345"
+  }
+}
+```
+
+**Response 404:**
+```json
+{ "error": "Certificate not found" }
+```
+
+## 21. System Status / Logging System
+
+Endpoint untuk mengecek status seluruh sistem operasional secara real-time. Bisa di-fetch oleh frontend untuk menampilkan dashboard "All Systems Operational".
+
+**Endpoint:** `GET /api/system/status` (public, no auth)
+
+### Services yang Dicek
+
+| Service       | Status Possible                       | Jika Down                            |
+| ------------- | ------------------------------------- | ------------------------------------ |
+| **Database**  | `operational` / `down`                | PING ke PostgreSQL gagal             |
+| **Redis**     | `operational` / `degraded` / `down`   | Tidak terkonfigurasi atau PING gagal |
+| **MinIO**     | `operational` / `degraded`            | Tidak terkonfigurasi                 |
+
+### Overall Status
+
+| Status             | Arti                                              |
+| ------------------ | ------------------------------------------------- |
+| `all_operational`  | Semua service berjalan normal ✅                   |
+| `partial_outage`   | Ada service yang degraded (tidak kritis) ⚠️        |
+| `major_outage`     | Ada service yang down total ❌                     |
+
+### Response 200
+
+```json
+{
+  "status": "all_operational",
+  "uptime": "72h15m30s",
+  "version": "1.0.0",
+  "environment": "production",
+  "timestamp": "2026-07-01T10:00:00Z",
+  "services": [
+    {
+      "name": "database",
+      "status": "operational",
+      "message": "PostgreSQL connected",
+      "latency": "2.5ms"
+    },
+    {
+      "name": "redis",
+      "status": "operational",
+      "message": "Redis connected",
+      "latency": "1.2ms"
+    },
+    {
+      "name": "minio",
+      "status": "operational",
+      "message": "MinIO connected",
+      "latency": "0.5ms"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "operational": 3,
+    "degraded": 0,
+    "down": 0
+  }
+}
+```
+
+### Frontend Usage
+
+Frontend bisa auto-refresh setiap 30 detik dan menampilkan status badge:
+
+```js
+async function checkSystemStatus() {
+  const res = await fetch("https://api.jvalleyverse.web.id/api/system/status");
+  const { status, uptime, services, summary } = await res.json();
+  
+  if (status === "all_operational") {
+    showGreenBadge("All Systems Operational");
+  } else if (status === "partial_outage") {
+    showYellowBadge("Partial Outage");
+  } else {
+    showRedBadge("Major Outage");
+  }
+  
+  services.forEach(s => {
+    console.log(`${s.name}: ${s.status} (${s.latency})`);
+  });
+}
+
+setInterval(checkSystemStatus, 30000);
+```
+
+### File Structure
+
+| File                                            | Fungsi                                  |
+| ----------------------------------------------- | --------------------------------------- |
+| `internal/service/system_status_service.go`     | Logic pengecekan tiap service           |
+| `internal/handler/status_handler.go`            | HTTP handler untuk endpoint             |
+| `pkg/routes/routes.go`                          | Route registration sebagai public route |
+
+## 22. Blog Feature
 
 ### Role Access
 

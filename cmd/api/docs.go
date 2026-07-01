@@ -11,7 +11,7 @@ package main
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @host localhost:3000
+// @host localhost:3001
 // @BasePath /api
 // @schemes http https
 

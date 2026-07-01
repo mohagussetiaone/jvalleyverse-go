@@ -17,8 +17,8 @@ func NewNotificationHandler(notifSvc service.INotificationService) *Notification
 // ListNotifications returns user's notifications
 func (h *NotificationHandler) ListNotifications(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	notifs, total, err := h.notifSvc.ListNotifications(c.UserContext(), userID, page, limit)
 	if err != nil {

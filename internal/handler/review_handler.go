@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/service"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,12 +21,26 @@ func (h *ReviewHandler) ListCourseReviews(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid course ID"})
 	}
 
-	reviews, err := h.reviewSvc.ListCourseReviews(c.UserContext(), courseID)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
+
+	reviews, total, err := h.reviewSvc.ListCourseReviews(c.UserContext(), courseID, page, limit)
 	if err != nil {
 		return safeError(c, 500, err)
 	}
 
-	return c.JSON(fiber.Map{"data": reviews})
+	if reviews == nil {
+		reviews = []dto.ReviewItem{}
+	}
+
+	return c.JSON(fiber.Map{
+		"data": reviews,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
 }
 
 func (h *ReviewHandler) ListLessonReviews(c *fiber.Ctx) error {
@@ -34,12 +49,26 @@ func (h *ReviewHandler) ListLessonReviews(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid lesson ID"})
 	}
 
-	reviews, err := h.reviewSvc.ListLessonReviews(c.UserContext(), lessonID)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
+
+	reviews, total, err := h.reviewSvc.ListLessonReviews(c.UserContext(), lessonID, page, limit)
 	if err != nil {
 		return safeError(c, 500, err)
 	}
 
-	return c.JSON(fiber.Map{"data": reviews})
+	if reviews == nil {
+		reviews = []dto.ReviewItem{}
+	}
+
+	return c.JSON(fiber.Map{
+		"data": reviews,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
 }
 
 func (h *ReviewHandler) CreateReview(c *fiber.Ctx) error {

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "JValleyVerse API",
-    "description": "Community-driven learning platform with gamification, certification, showcase, and file upload features. Protected by rate limiting (Global 200/min, Content 60/min, Auth 10/min), anti-scraping (ScraperGuard), XSRF double-submit cookie, security headers, and idempotency keys for safe retry.",
+    "description": "Community-driven learning platform with gamification, certification, showcase, and file upload features. Protected by rate limiting (Global 200/min, Content 60/min, Auth 10/min), anti-scraping (ScraperGuard), XSRF double-submit cookie (SameSite=None, Secure=true), security headers, and idempotency keys for safe retry.",
     "version": "1.0.0",
     "contact": {
       "name": "JValleyVerse Team"
@@ -17,7 +17,7 @@
       "description": "Production"
     },
     {
-      "url": "http://localhost:3000",
+      "url": "http://localhost:3001",
       "description": "Local development"
     }
   ],
@@ -117,6 +117,38 @@
     {
       "name": "Admin - Users",
       "description": "Admin user management"
+    },
+    {
+      "name": "Blogs",
+      "description": "Public blog listing and details"
+    },
+    {
+      "name": "FAQs",
+      "description": "Public FAQ listing"
+    },
+    {
+      "name": "Company",
+      "description": "Company profile"
+    },
+    {
+      "name": "Admin - Blogs",
+      "description": "Admin blog management"
+    },
+    {
+      "name": "Admin - FAQs",
+      "description": "Admin FAQ management"
+    },
+    {
+      "name": "System",
+      "description": "System status and monitoring endpoints"
+    },
+    {
+      "name": "Certificates",
+      "description": "Certificate verification endpoints"
+    },
+    {
+      "name": "Portfolio",
+      "description": "User portfolio generator endpoints"
     }
   ],
   "security": [
@@ -756,6 +788,224 @@
           "unread_notifications": {
             "type": "integer",
             "example": 5
+          },
+          "streak_count": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "SystemStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["all_operational", "partial_outage", "major_outage"]
+          },
+          "uptime": {
+            "type": "string",
+            "example": "72h15m30s"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "environment": {
+            "type": "string",
+            "example": "production"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceHealth"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/StatusSummary"
+          }
+        }
+      },
+      "ServiceHealth": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "database"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["operational", "degraded", "down"]
+          },
+          "message": {
+            "type": "string",
+            "example": "PostgreSQL connected"
+          },
+          "latency": {
+            "type": "string",
+            "example": "2.5ms"
+          }
+        }
+      },
+      "StatusSummary": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 3
+          },
+          "operational": {
+            "type": "integer",
+            "example": 3
+          },
+          "degraded": {
+            "type": "integer",
+            "example": 0
+          },
+          "down": {
+            "type": "integer",
+            "example": 0
+          }
+        }
+      },
+      "StreakResponse": {
+        "type": "object",
+        "properties": {
+          "streak_count": {
+            "type": "integer",
+            "example": 5
+          },
+          "longest_streak": {
+            "type": "integer",
+            "example": 12
+          },
+          "last_activity_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PortfolioResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "total_points": {
+            "type": "integer",
+            "example": 850
+          },
+          "level": {
+            "type": "integer",
+            "example": 3
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PortfolioItem"
+            }
+          },
+          "cert_count": {
+            "type": "integer",
+            "example": 5
+          },
+          "showcase_count": {
+            "type": "integer",
+            "example": 3
+          },
+          "study_case_count": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "PortfolioItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["certificate", "showcase", "study_case"]
+          },
+          "url": {
+            "type": "string",
+            "format": "url"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CertificateVerification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "unique_code": {
+            "type": "string",
+            "example": "CERT-abc12345"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "lesson_id": {
+            "type": "string"
+          },
+          "lesson_name": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "verification_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "qr_code_url": {
+            "type": "string",
+            "format": "url"
+          },
+          "achievement": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "certificate"
+              },
+              "title": {
+                "type": "string"
+              },
+              "unique_code": {
+                "type": "string"
+              }
+            }
           }
         }
       },
@@ -1136,6 +1386,16 @@
           "user_name": {
             "type": "string"
           },
+          "verification_url": {
+            "type": "string",
+            "format": "url",
+            "example": "https://jvalleyverse.com/certificates/verify/CERT-abc123"
+          },
+          "qr_code_url": {
+            "type": "string",
+            "format": "url",
+            "example": "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=..."
+          },
           "achievement": {
             "type": "object",
             "properties": {
@@ -1401,6 +1661,769 @@
             "format": "date-time"
           }
         }
+      },
+      "FAQItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "abc123"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "order_index": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Google One Tap Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["credential"],
+                "properties": {
+                  "credential": {
+                    "type": "string",
+                    "description": "Google ID token from One Tap"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid Google token"
+          }
+        }
+      }
+    },
+    "/api/faqs": {
+      "get": {
+        "tags": ["FAQs"],
+        "summary": "List active FAQs (public)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active FAQs list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FAQItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blogs": {
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "List published blogs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog posts list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BlogListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blogs/{id}": {
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "Get blog detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Blog not found"
+          }
+        }
+      }
+    },
+    "/api/company": {
+      "get": {
+        "tags": ["Company"],
+        "summary": "Get company profile",
+        "responses": {
+          "200": {
+            "description": "Company profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "logo_url": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/change-password": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Change current user password",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password"],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Invalid current password"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/avatar": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Update profile picture (multipart upload)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Avatar image file"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "url"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/admin/company": {
+      "put": {
+        "tags": ["Admin"],
+        "summary": "Update company profile (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "logo_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Company profile updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/faqs": {
+      "get": {
+        "tags": ["Admin - FAQs"],
+        "summary": "List all FAQs (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All FAQs list with pagination"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin - FAQs"],
+        "summary": "Create FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["question", "answer"],
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "answer": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "FAQ created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/faqs/{id}": {
+      "get": {
+        "tags": ["Admin - FAQs"],
+        "summary": "Get single FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ details"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin - FAQs"],
+        "summary": "Update FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "answer": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FAQ updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin - FAQs"],
+        "summary": "Delete FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      }
+    },
+    "/api/admin/blogs": {
+      "get": {
+        "tags": ["Admin - Blogs"],
+        "summary": "List all blogs (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All blogs list with pagination"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin - Blogs"],
+        "summary": "Create blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "cover_img_url": {
+                    "type": "string"
+                  },
+                  "category_id": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "published"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Blog created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/blogs/{id}": {
+      "put": {
+        "tags": ["Admin - Blogs"],
+        "summary": "Update blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "cover_img_url": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "published"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Blog updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Blog not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin - Blogs"],
+        "summary": "Delete blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Blog not found"
+          }
+        }
       }
     }
   },
@@ -1580,6 +2603,25 @@
                       "example": "ok"
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/status": {
+      "get": {
+        "tags": ["Health", "System"],
+        "summary": "System operational status (public)",
+        "description": "Returns real-time status of all system dependencies (Database, Redis, MinIO). No auth required. Frontend can auto-refresh every 30s to display operational dashboard.",
+        "responses": {
+          "200": {
+            "description": "System status with per-service health checks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatus"
                 }
               }
             }
@@ -3004,6 +4046,97 @@
         }
       }
     },
+    "/api/users/me/streak": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get my learning streak",
+        "description": "Returns current learning streak count, longest streak, and last activity date. Streak auto-tracks when user completes lessons.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learning streak info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreakResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/{id}/portfolio": {
+      "get": {
+        "tags": ["Portfolio", "Users"],
+        "summary": "Get user portfolio (public)",
+        "description": "Aggregates certificates, showcases, and study cases for a user into a shareable portfolio page. No auth required.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User portfolio with aggregated items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/certificates/{code}/verify": {
+      "get": {
+        "tags": ["Certificates"],
+        "summary": "Verify certificate (public)",
+        "description": "Public endpoint to verify a certificate by its unique code. Returns certificate details including verification URL and QR code URL. No auth required.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate verification details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateVerification"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Certificate not found"
+          }
+        }
+      }
+    },
     "/api/users/me/activity": {
       "get": {
         "tags": ["Gamification"],
@@ -3364,11 +4497,27 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Course reviews list",
+            "description": "Course reviews list with pagination",
             "content": {
               "application/json": {
                 "schema": {
@@ -3379,6 +4528,9 @@
                       "items": {
                         "$ref": "#/components/schemas/ReviewItem"
                       }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
                     }
                   }
                 }
@@ -3403,11 +4555,27 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Lesson reviews list",
+            "description": "Lesson reviews list with pagination",
             "content": {
               "application/json": {
                 "schema": {
@@ -3418,6 +4586,9 @@
                       "items": {
                         "$ref": "#/components/schemas/ReviewItem"
                       }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
                     }
                   }
                 }

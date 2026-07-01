@@ -46,8 +46,8 @@ func (h *ShowcaseHandler) Create(c *fiber.Ctx) error {
 // ListMyShowcases returns current user's showcases (GET /api/users/me/showcases)
 func (h *ShowcaseHandler) ListMyShowcases(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	showcases, total, err := h.showcaseSvc.ListMyShowcases(c.UserContext(), userID, page, limit)
 	if err != nil {
@@ -66,8 +66,8 @@ func (h *ShowcaseHandler) ListMyShowcases(c *fiber.Ctx) error {
 
 // ListShowcases returns paginated public showcases (GET /api/showcases)
 func (h *ShowcaseHandler) ListShowcases(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 	categoryID := c.Query("category_id")
 	sort := c.Query("sort", "newest")
 

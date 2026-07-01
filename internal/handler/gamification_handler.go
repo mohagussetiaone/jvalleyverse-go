@@ -37,7 +37,7 @@ func (h *GamificationHandler) GetUserPoints(c *fiber.Ctx) error {
 
 // GetLeaderboard returns top users by points
 func (h *GamificationHandler) GetLeaderboard(c *fiber.Ctx) error {
-	limit := c.QueryInt("limit", 10)
+	limit := clampLimit(c.QueryInt("limit", DefaultLeaderLimit), DefaultLeaderLimit)
 
 	leaderboard, err := h.gamificationSvc.GetLeaderboard(c.UserContext(), limit)
 	if err != nil {

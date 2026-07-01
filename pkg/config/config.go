@@ -32,6 +32,7 @@ type Config struct {
 	MinioBucket    string
 	MinioCDNURL    string
 	MinioUseSSL    bool
+	FrontendURL    string
 }
 
 var AppConfig *Config
@@ -53,7 +54,7 @@ func LoadConfig() {
 	}
 
 	AppConfig = &Config{
-		Port:           getEnv("PORT", "3000"),
+		Port:           getEnv("PORT", "3001"),
 		JWTSecret:      jwtSecret,
 		JWTExpiry:      expiry,
 		DBHost:         getEnv("DB_HOST", "localhost"),
@@ -75,6 +76,7 @@ func LoadConfig() {
 		MinioBucket:    getEnv("MINIO_BUCKET", "jvalleyverse"),
 		MinioCDNURL:    getEnv("MINIO_CDN_URL", "https://cdn.mohagussetiaone.my.id"),
 		MinioUseSSL:    getEnv("MINIO_USE_SSL", "true") == "true",
+		FrontendURL:    getEnv("FRONTEND_URL", "https://jvalleyverse.com"),
 	}
 }
 

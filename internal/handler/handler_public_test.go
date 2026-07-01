@@ -538,6 +538,95 @@ func TestDiscussionHandler_GetDiscussion(t *testing.T) {
 }
 
 // ──────────────────────────────────────────────
+// FAQ PUBLIC TESTS (flow.md section 15)
+// ──────────────────────────────────────────────
+
+func TestFaqHandler_ListPublic(t *testing.T) {
+	app := setupTestApp()
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "Apa itu JValleyverse?", "Platform belajar coding.", "general", 1, true)
+	mockSvc.addTestFAQ("faq2", "Bagaimana cara daftar?", "Klik tombol Daftar.", "account", 2, true)
+	handler := NewFaqHandler(mockSvc)
+	app.Get("/api/faqs", handler.ListPublic)
+
+	req := httptest.NewRequest("GET", "/api/faqs?page=1&limit=20", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	data := result["data"].([]interface{})
+	assert.GreaterOrEqual(t, len(data), 2)
+	assert.Contains(t, result, "pagination")
+	pagination := result["pagination"].(map[string]interface{})
+	assert.Equal(t, float64(1), pagination["page"])
+	assert.Equal(t, float64(20), pagination["limit"])
+	assert.Equal(t, float64(2), pagination["total"])
+}
+
+func TestFaqHandler_ListPublic_Empty(t *testing.T) {
+	app := setupTestApp()
+	handler := NewFaqHandler(newMockFaqService())
+	app.Get("/api/faqs", handler.ListPublic)
+
+	req := httptest.NewRequest("GET", "/api/faqs?page=1&limit=20", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	data := result["data"].([]interface{})
+	assert.Equal(t, 0, len(data))
+	assert.Contains(t, result, "pagination")
+}
+
+func TestFaqHandler_ListPublic_OnlyActive(t *testing.T) {
+	app := setupTestApp()
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "Active FAQ", "Active answer.", "general", 1, true)
+	mockSvc.addTestFAQ("faq2", "Inactive FAQ", "Inactive answer.", "general", 2, false)
+	handler := NewFaqHandler(mockSvc)
+	app.Get("/api/faqs", handler.ListPublic)
+
+	req := httptest.NewRequest("GET", "/api/faqs?page=1&limit=20", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	data := result["data"].([]interface{})
+	assert.Equal(t, 1, len(data))
+	first := data[0].(map[string]interface{})
+	assert.Equal(t, "Active FAQ", first["question"])
+	pagination := result["pagination"].(map[string]interface{})
+	assert.Equal(t, float64(1), pagination["total"])
+}
+
+// ──────────────────────────────────────────────
+// COMPANY PUBLIC TESTS (flow.md section 15)
+// ──────────────────────────────────────────────
+
+func TestCompanyHandler_GetCompany(t *testing.T) {
+	app := setupTestApp()
+	handler := NewCompanyHandler(newMockCompanyService())
+	app.Get("/api/company", handler.GetCompany)
+
+	req := httptest.NewRequest("GET", "/api/company", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "JValleyVerse", result["brand_name"])
+	assert.Equal(t, "Learn, Build, Grow Together", result["tagline"])
+	assert.Equal(t, "hello@jvalleyverse.com", result["email"])
+}
+
+// ──────────────────────────────────────────────
 // GAMIFICATION PUBLIC TESTS (flow.md section 9)
 // ──────────────────────────────────────────────
 

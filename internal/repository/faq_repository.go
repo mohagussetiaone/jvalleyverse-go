@@ -50,13 +50,26 @@ func (r *FAQRepository) ListAll(ctx context.Context, page, limit int) ([]domain.
 	return faqs, total, err
 }
 
-func (r *FAQRepository) ListActive(ctx context.Context) ([]domain.FAQ, error) {
+func (r *FAQRepository) ListActive(ctx context.Context, page, limit int) ([]domain.FAQ, int64, error) {
 	var faqs []domain.FAQ
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&domain.FAQ{}).Where("is_active = ?", true).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	if offset < 0 {
+		offset = 0
+	}
+
 	err := r.db.WithContext(ctx).
 		Where("is_active = ?", true).
 		Order("order_index ASC, created_at ASC").
+		Offset(offset).
+		Limit(limit).
 		Find(&faqs).Error
-	return faqs, err
+	return faqs, total, err
 }
 
 func (r *FAQRepository) Update(ctx context.Context, faq *domain.FAQ) error {

@@ -179,7 +179,12 @@ func (m *mockDashboardService) GetDashboard(_ context.Context, _ string) (map[st
 		"courses_completed":    3,
 		"courses_dropped":      1,
 		"unread_notifications": 5,
+		"streak_count":         3,
 	}, nil
+}
+
+func (m *mockDashboardService) GetStreak(_ context.Context, userID string) (int, error) {
+	return 3, nil
 }
 
 // ──────────────────────────────────────────────
@@ -1084,12 +1089,12 @@ func (m *mockReviewService) DeleteReview(_ context.Context, reviewID, userID str
 	return nil
 }
 
-func (m *mockReviewService) ListCourseReviews(_ context.Context, courseID string) ([]dto.ReviewItem, error) {
-	return []dto.ReviewItem{}, nil
+func (m *mockReviewService) ListCourseReviews(_ context.Context, courseID string, page, limit int) ([]dto.ReviewItem, int64, error) {
+	return []dto.ReviewItem{}, 0, nil
 }
 
-func (m *mockReviewService) ListLessonReviews(_ context.Context, lessonID string) ([]dto.ReviewItem, error) {
-	return []dto.ReviewItem{}, nil
+func (m *mockReviewService) ListLessonReviews(_ context.Context, lessonID string, page, limit int) ([]dto.ReviewItem, int64, error) {
+	return []dto.ReviewItem{}, 0, nil
 }
 
 // ──────────────────────────────────────────────
@@ -1139,6 +1144,24 @@ func (m *mockCertificateService) GetCertificateByCode(_ context.Context, code, r
 			if cert.UserID != requesterID && requesterRole != "admin" {
 				return nil, domain.ErrForbidden
 			}
+			return &dto.CertificateItem{
+				ID:          cert.ID,
+				UniqueCode:  cert.UniqueCode,
+				IssuedAt:    cert.IssuedAt,
+				UserID:      cert.UserID,
+				LessonID:    cert.LessonID,
+				LessonName:  "Test Lesson",
+				UserName:    "Test User",
+				Achievement: &dto.AchievementInfo{Type: "certificate", Title: "Test Lesson", UniqueCode: cert.UniqueCode},
+			}, nil
+		}
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockCertificateService) VerifyCertificateByCode(_ context.Context, code string) (*dto.CertificateItem, error) {
+	for _, cert := range m.certificates {
+		if cert.UniqueCode == code {
 			return &dto.CertificateItem{
 				ID:          cert.ID,
 				UniqueCode:  cert.UniqueCode,
@@ -1495,6 +1518,150 @@ func (m *mockNotificationService) MarkAllAsRead(_ context.Context, userID string
 
 func (m *mockNotificationService) DeleteNotification(_ context.Context, notificationID, userID string) error {
 	return nil
+}
+
+// ──────────────────────────────────────────────
+// mockFaqService implements service.IFaqService
+// ──────────────────────────────────────────────
+
+type mockFaqService struct {
+	faqs map[string]*dto.FAQItem
+}
+
+func newMockFaqService() *mockFaqService {
+	return &mockFaqService{
+		faqs: make(map[string]*dto.FAQItem),
+	}
+}
+
+func (m *mockFaqService) addTestFAQ(id, question, answer, category string, orderIndex int, isActive bool) {
+	m.faqs[id] = &dto.FAQItem{
+		ID:         id,
+		Question:   question,
+		Answer:     answer,
+		Category:   category,
+		OrderIndex: orderIndex,
+		IsActive:   isActive,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+}
+
+func (m *mockFaqService) CreateFAQ(_ context.Context, question, answer, category string, orderIndex int) (*dto.FAQItem, error) {
+	if question == "" || answer == "" {
+		return nil, domain.ErrInvalidInput
+	}
+	if category == "" {
+		category = "general"
+	}
+	item := &dto.FAQItem{
+		ID:         "mock-faq-" + question,
+		Question:   question,
+		Answer:     answer,
+		Category:   category,
+		OrderIndex: orderIndex,
+		IsActive:   true,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	m.faqs[item.ID] = item
+	return item, nil
+}
+
+func (m *mockFaqService) UpdateFAQ(_ context.Context, id, question, answer, category string, orderIndex int, isActive bool) (*dto.FAQItem, error) {
+	item, ok := m.faqs[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	if question != "" {
+		item.Question = question
+	}
+	if answer != "" {
+		item.Answer = answer
+	}
+	if category != "" {
+		item.Category = category
+	}
+	item.OrderIndex = orderIndex
+	item.IsActive = isActive
+	return item, nil
+}
+
+func (m *mockFaqService) DeleteFAQ(_ context.Context, id string) error {
+	if _, ok := m.faqs[id]; !ok {
+		return domain.ErrNotFound
+	}
+	delete(m.faqs, id)
+	return nil
+}
+
+func (m *mockFaqService) ListAllFAQs(_ context.Context, page, limit int) ([]dto.FAQItem, int64, error) {
+	items := make([]dto.FAQItem, 0, len(m.faqs))
+	for _, f := range m.faqs {
+		items = append(items, *f)
+	}
+	return items, int64(len(items)), nil
+}
+
+func (m *mockFaqService) ListPublicFAQs(_ context.Context, page, limit int) ([]dto.FAQItem, int64, error) {
+	items := make([]dto.FAQItem, 0)
+	for _, f := range m.faqs {
+		if f.IsActive {
+			items = append(items, *f)
+		}
+	}
+	return items, int64(len(items)), nil
+}
+
+func (m *mockFaqService) GetFAQByID(_ context.Context, id string) (*dto.FAQItem, error) {
+	item, ok := m.faqs[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return item, nil
+}
+
+// ──────────────────────────────────────────────
+// mockCompanyService implements service.ICompanyService
+// ──────────────────────────────────────────────
+
+type mockCompanyService struct {
+	company *dto.CompanyItem
+}
+
+func newMockCompanyService() *mockCompanyService {
+	return &mockCompanyService{
+		company: &dto.CompanyItem{
+			ID:        "mock-company-1",
+			BrandName: "JValleyVerse",
+			Tagline:   "Learn, Build, Grow Together",
+			Email:     "hello@jvalleyverse.com",
+			Domain:    "https://jvalleyverse.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+}
+
+func (m *mockCompanyService) GetCompany(_ context.Context) (*dto.CompanyItem, error) {
+	return m.company, nil
+}
+
+func (m *mockCompanyService) UpdateCompany(_ context.Context, input domain.Company) (*dto.CompanyItem, error) {
+	if input.BrandName != "" {
+		m.company.BrandName = input.BrandName
+	}
+	if input.Tagline != "" {
+		m.company.Tagline = input.Tagline
+	}
+	if input.Email != "" {
+		m.company.Email = input.Email
+	}
+	if input.Domain != "" {
+		m.company.Domain = input.Domain
+	}
+	m.company.UpdatedAt = time.Now()
+	return m.company, nil
 }
 
 // ──────────────────────────────────────────────

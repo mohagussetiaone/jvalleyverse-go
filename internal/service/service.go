@@ -521,6 +521,7 @@ var (
 	auditSvc        *AuditService
 	notifSvc        INotificationService
 	dashboardSvc    IDashboardService
+	streakSvc       *StreakService
 )
 
 // InitServices initializes all global service instances
@@ -547,7 +548,11 @@ func InitServices(db *gorm.DB) {
 	userSvc = NewUserService(userRepo, pointRepo, levelRepo, refreshRepo)
 	showcaseSvc = NewShowcaseService(showcaseRepo, likeRepo, userSvc)
 	certificateSvc = NewCertificateService(certificateRepo, lessonRepo, userRepo)
-	lessonSvc = NewLessonService(lessonRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, courseRepo, enrollRepo, sectionRepo)
+
+	// Learning Streak repository (needed by LessonService and DashboardService)
+	streakRepo := repository.NewLearningStreakRepository(db)
+
+	lessonSvc = NewLessonService(lessonRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, courseRepo, enrollRepo, sectionRepo, streakRepo)
 	discussionSvc = NewDiscussionService(discussionRepo, replyRepo, userRepo)
 	replySvc = NewReplyService(replyRepo, discussionRepo, userSvc)
 	gamificationSvc = NewGamificationService(pointRepo, levelRepo, userRepo, showcaseRepo, userSvc)
@@ -572,8 +577,11 @@ func InitServices(db *gorm.DB) {
 	notifRepo := repository.NewNotificationRepository(db)
 	notifSvc = NewNotificationService(notifRepo)
 
+	// Streak service
+	streakSvc = NewStreakService(streakRepo)
+
 	// Dashboard service
-	dashboardSvc = NewDashboardService(lessonRepo, classProgressRepo, notifSvc)
+	dashboardSvc = NewDashboardService(lessonRepo, classProgressRepo, notifSvc, streakRepo)
 
 	// FAQ service
 	faqRepo := repository.NewFAQRepository(db)
@@ -646,6 +654,10 @@ func GetNotificationService() INotificationService {
 
 func GetDashboardService() IDashboardService {
 	return dashboardSvc
+}
+
+func GetStreakService() *StreakService {
+	return streakSvc
 }
 
 func GetFaqService() IFaqService {

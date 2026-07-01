@@ -3,7 +3,6 @@ package handler
 import (
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/service"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,8 +18,8 @@ func NewStudyCaseHandler(studyCaseSvc service.IStudyCaseService) *StudyCaseHandl
 // ListMyStudyCases returns current user's study cases (GET /api/users/me/study-cases)
 func (h *StudyCaseHandler) ListMyStudyCases(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	data, total, err := h.studyCaseSvc.ListStudyCasesByUser(c.UserContext(), userID, page, limit)
 	if err != nil {
@@ -47,8 +46,8 @@ func (h *StudyCaseHandler) ListMyStudyCases(c *fiber.Ctx) error {
 // @Success      200  {object}  map[string]interface{}
 // @Router       /study-cases [get]
 func (h *StudyCaseHandler) ListStudyCases(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	categoryID := c.Query("category_id", "")
 	var filter *service.StudyCaseListFilter

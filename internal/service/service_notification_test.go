@@ -93,6 +93,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&domain.UserLevel{},
 		&domain.Certificate{},
 		&domain.Notification{},
+		&domain.LearningStreak{},
 	))
 	return db
 }
@@ -291,6 +292,7 @@ func TestNotif_LessonComplete_SendsCertificateNotification(t *testing.T) {
 		repository.NewCourseRepository(db),
 		repository.NewEnrollmentRepository(db),
 		repository.NewSectionRepository(db),
+		repository.NewLearningStreakRepository(db),
 	)
 
 	_, err := svc.StartLesson(context.Background(), "user1", "l1")

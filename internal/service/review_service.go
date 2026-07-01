@@ -12,8 +12,8 @@ type IReviewService interface {
 	CreateReview(ctx context.Context, userID, courseID, lessonID string, rating int, message string) (*domain.Review, error)
 	UpdateReview(ctx context.Context, reviewID, userID string, rating int, message string) (*domain.Review, error)
 	DeleteReview(ctx context.Context, reviewID, userID string) error
-	ListCourseReviews(ctx context.Context, courseID string) ([]dto.ReviewItem, error)
-	ListLessonReviews(ctx context.Context, lessonID string) ([]dto.ReviewItem, error)
+	ListCourseReviews(ctx context.Context, courseID string, page, limit int) ([]dto.ReviewItem, int64, error)
+	ListLessonReviews(ctx context.Context, lessonID string, page, limit int) ([]dto.ReviewItem, int64, error)
 }
 
 type ReviewService struct {
@@ -100,18 +100,32 @@ func (s *ReviewService) DeleteReview(ctx context.Context, reviewID, userID strin
 	return s.reviewRepo.DeleteByID(ctx, reviewID)
 }
 
-func (s *ReviewService) ListCourseReviews(ctx context.Context, courseID string) ([]dto.ReviewItem, error) {
-	reviews, err := s.reviewRepo.ListByCourse(ctx, courseID)
-	if err != nil {
-		return nil, err
+func (s *ReviewService) ListCourseReviews(ctx context.Context, courseID string, page, limit int) ([]dto.ReviewItem, int64, error) {
+	if page < 1 {
+		page = 1
 	}
-	return dto.ToReviewItems(reviews), nil
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	reviews, total, err := s.reviewRepo.ListByCourse(ctx, courseID, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	return dto.ToReviewItems(reviews), total, nil
 }
 
-func (s *ReviewService) ListLessonReviews(ctx context.Context, lessonID string) ([]dto.ReviewItem, error) {
-	reviews, err := s.reviewRepo.ListByLesson(ctx, lessonID)
-	if err != nil {
-		return nil, err
+func (s *ReviewService) ListLessonReviews(ctx context.Context, lessonID string, page, limit int) ([]dto.ReviewItem, int64, error) {
+	if page < 1 {
+		page = 1
 	}
-	return dto.ToReviewItems(reviews), nil
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	reviews, total, err := s.reviewRepo.ListByLesson(ctx, lessonID, page, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	return dto.ToReviewItems(reviews), total, nil
 }

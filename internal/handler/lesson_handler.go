@@ -3,7 +3,6 @@ package handler
 import (
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/service"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -45,8 +44,8 @@ func (h *LessonHandler) ListLessonsByCourse(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Course ID is required"})
 	}
 
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 	offset := (page - 1) * limit
 
 	lessons, total, err := h.lessonSvc.ListLessonsByCourse(c.UserContext(), courseID, limit, offset)

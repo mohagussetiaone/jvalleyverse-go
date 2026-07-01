@@ -51,7 +51,8 @@ Go 1.25 + Fiber v2 + GORM + PostgreSQL + Redis
 | lesson_details     | lesson_id (unique), about, rules, tools (JSON), resources (JSON)                   |
 | lesson_progresses  | user_id, lesson_id, status, progress_percentage                                    |
 | course_enrollments | user_id, course_id (unique composite)                                              |
-| certificates       | user_id, lesson_id, unique_code (unique)                                           |
+| learning_streaks   | user_id (unique), streak_count, longest_streak, last_activity_date                     |
+| certificates       | user_id, lesson_id, unique_code (unique), verification_url, qr_code_url             |
 | discussions        | title, content, user_id, lesson_id (nullable), category_id                         |
 | replies            | content, user_id, discussion_id, parent_id (nullable)                              |
 | showcases          | title, user_id, category_id, media_urls (JSONB)                                    |
@@ -70,7 +71,20 @@ Go 1.25 + Fiber v2 + GORM + PostgreSQL + Redis
 
 ## API Route Table
 
-### Public (33 routes, some with optional JWT)
+### New Public Routes (Portfolio + Certificate Verification)
+
+```
+GET    /api/users/:id/portfolio           — Public user portfolio (aggregates certs, showcases, study cases)
+GET    /api/certificates/:code/verify     — Verify certificate (public, no auth)
+```
+
+### New Protected Routes
+
+```
+GET    /api/users/me/streak               — My learning streak (JWT)
+```
+
+### Public (34 routes, some with optional JWT)
 
 Catatan: Route yang ditandai `(Opt.JWT)` menggunakan middleware `OptionalJWTAuth` — response akan menyertakan `is_enrolled` jika user membawa token.
 
@@ -91,9 +105,9 @@ GET    /api/courses (Opt.JWT)          — Public courses (+ is_enrolled jika lo
 GET    /api/courses/:course_id (Opt.JWT) — Course with sections & lessons (+ is_enrolled)
 GET    /api/courses/:course_id/sections — List sections
 GET    /api/courses/:course_id/sections/:section_id — Section detail
-GET    /api/courses/:course_id/reviews  — Reviews for a course
+GET    /api/courses/:course_id/reviews  — Reviews for a course (?page=&limit=)
 GET    /api/lessons/:id                — Lesson detail
-GET    /api/lessons/:id/reviews        — Reviews for a lesson
+GET    /api/lessons/:id/reviews        — Reviews for a lesson (?page=&limit=)
 GET    /api/courses/:course_id/lessons — Lessons in course
 GET    /api/courses/:course_id/sections/:section_id/lessons — Lessons in section
 GET    /api/courses/:course_id/lessons/:slug — Lesson by slug
@@ -105,6 +119,7 @@ GET    /api/study-cases                — Paginated study cases
 GET    /api/study-cases/:id            — Study case detail
 GET    /api/health                     — Health check
 GET    /api/health/detailed            — Detailed health + metrics
+GET    /api/system/status              — System operational status (no auth)
 GET    /api/users/:id                  — Public profile
 GET    /api/company                    — Company profile (no auth)
 ```
@@ -133,6 +148,7 @@ PUT    /api/lessons/:id/progress          — Update progress
 POST   /api/lessons/:id/complete          — Complete lesson
 GET    /api/users/me/certificates         — My certificates
 GET    /api/users/me/certificates/:code   — Certificate by code
+GET    /api/certificates/:code/verify     — Verify certificate (public, no auth)
 GET    /api/users/me/notifications        — My notifications
 GET    /api/users/me/notifications/count  — Unread notification count
 PUT    /api/users/me/notifications/:id/read — Mark notif as read
@@ -213,7 +229,7 @@ Admin:
 ### FAQ (Public + Admin CRUD)
 
 ```
-GET  /api/faqs (public)              — List active FAQs (no auth)
+GET  /api/faqs (public)              — List active FAQs (?page=&limit=, no auth)
 
 Admin:
   GET    /api/admin/faqs              — List all FAQs (paginated)
@@ -425,7 +441,7 @@ Semua response API menggunakan **DTO struct bukan raw domain model** untuk:
 **`CertificateItem`** — list certificate
 
 ```json
-{ "id": "...", "unique_code": "CERT-abc12345", "issued_at": "...", "lesson_id": "...", "lesson_name": "Nama Lesson", "user_name": "Budi", "achievement": { "type": "certificate" } }
+{ "id": "...", "unique_code": "CERT-abc12345", "issued_at": "...", "lesson_id": "...", "lesson_name": "Nama Lesson", "user_name": "Budi", "achievement": { "type": "certificate" }, "verification_url": "https://jvalleyverse.com/certificates/verify/CERT-abc12345", "qr_code_url": "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=..." }
 ```
 
 **`UserListItem`** — admin: list all users
@@ -748,6 +764,11 @@ Semua response dilengkapi security headers berikut:
 Endpoint **Safe** (termasuk `POST /api/courses/:id/enroll`, `POST /api/upload`) **tidak perlu XSRF token** — cukup JWT.
 
 Endpoint **Dangerous** dan **Admin** mewajibkan header `X-XSRF-TOKEN` yang dicocokkan dengan cookie `XSRF-TOKEN`. Token di-generate saat login.
+
+**Cookie Attributes:**
+- `SameSite: "None"` — mengizinkan pengiriman cookie dari frontend ke API pada cross-origin POST request
+- `Secure: true` — cookie hanya dikirim via HTTPS (wajib untuk SameSite=None)
+- `HTTPOnly: false` — JavaScript frontend dapat membaca cookie
 
 ```
 Cookie: XSRF-TOKEN=abc123

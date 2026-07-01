@@ -52,8 +52,8 @@ func (h *DiscussionHandler) ListDiscussions(c *fiber.Ctx) error {
 		lessonIDPtr = &lessonID
 	}
 
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	discussions, total, err := h.discussionSvc.ListDiscussions(c.UserContext(), page, limit, lessonIDPtr, studyCaseIDPtr, nil)
 	if err != nil {
@@ -135,8 +135,8 @@ func (h *DiscussionHandler) DeleteDiscussion(c *fiber.Ctx) error {
 // ListMyDiscussions returns current user's discussions
 func (h *DiscussionHandler) ListMyDiscussions(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	discussions, total, err := h.discussionSvc.ListUserDiscussions(c.UserContext(), userID, page, limit)
 	if err != nil {

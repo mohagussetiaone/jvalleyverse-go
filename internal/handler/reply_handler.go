@@ -18,8 +18,8 @@ func NewReplyHandler() *ReplyHandler {
 // GetMyReplies returns current user's replies
 func (h *ReplyHandler) GetMyReplies(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	replies, total, err := h.replySvc.ListRepliesByUser(c.UserContext(), userID, page, limit)
 	if err != nil {

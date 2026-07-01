@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/minio"
 	"jvalleyverse/internal/service"
 
@@ -10,12 +11,20 @@ import (
 type UserHandler struct {
 	userSvc       service.IUserService
 	dashboardSvc  service.IDashboardService
+	certificateSvc service.ICertificateService
+	showcaseSvc   service.IShowcaseService
+	studyCaseSvc  service.IStudyCaseService
+	streakSvc     *service.StreakService
 }
 
 func NewUserHandler(userSvc service.IUserService, dashboardSvc service.IDashboardService) *UserHandler {
 	return &UserHandler{
-		userSvc:      userSvc,
-		dashboardSvc: dashboardSvc,
+		userSvc:       userSvc,
+		dashboardSvc:  dashboardSvc,
+		certificateSvc: service.GetCertificateService(),
+		showcaseSvc:   service.GetShowcaseService(),
+		studyCaseSvc:  service.GetStudyCaseService(),
+		streakSvc:     service.GetStreakService(),
 	}
 }
 
@@ -149,8 +158,8 @@ func (h *UserHandler) GetPublicProfile(c *fiber.Ctx) error {
 // GetActivityLog returns user activity log
 func (h *UserHandler) GetActivityLog(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	logs, total, err := h.userSvc.GetUserActivityLog(c.UserContext(), userID, page, limit)
 	if err != nil {
@@ -169,8 +178,8 @@ func (h *UserHandler) GetActivityLog(c *fiber.Ctx) error {
 
 // ListMentors returns paginated list of mentors
 func (h *UserHandler) ListMentors(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	mentors, total, err := h.userSvc.ListMentors(c.UserContext(), page, limit)
 	if err != nil {
@@ -187,10 +196,94 @@ func (h *UserHandler) ListMentors(c *fiber.Ctx) error {
 	})
 }
 
+// GetPortfolio returns public portfolio for a user (GET /api/users/:id/portfolio)
+func (h *UserHandler) GetPortfolio(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	if userID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid user ID"})
+	}
+
+	user, err := h.userSvc.GetProfile(c.UserContext(), userID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Gather portfolio items
+	var items []dto.PortfolioItem
+
+	// Certificates
+	certs, certTotal, _ := h.certificateSvc.ListUserCertificates(c.UserContext(), userID, 1, 100)
+	for _, cert := range certs {
+		items = append(items, dto.PortfolioItem{
+			ID:          cert.ID,
+			Title:       cert.LessonName,
+			Description: "Certificate of completion",
+			Type:        "certificate",
+			URL:         cert.VerificationURL,
+			CreatedAt:   cert.IssuedAt,
+			Tags:        []string{"certificate"},
+		})
+	}
+
+	// Showcases
+	showcases, showcaseTotal, _ := h.showcaseSvc.ListMyShowcases(c.UserContext(), userID, 1, 100)
+	for _, sc := range showcases {
+		images := make([]string, 0)
+		if len(sc.MediaURLs) > 0 {
+			images = sc.MediaURLs
+		}
+		items = append(items, dto.PortfolioItem{
+			ID:          sc.ID,
+			Title:       sc.Title,
+			Description: sc.Description,
+			Type:        "showcase",
+			ImageURL:    images[0],
+			CreatedAt:   sc.CreatedAt,
+			Tags:        []string{"showcase"},
+		})
+	}
+
+	// Study Cases
+	studyCases, studyCaseTotal, _ := h.studyCaseSvc.ListStudyCasesByUser(c.UserContext(), userID, 1, 100)
+	for _, sc := range studyCases {
+		items = append(items, dto.PortfolioItem{
+			ID:          sc.ID,
+			Title:       sc.Name,
+			Description: sc.Description,
+			Type:        "study_case",
+			ImageURL:    sc.ImgURL,
+			Tags:        sc.Tags,
+			CreatedAt:   sc.CreatedAt,
+		})
+	}
+
+	return c.JSON(dto.PortfolioResponse{
+		User: dto.ToUserBrief(*user),
+		TotalPoints: user.TotalPoints,
+		Level:       user.Level,
+		Items:       items,
+		CertCount:     int(certTotal),
+		ShowcaseCount: int(showcaseTotal),
+		StudyCaseCount: int(studyCaseTotal),
+	})
+}
+
+// GetMyStreak returns current user's learning streak (GET /api/users/me/streak)
+func (h *UserHandler) GetMyStreak(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+
+	streak, err := h.streakSvc.GetUserStreak(c.UserContext(), userID)
+	if err != nil {
+		return safeError(c, 500, err)
+	}
+
+	return c.JSON(streak)
+}
+
 // GetAllUsers returns paginated list of all users (admin only)
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 20)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	users, total, err := h.userSvc.ListAllUsers(c.UserContext(), page, limit)
 	if err != nil {

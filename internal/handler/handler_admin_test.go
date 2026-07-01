@@ -559,3 +559,224 @@ func TestAdminBlogHandler_ListAllBlogs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 }
+
+// ──────────────────────────────────────────────
+// ADMIN FAQ CRUD (flow.md section 15)
+// ──────────────────────────────────────────────
+
+func TestAdminFaqHandler_Create(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockFaqService()
+	handler := NewFaqHandler(mockSvc)
+	app.Post("/api/admin/faqs", handler.Create)
+
+	body := `{"question":"Bagaimana cara daftar?","answer":"Klik tombol Daftar.","category":"account","order_index":1}`
+	req := httptest.NewRequest("POST", "/api/admin/faqs", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 201, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "Bagaimana cara daftar?", result["question"])
+	assert.Equal(t, "Klik tombol Daftar.", result["answer"])
+	assert.Equal(t, "account", result["category"])
+	assert.Equal(t, true, result["is_active"])
+}
+
+func TestAdminFaqHandler_Create_MissingQuestion(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Post("/api/admin/faqs", handler.Create)
+
+	body := `{"question":"","answer":"Answer","category":"general","order_index":1}`
+	req := httptest.NewRequest("POST", "/api/admin/faqs", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+}
+
+func TestAdminFaqHandler_Create_MissingAnswer(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Post("/api/admin/faqs", handler.Create)
+
+	body := `{"question":"Question?","answer":"","category":"general","order_index":1}`
+	req := httptest.NewRequest("POST", "/api/admin/faqs", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+}
+
+func TestAdminFaqHandler_Create_InvalidBody(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Post("/api/admin/faqs", handler.Create)
+
+	// Send invalid JSON
+	req := httptest.NewRequest("POST", "/api/admin/faqs", strings.NewReader("{invalid}"))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+}
+
+func TestAdminFaqHandler_ListAll(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "FAQ 1", "Answer 1", "general", 1, true)
+	mockSvc.addTestFAQ("faq2", "FAQ 2", "Answer 2", "account", 2, false)
+	handler := NewFaqHandler(mockSvc)
+	app.Get("/api/admin/faqs", handler.ListAll)
+
+	req := httptest.NewRequest("GET", "/api/admin/faqs", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	data := result["data"].([]interface{})
+	assert.Equal(t, 2, len(data)) // admin sees all, including inactive
+	pagination := result["pagination"].(map[string]interface{})
+	assert.Equal(t, float64(2), pagination["total"])
+}
+
+func TestAdminFaqHandler_GetByID(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "Test Question", "Test Answer", "general", 1, true)
+	handler := NewFaqHandler(mockSvc)
+	app.Get("/api/admin/faqs/:id", handler.GetByID)
+
+	req := httptest.NewRequest("GET", "/api/admin/faqs/faq1", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "Test Question", result["question"])
+	assert.Equal(t, "Test Answer", result["answer"])
+}
+
+func TestAdminFaqHandler_GetByID_NotFound(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Get("/api/admin/faqs/:id", handler.GetByID)
+
+	req := httptest.NewRequest("GET", "/api/admin/faqs/nonexistent", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 404, resp.StatusCode)
+}
+
+func TestAdminFaqHandler_Update(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "Old Question", "Old Answer", "general", 1, true)
+	handler := NewFaqHandler(mockSvc)
+	app.Put("/api/admin/faqs/:id", handler.Update)
+
+	body := `{"question":"Updated Question","answer":"Updated Answer","category":"account","order_index":2,"is_active":false}`
+	req := httptest.NewRequest("PUT", "/api/admin/faqs/faq1", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "Updated Question", result["question"])
+	assert.Equal(t, "Updated Answer", result["answer"])
+	assert.Equal(t, "account", result["category"])
+	assert.Equal(t, false, result["is_active"])
+}
+
+func TestAdminFaqHandler_Update_NotFound(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Put("/api/admin/faqs/:id", handler.Update)
+
+	body := `{"question":"Updated","answer":"Answer"}`
+	req := httptest.NewRequest("PUT", "/api/admin/faqs/nonexistent", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 404, resp.StatusCode)
+}
+
+func TestAdminFaqHandler_Delete(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockFaqService()
+	mockSvc.addTestFAQ("faq1", "To Delete", "Answer", "general", 1, true)
+	handler := NewFaqHandler(mockSvc)
+	app.Delete("/api/admin/faqs/:id", handler.Delete)
+
+	req := httptest.NewRequest("DELETE", "/api/admin/faqs/faq1", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "FAQ deleted", result["message"])
+}
+
+func TestAdminFaqHandler_Delete_NotFound(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewFaqHandler(newMockFaqService())
+	app.Delete("/api/admin/faqs/:id", handler.Delete)
+
+	req := httptest.NewRequest("DELETE", "/api/admin/faqs/nonexistent", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 404, resp.StatusCode)
+}
+
+// ──────────────────────────────────────────────
+// ADMIN COMPANY PROFILE (flow.md section 15)
+// ──────────────────────────────────────────────
+
+func TestAdminCompanyHandler_UpdateCompany(t *testing.T) {
+	app := setupAdminApp("admin1")
+	mockSvc := newMockCompanyService()
+	handler := NewCompanyHandler(mockSvc)
+	app.Put("/api/admin/company", handler.UpdateCompany)
+
+	body := `{"brand_name":"JValleyVerse Updated","tagline":"New Tagline","email":"new@jvalleyverse.com"}`
+	req := httptest.NewRequest("PUT", "/api/admin/company", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	assert.Equal(t, "JValleyVerse Updated", result["brand_name"])
+	assert.Equal(t, "New Tagline", result["tagline"])
+	assert.Equal(t, "new@jvalleyverse.com", result["email"])
+}
+
+func TestAdminCompanyHandler_UpdateCompany_InvalidBody(t *testing.T) {
+	app := setupAdminApp("admin1")
+	handler := NewCompanyHandler(newMockCompanyService())
+	app.Put("/api/admin/company", handler.UpdateCompany)
+
+	req := httptest.NewRequest("PUT", "/api/admin/company", strings.NewReader("{invalid}"))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode)
+}

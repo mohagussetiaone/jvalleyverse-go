@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 
 	"jvalleyverse/internal/domain"
@@ -18,9 +16,12 @@ func NewFaqHandler(faqSvc service.IFaqService) *FaqHandler {
 	return &FaqHandler{faqSvc: faqSvc}
 }
 
-// GET /api/faqs — public, no auth required, returns active FAQs only
+// GET /api/faqs — public, no auth required, returns active FAQs with pagination
 func (h *FaqHandler) ListPublic(c *fiber.Ctx) error {
-	faqs, err := h.faqSvc.ListPublicFAQs(c.UserContext())
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
+
+	faqs, total, err := h.faqSvc.ListPublicFAQs(c.UserContext(), page, limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch FAQs"})
 	}
@@ -31,13 +32,18 @@ func (h *FaqHandler) ListPublic(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"data": faqs,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
 	})
 }
 
 // GET /api/admin/faqs — admin only, all FAQs with pagination
 func (h *FaqHandler) ListAll(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
 
 	faqs, total, err := h.faqSvc.ListAllFAQs(c.UserContext(), page, limit)
 	if err != nil {

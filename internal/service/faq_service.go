@@ -16,7 +16,7 @@ type IFaqService interface {
 	UpdateFAQ(ctx context.Context, id, question, answer, category string, orderIndex int, isActive bool) (*dto.FAQItem, error)
 	DeleteFAQ(ctx context.Context, id string) error
 	ListAllFAQs(ctx context.Context, page, limit int) ([]dto.FAQItem, int64, error)
-	ListPublicFAQs(ctx context.Context) ([]dto.FAQItem, error)
+	ListPublicFAQs(ctx context.Context, page, limit int) ([]dto.FAQItem, int64, error)
 	GetFAQByID(ctx context.Context, id string) (*dto.FAQItem, error)
 }
 
@@ -108,17 +108,24 @@ func (s *FaqService) ListAllFAQs(ctx context.Context, page, limit int) ([]dto.FA
 	return items, total, nil
 }
 
-func (s *FaqService) ListPublicFAQs(ctx context.Context) ([]dto.FAQItem, error) {
-	faqs, err := s.faqRepo.ListActive(ctx)
+func (s *FaqService) ListPublicFAQs(ctx context.Context, page, limit int) ([]dto.FAQItem, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	faqs, total, err := s.faqRepo.ListActive(ctx, page, limit)
 	if err != nil {
-		return nil, fmt.Errorf("list public faqs: %w", err)
+		return nil, 0, fmt.Errorf("list public faqs: %w", err)
 	}
 
 	items := make([]dto.FAQItem, len(faqs))
 	for i, f := range faqs {
 		items[i] = dto.ToFAQItem(f)
 	}
-	return items, nil
+	return items, total, nil
 }
 
 func (s *FaqService) GetFAQByID(ctx context.Context, id string) (*dto.FAQItem, error) {

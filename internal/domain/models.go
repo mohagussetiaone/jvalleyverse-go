@@ -167,18 +167,20 @@ type LessonProgress struct {
 }
 
 type Certificate struct {
-	ID         string         `gorm:"primaryKey" json:"id"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID     string         `gorm:"not null;index" json:"user_id"`
-	User       User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	LessonID   string         `gorm:"not null;index" json:"lesson_id"`
-	Lesson     Lesson         `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
-	UniqueCode string         `gorm:"uniqueIndex;not null" json:"unique_code"`
-	BadgeURL   string         `json:"badge_url"`
-	IssuedAt   time.Time      `json:"issued_at"`
-	ExpiresAt  *time.Time     `json:"expires_at"`
+	ID               string         `gorm:"primaryKey" json:"id"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
+	UserID           string         `gorm:"not null;index" json:"user_id"`
+	User             User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	LessonID         string         `gorm:"not null;index" json:"lesson_id"`
+	Lesson           Lesson         `gorm:"foreignKey:LessonID" json:"lesson,omitempty"`
+	UniqueCode       string         `gorm:"uniqueIndex;not null" json:"unique_code"`
+	BadgeURL         string         `json:"badge_url"`
+	VerificationURL  string         `json:"verification_url"`
+	QRCodeURL        string         `json:"qr_code_url"`
+	IssuedAt         time.Time      `json:"issued_at"`
+	ExpiresAt        *time.Time     `json:"expires_at"`
 }
 
 type Discussion struct {
@@ -439,6 +441,18 @@ type FAQ struct {
 	IsActive  bool           `gorm:"default:true" json:"is_active"`
 }
 
+// LearningStreak tracks user's consecutive learning days
+type LearningStreak struct {
+	ID               string    `gorm:"primaryKey" json:"id"`
+	UserID           string    `gorm:"uniqueIndex;not null" json:"user_id"`
+	User             User      `gorm:"foreignKey:UserID" json:"-"`
+	StreakCount      int       `gorm:"default:0" json:"streak_count"`
+	LongestStreak    int       `gorm:"default:0" json:"longest_streak"`
+	LastActivityDate time.Time `json:"last_activity_date"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
 // Company represents JValleyVerse company profile (singleton — only one row)
 type Company struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
@@ -490,5 +504,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&Notification{},
 		&FAQ{},
 		&Company{},
+		&LearningStreak{},
 	)
 }

@@ -7,14 +7,16 @@ import (
 )
 
 type CertificateItem struct {
-	ID          string           `json:"id"`
-	UniqueCode  string           `json:"unique_code"`
-	IssuedAt    time.Time        `json:"issued_at"`
-	UserID      string           `json:"user_id,omitempty"`
-	LessonID    string           `json:"lesson_id,omitempty"`
-	LessonName  string           `json:"lesson_name,omitempty"`
-	UserName    string           `json:"user_name,omitempty"`
-	Achievement *AchievementInfo `json:"achievement,omitempty"`
+	ID               string           `json:"id"`
+	UniqueCode       string           `json:"unique_code"`
+	IssuedAt         time.Time        `json:"issued_at"`
+	UserID           string           `json:"user_id,omitempty"`
+	LessonID         string           `json:"lesson_id,omitempty"`
+	LessonName       string           `json:"lesson_name,omitempty"`
+	UserName         string           `json:"user_name,omitempty"`
+	Achievement      *AchievementInfo `json:"achievement,omitempty"`
+	VerificationURL  string           `json:"verification_url,omitempty"`
+	QRCodeURL        string           `json:"qr_code_url,omitempty"`
 }
 
 type AchievementInfo struct {

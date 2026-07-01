@@ -62,6 +62,10 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/api/health", healthHandler.Health)
 	app.Get("/api/health/detailed", healthHandler.HealthDetailed)
 
+	// --- Public System Status (no auth) ---
+	statusHandler := handler.NewStatusHandler()
+	app.Get("/api/system/status", statusHandler.SystemStatus)
+
 	// --- Public Company Profile (no auth) ---
 	companyHandler := handler.NewCompanyHandler(service.GetCompanyService())
 	app.Get("/api/company", companyHandler.GetCompany)
@@ -97,6 +101,9 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/api/users/me/dashboard", middleware.JWTAuth(), userHandler.GetDashboard)
 	app.Get("/api/users/:id", userHandler.GetPublicProfile)
 
+	// --- Public User Portfolio (no auth) ---
+	app.Get("/api/users/:id/portfolio", userHandler.GetPortfolio)
+
 	// Safe group — JWT only (no XSRF) for non-dangerous operations
 	safe := app.Group("/api", middleware.JWTAuth(), middleware.IdempotencyMiddleware())
 
@@ -104,6 +111,9 @@ func SetupRoutes(app *fiber.App) {
 	certificateHandler := handler.NewCertificateHandler()
 	safe.Get("/users/me/certificates", certificateHandler.ListCertificates)
 	safe.Get("/users/me/certificates/:code", certificateHandler.GetCertificate)
+
+	// --- Public Certificate Verification (no auth) ---
+	app.Get("/api/certificates/:code/verify", certificateHandler.VerifyCertificate)
 
 	// Enrollment & Courses
 	safe.Post("/courses/:id/enroll", courseHandler.EnrollCourse)
@@ -125,6 +135,9 @@ func SetupRoutes(app *fiber.App) {
 	safe.Put("/users/me/notifications/:id/read", notifHandler.MarkAsRead)
 	safe.Put("/users/me/notifications/read-all", notifHandler.MarkAllAsRead)
 	safe.Delete("/users/me/notifications/:id", notifHandler.DeleteNotification)
+
+	// My Learning Streak
+	safe.Get("/users/me/streak", userHandler.GetMyStreak)
 
 	// My Items (read)
 	safe.Get("/users/me/discussions", discussionHandler.ListMyDiscussions)

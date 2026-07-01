@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"jvalleyverse/internal/domain"
 	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/repository"
+	"jvalleyverse/pkg/config"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,6 +38,7 @@ type LessonService struct {
 	courseRepo         *repository.CourseRepository
 	enrollRepo         *repository.EnrollmentRepository
 	sectionRepo        *repository.SectionRepository
+	streakRepo         *repository.LearningStreakRepository
 }
 
 func NewLessonService(
@@ -47,6 +50,7 @@ func NewLessonService(
 	courseRepo *repository.CourseRepository,
 	enrollRepo *repository.EnrollmentRepository,
 	sectionRepo *repository.SectionRepository,
+	streakRepo *repository.LearningStreakRepository,
 ) *LessonService {
 	return &LessonService{
 		lessonRepo:         lessonRepo,
@@ -57,6 +61,7 @@ func NewLessonService(
 		courseRepo:         courseRepo,
 		enrollRepo:         enrollRepo,
 		sectionRepo:        sectionRepo,
+		streakRepo:         streakRepo,
 	}
 }
 
@@ -208,11 +213,19 @@ func (s *LessonService) CompleteLesson(ctx context.Context, userID, lessonID str
 	}
 
 	code := generateUniqueCertificateCode()
+	baseURL := "https://jvalleyverse.com"
+	if config.AppConfig != nil && config.AppConfig.FrontendURL != "" {
+		baseURL = config.AppConfig.FrontendURL
+	}
+	verificationURL := fmt.Sprintf("%s/certificates/verify/%s", baseURL, code)
+	qrCodeURL := fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s", verificationURL)
 	cert := &domain.Certificate{
-		UserID:     userID,
-		LessonID:   lessonID,
-		UniqueCode: code,
-		IssuedAt:   now,
+		UserID:          userID,
+		LessonID:        lessonID,
+		UniqueCode:      code,
+		IssuedAt:        now,
+		VerificationURL: verificationURL,
+		QRCodeURL:       qrCodeURL,
 	}
 	if err := s.certRepo.Create(ctx, cert); err != nil {
 		return nil, err
@@ -239,6 +252,9 @@ func (s *LessonService) CompleteLesson(ctx context.Context, userID, lessonID str
 		)
 	}
 
+	// Update learning streak
+	s.updateLearningStreak(ctx, userID, now)
+
 	return map[string]interface{}{
 		"message":     "Lesson completed!",
 		"certificate": cert,
@@ -252,6 +268,46 @@ func (s *LessonService) CompleteLesson(ctx context.Context, userID, lessonID str
 		"next_lesson":    lesson.NextLesson,
 		"points_awarded": 50,
 	}, nil
+}
+
+func (s *LessonService) updateLearningStreak(ctx context.Context, userID string, now time.Time) {
+	streak, err := s.streakRepo.FindByUserID(ctx, userID)
+	if err != nil {
+		// No streak record yet, create one
+		streak = &domain.LearningStreak{
+			UserID:           userID,
+			StreakCount:      1,
+			LongestStreak:    1,
+			LastActivityDate: now,
+		}
+		s.streakRepo.Upsert(ctx, streak)
+		return
+	}
+
+	today := now.Truncate(24 * time.Hour)
+	lastActivity := streak.LastActivityDate.Truncate(24 * time.Hour)
+
+	if today.Equal(lastActivity) {
+		// Same day activity, don't change streak
+		return
+	}
+
+	yesterday := today.AddDate(0, 0, -1)
+	if lastActivity.Equal(yesterday) {
+		// Consecutive day, increment streak
+		streak.StreakCount++
+	} else {
+		// Streak broken, reset to 1
+		streak.StreakCount = 1
+	}
+
+	// Update longest streak if current streak is longer
+	if streak.StreakCount > streak.LongestStreak {
+		streak.LongestStreak = streak.StreakCount
+	}
+
+	streak.LastActivityDate = now
+	s.streakRepo.Upsert(ctx, streak)
 }
 
 func generateUniqueCertificateCode() string {

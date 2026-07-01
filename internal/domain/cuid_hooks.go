@@ -150,3 +150,10 @@ func (f *FAQ) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+func (ls *LearningStreak) BeforeCreate(tx *gorm.DB) error {
+	if ls.ID == "" {
+		ls.ID = cuid.New()
+	}
+	return nil
+}

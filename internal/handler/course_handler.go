@@ -29,15 +29,8 @@ func NewCourseHandler(courseSvc service.ICourseService) *CourseHandler {
 // @Success      200  {object}  map[string]interface{}
 // @Router       /courses [get]
 func (h *CourseHandler) ListPublicCourses(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	if page < 1 {
-		page = 1
-	}
-
-	limit := c.QueryInt("limit", 10)
-	if limit < 1 {
-		limit = 10
-	}
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultCourseLimit), DefaultCourseLimit)
 
 	// Optional filters
 	categoryID := c.Query("category_id", "")
@@ -193,14 +186,8 @@ func (h *CourseHandler) EnrollCourse(c *fiber.Ctx) error {
 
 func (h *CourseHandler) ListEnrolledCourses(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
-	page := c.QueryInt("page", 1)
-	if page < 1 {
-		page = 1
-	}
-	limit := c.QueryInt("limit", 10)
-	if limit < 1 {
-		limit = 10
-	}
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultCourseLimit), DefaultCourseLimit)
 
 	courses, total, err := h.courseSvc.ListEnrolledCourses(c.UserContext(), userID, page, limit)
 	if err != nil {
