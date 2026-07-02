@@ -127,6 +127,7 @@ func makeUserSvc(db *gorm.DB) IUserService {
 func makeReplySvc(db *gorm.DB, userSvc IUserService) *ReplyService {
 	return NewReplyService(
 		repository.NewReplyRepository(db),
+		repository.NewReplyReactionRepository(db),
 		repository.NewDiscussionRepository(db),
 		userSvc,
 	)
@@ -420,7 +421,7 @@ func TestNotif_DiscussionCreated_WithLesson_SendsConfirmation(t *testing.T) {
 	assert.Equal(t, 1, spy.CountByType("discussion_created"), "confirmation notification when lessonID present")
 }
 
-func TestNotif_DiscussionCreated_NoLesson_NoNotification(t *testing.T) {
+func TestNotif_DiscussionCreated_NoLesson_HasSelfNotification(t *testing.T) {
 	db := setupTestDB(t)
 	spy := setupNotificationSpy(t)
 	seedUser(db, "u1", "u@t.com", "U", "user")
@@ -430,7 +431,8 @@ func TestNotif_DiscussionCreated_NoLesson_NoNotification(t *testing.T) {
 	_, err := svc.CreateDiscussion(context.Background(), "u1", "Q?", "Help", nil, nil, "cat1")
 	require.NoError(t, err)
 
-	assert.Equal(t, 0, spy.CountByType("discussion_created"), "no notification when lessonID is nil")
+	// Self-notification (activity history) is always sent regardless of lessonID
+	assert.Equal(t, 1, spy.CountByType("discussion_created"), "self-notification should be sent as activity history")
 }
 
 // ──────────────────────────────────────────────

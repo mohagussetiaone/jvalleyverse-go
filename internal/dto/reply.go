@@ -1,8 +1,6 @@
 package dto
 
-import (
-	"time"
-)
+import "time"
 
 type ReplyListItem struct {
 	ID              string    `json:"id"`
@@ -13,4 +11,10 @@ type ReplyListItem struct {
 	LikesCount      int       `json:"likes_count"`
 	IsMarkedBest    bool      `json:"is_marked_best"`
 	CreatedAt       time.Time `json:"created_at"`
+}
+
+type ReactionSummary struct {
+	Emoji   string `json:"emoji"`
+	Count   int    `json:"count"`
+	Reacted bool   `json:"reacted"`
 }

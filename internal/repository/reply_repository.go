@@ -41,6 +41,17 @@ func (r *ReplyRepository) ListByDiscussionID(ctx context.Context, discussionID s
 	return replies, err
 }
 
+// ListAllByDiscussionID fetches ALL replies for a discussion (including nested) with User preloaded
+func (r *ReplyRepository) ListAllByDiscussionID(ctx context.Context, discussionID string) ([]domain.Reply, error) {
+	var replies []domain.Reply
+	err := r.db.WithContext(ctx).
+		Where("discussion_id = ?", discussionID).
+		Preload("User").
+		Order("created_at ASC").
+		Find(&replies).Error
+	return replies, err
+}
+
 // ListByUserID lists replies created by a user with pagination
 func (r *ReplyRepository) ListByUserID(ctx context.Context, userID string, page, limit int) ([]domain.Reply, int64, error) {
 	var replies []domain.Reply

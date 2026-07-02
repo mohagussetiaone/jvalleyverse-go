@@ -10,6 +10,7 @@ type UserBrief struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Avatar string `json:"avatar,omitempty"`
+	Bio    string `json:"bio,omitempty"`
 	Role   string `json:"role,omitempty"`
 }
 
@@ -39,6 +40,7 @@ func ToUserBrief(u domain.User) UserBrief {
 		ID:     u.ID,
 		Name:   u.Name,
 		Avatar: u.Avatar,
+		Bio:    u.Bio,
 		Role:   u.Role,
 	}
 }

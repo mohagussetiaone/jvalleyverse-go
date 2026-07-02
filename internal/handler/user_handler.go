@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"jvalleyverse/internal/dto"
 	"jvalleyverse/internal/minio"
 	"jvalleyverse/internal/service"
@@ -26,6 +27,140 @@ func NewUserHandler(userSvc service.IUserService, dashboardSvc service.IDashboar
 		studyCaseSvc:  service.GetStudyCaseService(),
 		streakSvc:     service.GetStreakService(),
 	}
+}
+
+// ── Activity history helpers ──
+
+func (h *UserHandler) fetchPointActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	items, _, err := h.userSvc.GetUserActivityLog(ctx, userID, page, limit)
+	if err != nil || len(items) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(items))
+	for i, item := range items {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          item.ID,
+			Type:        "point",
+			Title:       item.Activity,
+			Description: item.Activity,
+			CreatedAt:   item.Timestamp,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchDiscussionActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	discussions, _, err := service.GetDiscussionService().ListUserDiscussions(ctx, userID, page, limit)
+	if err != nil || len(discussions) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(discussions))
+	for i, d := range discussions {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          d.ID,
+			Type:        "discussion",
+			Title:       d.Title,
+			Description: "Membuat diskusi",
+			Link:        "/discussions/" + d.ID,
+			CreatedAt:   d.CreatedAt,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchReplyActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	replies, _, err := service.GetReplyService().ListRepliesByUser(ctx, userID, page, limit)
+	if err != nil || len(replies) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(replies))
+	for i, r := range replies {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          r.ID,
+			Type:        "reply",
+			Title:       r.DiscussionTitle,
+			Description: r.Content,
+			Link:        "/discussions/" + r.DiscussionID,
+			CreatedAt:   r.CreatedAt,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchCertificateActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	certs, _, err := h.certificateSvc.ListUserCertificates(ctx, userID, page, limit)
+	if err != nil || len(certs) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(certs))
+	for i, c := range certs {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          c.ID,
+			Type:        "certificate",
+			Title:       c.LessonName,
+			Description: "Sertifikat diperoleh",
+			Link:        "/certificates/" + c.UniqueCode + "/verify",
+			CreatedAt:   c.IssuedAt,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchShowcaseActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	showcases, _, err := h.showcaseSvc.ListMyShowcases(ctx, userID, page, limit)
+	if err != nil || len(showcases) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(showcases))
+	for i, s := range showcases {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          s.ID,
+			Type:        "showcase",
+			Title:       s.Title,
+			Description: s.Description,
+			Link:        "/showcases/" + s.ID,
+			CreatedAt:   s.CreatedAt,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchStudyCaseActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	studyCases, _, err := h.studyCaseSvc.ListStudyCasesByUser(ctx, userID, page, limit)
+	if err != nil || len(studyCases) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(studyCases))
+	for i, sc := range studyCases {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          sc.ID,
+			Type:        "study_case",
+			Title:       sc.Name,
+			Description: sc.Description,
+			Link:        "/study-cases/" + sc.ID,
+			CreatedAt:   sc.CreatedAt,
+		}
+	}
+	return result
+}
+
+func (h *UserHandler) fetchCourseActivity(ctx context.Context, userID string, page, limit int) []dto.ActivityHistoryItem {
+	courses, _, err := service.GetCourseService().ListEnrolledCourses(ctx, userID, page, limit)
+	if err != nil || len(courses) == 0 {
+		return nil
+	}
+	result := make([]dto.ActivityHistoryItem, len(courses))
+	for i, c := range courses {
+		result[i] = dto.ActivityHistoryItem{
+			ID:          c.ID,
+			Type:        "course_enrollment",
+			Title:       c.Title,
+			Description: "Mendaftar kursus",
+			Link:        "/courses/" + c.ID,
+			CreatedAt:   c.EnrolledAt,
+		}
+	}
+	return result
 }
 
 // GetProfile returns current user profile
@@ -155,7 +290,79 @@ func (h *UserHandler) GetPublicProfile(c *fiber.Ctx) error {
 	})
 }
 
-// GetActivityLog returns user activity log
+// GetActivityHistory returns unified activity history with optional type filter
+func (h *UserHandler) GetActivityHistory(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	page := clampPage(c.QueryInt("page", DefaultPage))
+	limit := clampLimit(c.QueryInt("limit", DefaultLimit), DefaultLimit)
+	activityType := c.Query("type", "")
+
+	var all []dto.ActivityHistoryItem
+
+	switch activityType {
+	case "", "all":
+		// Fetch all types
+		all = append(all, h.fetchPointActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchDiscussionActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchReplyActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchCertificateActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchShowcaseActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchStudyCaseActivity(c.UserContext(), userID, page, limit)...)
+		all = append(all, h.fetchCourseActivity(c.UserContext(), userID, page, limit)...)
+
+	case "discussion":
+		all = h.fetchDiscussionActivity(c.UserContext(), userID, page, limit)
+	case "reply", "comment":
+		all = h.fetchReplyActivity(c.UserContext(), userID, page, limit)
+	case "certificate":
+		all = h.fetchCertificateActivity(c.UserContext(), userID, page, limit)
+	case "showcase":
+		all = h.fetchShowcaseActivity(c.UserContext(), userID, page, limit)
+	case "study_case", "studycase":
+		all = h.fetchStudyCaseActivity(c.UserContext(), userID, page, limit)
+	case "course", "enrollment":
+		all = h.fetchCourseActivity(c.UserContext(), userID, page, limit)
+	case "point", "activity":
+		all = h.fetchPointActivity(c.UserContext(), userID, page, limit)
+	default:
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid type. Valid: all, discussion, reply, certificate, showcase, study_case, course, point"})
+	}
+
+	// Sort by created_at DESC
+	for i := 0; i < len(all); i++ {
+		for j := i + 1; j < len(all); j++ {
+			if all[j].CreatedAt.After(all[i].CreatedAt) {
+				all[i], all[j] = all[j], all[i]
+			}
+		}
+	}
+
+	// Paginate
+	total := len(all)
+	offset := (page - 1) * limit
+	if offset >= len(all) {
+		offset = len(all)
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	all = all[offset:end]
+	if all == nil {
+		all = []dto.ActivityHistoryItem{}
+	}
+
+	return c.JSON(fiber.Map{
+		"data": all,
+		"pagination": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
+}
+
+// GetActivityLog returns user activity log (point-based, legacy)
 func (h *UserHandler) GetActivityLog(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)
 	page := clampPage(c.QueryInt("page", DefaultPage))

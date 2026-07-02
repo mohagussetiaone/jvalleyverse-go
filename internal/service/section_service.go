@@ -140,6 +140,9 @@ func (s *SectionService) GetCourseWithSections(ctx context.Context, courseID str
 		sections[i] = dto.ToSectionBrief(s)
 	}
 
+	tools := dto.ParseTools(course.Tools)
+	reviews := dto.ToReviewItems(course.Reviews)
+
 	result := &dto.CourseDetailWithSections{
 		ID:                 course.ID,
 		Title:              course.Title,
@@ -150,10 +153,12 @@ func (s *SectionService) GetCourseWithSections(ctx context.Context, courseID str
 		AdminID:            course.AdminID,
 		AdminName:          course.Admin.Name,
 		Mentor:             dto.ToUserBriefPtr(&course.Mentor, course.MentorID),
+		Tools:              tools,
 		Hours:              course.Hours,
 		TotalDurationHours: totalDurationMinutes / 60,
 		Visibility:         course.Visibility,
 		Sections:           sections,
+		Reviews:            reviews,
 		CreatedAt:          course.CreatedAt,
 	}
 

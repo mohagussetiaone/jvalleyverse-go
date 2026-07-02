@@ -55,6 +55,7 @@ erDiagram
         string category_id FK
         string admin_id FK
         string mentor_id FK
+        json tools "array of strings — tools yg perlu dipersiapkan"
         json learning_objectives "array of strings"
     }
     Section {
@@ -759,23 +760,39 @@ POST /api/replies/:id/like (JWT)
   Points: +3 untuk creator reply ("receive_reply_like")
   Skip: jika self-like
 
+POST /api/replies/:id/react (JWT) — [BARU]
+  Request: { emoji: "👍" }
+  Valid emoji: 👍 ❤️ 😂 😮 😢 😡
+  Effect: tambah reaction (composite key: user+reply+emoji)
+
+DELETE /api/replies/:id/react/:emoji (JWT) — [BARU]
+  Effect: hapus reaction
+
 POST /api/replies/:id/best (JWT)
   Guard: owner dari discussion induk
   Effect: is_marked_best = true
   Points: +25 untuk creator reply ("best_answer")
 ```
 
-### Nested Reply Structure
+### Nested Reply Structure (Unlimited Depth)
 
 ```
 Discussion
 ├── Reply A (top-level, parent_id = null)
 │   ├── Child Reply A1 (parent_id = Reply A.id)
+│   │   └── Sub-child Reply A1a (parent_id = Reply A1.id)
 │   └── Child Reply A2 (parent_id = Reply A.id)
 ├── Reply B (top-level)
 │   └── Child Reply B1
 └── Reply C (top-level)
 ```
+
+Nested replies mendukung **unlimited depth** — reply bisa dibalas berkali-kali hingga level berapapun. Tree dibangun secara rekursif oleh `buildReplyTree()` di `DiscussionService`.
+
+Setiap reply dalam response `GET /api/discussions/:id` sekarang menyertakan:
+- `parent_id` — ID parent reply (null untuk top-level)
+- `children` — Array reply anak (recursive)
+- `reactions` — Array reaction summary (emoji, count, reacted)
 
 ---
 
@@ -853,7 +870,25 @@ GET  /api/users/me/study-cases          — Study case milik saya (JWT)
 GET  /api/users/me/blogs                — Blog milik saya (JWT, paginated, ?status=draft|published)
 GET  /api/users/me/replies              — Reply milik saya (JWT, paginated)
 GET  /api/users/me/certificates         — Sertifikat milik saya (JWT)
+GET  /api/users/me/activity-history     — History aktivitas lengkap (JWT, ?type=) [BARU]
 ```
+
+#### Activity History (Per-kategori)
+
+Endpoint `GET /api/users/me/activity-history?type=` mengembalikan unified activity feed dari 7 sumber berbeda:
+
+| Tipe query       | Sumber                      |
+| ---------------- | --------------------------- |
+| `all` (default)  | Semua tipe di-agregasi      |
+| `discussion`     | Diskusi yang dibuat user    |
+| `reply`          | Reply yang dibuat user      |
+| `certificate`    | Sertifikat yang diperoleh   |
+| `showcase`       | Showcase yang dibuat user   |
+| `study_case`     | Study case yang dibuat user |
+| `course`         | Course yang di-enroll       |
+| `point`          | Activity point-based        |
+
+Response di-sort by `created_at DESC` dan di-paginate.
 
 ### Notifications
 

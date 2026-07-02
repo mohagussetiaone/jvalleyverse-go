@@ -98,6 +98,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Post("/api/users/me/change-password", middleware.JWTAuth(), userHandler.ChangePassword)
 	app.Post("/api/users/me/avatar", middleware.JWTAuth(), userHandler.UpdateProfilePicture)
 	app.Get("/api/users/me/activity", middleware.JWTAuth(), userHandler.GetActivityLog)
+	app.Get("/api/users/me/activity-history", middleware.JWTAuth(), userHandler.GetActivityHistory)
 	app.Get("/api/users/me/dashboard", middleware.JWTAuth(), userHandler.GetDashboard)
 	app.Get("/api/users/:id", userHandler.GetPublicProfile)
 
@@ -176,6 +177,8 @@ func SetupRoutes(app *fiber.App) {
 	dangerous.Put("/replies/:id", replyHandler.UpdateReply)
 	dangerous.Delete("/replies/:id", replyHandler.DeleteReply)
 	dangerous.Post("/replies/:id/like", replyHandler.LikeReply)
+	dangerous.Post("/replies/:id/react", replyHandler.ReactReply)
+	dangerous.Delete("/replies/:id/react/:emoji", replyHandler.UnreactReply)
 	dangerous.Post("/replies/:id/best", replyHandler.MarkBestReply)
 
 	dangerous.Post("/reviews", reviewHandler.CreateReview)

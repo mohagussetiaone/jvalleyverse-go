@@ -131,7 +131,8 @@ GET    /api/users/me                   — My profile
 PUT    /api/users/me                   — Update profile
 POST   /api/users/me/change-password   — Change password
 POST   /api/users/me/avatar            — Update profile picture (multipart upload to MinIO)
-GET    /api/users/me/activity          — My activity log
+GET    /api/users/me/activity          — My activity log (point-based)
+GET    /api/users/me/activity-history  — Unified activity history (?type=all|discussion|reply|certificate|showcase|study_case|course|point) [BARU]
 GET    /api/users/me/dashboard         — Dashboard widgets
 ```
 
@@ -183,6 +184,8 @@ POST   /api/discussions/:id/replies       — Create reply
 PUT    /api/replies/:id                   — Update reply
 DELETE /api/replies/:id                   — Delete reply
 POST   /api/replies/:id/like              — Like reply
+POST   /api/replies/:id/react              — React dengan emoji (body: {emoji: "👍"}) [BARU]
+DELETE /api/replies/:id/react/:emoji       — Hapus reaction [BARU]
 POST   /api/replies/:id/best              — Mark as best answer
 POST   /api/reviews                       — Create review
 PUT    /api/reviews/:id                   — Update review
@@ -367,8 +370,9 @@ Semua response API menggunakan **DTO struct bukan raw domain model** untuk:
 ```json
 { "id": "...", "title": "...", "description": "...",
   "thumbnail": "...", "category": CategoryBrief, "admin_id": "...",
-  "admin_name": "Admin", "mentor": UserBrief|null, "hours": 10,
-  "total_duration_hours": 3, "visibility": "public",
+  "admin_name": "Admin", "mentor": UserBrief|null,
+  "tools": ["Go 1.22+", "VS Code", "Terminal"],  // [BARU]
+  "hours": 10, "total_duration_hours": 3, "visibility": "public",
   "sections": [SectionBrief, ...], "is_enrolled": true, "created_at": "..." }
 ```
 

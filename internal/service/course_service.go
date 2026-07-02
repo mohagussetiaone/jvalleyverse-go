@@ -17,8 +17,8 @@ type CourseListFilter struct {
 }
 
 type ICourseService interface {
-	CreateCourse(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string, mentorID string, price float64, hours int, learningObjectives datatypes.JSON) (*domain.Course, error)
-	UpdateCourse(ctx context.Context, courseID, adminID string, title, description string, price float64, visibility string, learningObjectives datatypes.JSON) error
+	CreateCourse(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string, mentorID string, price float64, hours int, tools datatypes.JSON, learningObjectives datatypes.JSON) (*domain.Course, error)
+	UpdateCourse(ctx context.Context, courseID, adminID string, title, description string, price float64, visibility string, tools datatypes.JSON, learningObjectives datatypes.JSON) error
 	DeleteCourse(ctx context.Context, courseID, adminID string) error
 	ListPublicCourses(ctx context.Context, page, limit int, filter *CourseListFilter) ([]dto.CourseListItem, int64, error)
 	ListPublicCoursesWithEnrollment(ctx context.Context, userID string, page, limit int, filter *CourseListFilter) ([]dto.CourseListItem, int64, error)
@@ -49,7 +49,7 @@ func NewCourseService(
 	}
 }
 
-func (s *CourseService) CreateCourse(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string, mentorID string, price float64, hours int, learningObjectives datatypes.JSON) (*domain.Course, error) {
+func (s *CourseService) CreateCourse(ctx context.Context, adminID string, title, description, thumbnail string, categoryID string, mentorID string, price float64, hours int, tools datatypes.JSON, learningObjectives datatypes.JSON) (*domain.Course, error) {
 	if title == "" || categoryID == "" {
 		return nil, domain.ErrInvalidInput
 	}
@@ -68,6 +68,7 @@ func (s *CourseService) CreateCourse(ctx context.Context, adminID string, title,
 		Price:              price,
 		Hours:              hours,
 		Visibility:         "public",
+		Tools:              tools,
 		LearningObjectives: learningObjectives,
 	}
 
@@ -131,7 +132,7 @@ func (s *CourseService) ListPublicCoursesWithEnrollment(
 	return result, total, nil
 }
 
-func (s *CourseService) UpdateCourse(ctx context.Context, courseID, adminID string, title, description string, price float64, visibility string, learningObjectives datatypes.JSON) error {
+func (s *CourseService) UpdateCourse(ctx context.Context, courseID, adminID string, title, description string, price float64, visibility string, tools datatypes.JSON, learningObjectives datatypes.JSON) error {
 	course, err := s.courseRepo.FindByID(ctx, courseID)
 	if err != nil {
 		return err
@@ -153,7 +154,10 @@ func (s *CourseService) UpdateCourse(ctx context.Context, courseID, adminID stri
 	if visibility != "" {
 		course.Visibility = visibility
 	}
-	if learningObjectives != nil {
+	if len(tools) > 0 {
+		course.Tools = tools
+	}
+	if len(learningObjectives) > 0 {
 		course.LearningObjectives = learningObjectives
 	}
 

@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 
 	"jvalleyverse/internal/domain"
@@ -15,6 +16,7 @@ type CourseListItem struct {
 	Category     CategoryBrief  `json:"category"`
 	AdminName    string         `json:"admin_name"`
 	Mentor       *UserBrief     `json:"mentor,omitempty"`
+	Tools        []string       `json:"tools,omitempty"`
 	Hours        int            `json:"hours"`
 	Visibility   string         `json:"visibility,omitempty"`
 	SectionCount int            `json:"section_count"`
@@ -32,10 +34,12 @@ type CourseDetailWithSections struct {
 	AdminID            string         `json:"admin_id"`
 	AdminName          string         `json:"admin_name"`
 	Mentor             *UserBrief     `json:"mentor,omitempty"`
+	Tools              []string       `json:"tools,omitempty"`
 	Hours              int            `json:"hours"`
 	TotalDurationHours int            `json:"total_duration_hours"`
 	Visibility         string         `json:"visibility"`
 	Sections           []SectionBrief `json:"sections"`
+	Reviews            []ReviewItem   `json:"reviews,omitempty"`
 	IsEnrolled         bool           `json:"is_enrolled,omitempty"`
 	CreatedAt          time.Time      `json:"created_at"`
 }
@@ -44,6 +48,17 @@ type EnrolledCourseItem struct {
 	CourseListItem
 	EnrolledAt  time.Time `json:"enrolled_at"`
 	LastLessonID *string  `json:"last_lesson_id"`
+}
+
+func ParseTools(toolsJSON []byte) []string {
+	if len(toolsJSON) == 0 {
+		return nil
+	}
+	var tools []string
+	if err := json.Unmarshal(toolsJSON, &tools); err != nil {
+		return nil
+	}
+	return tools
 }
 
 func CourseToListItem(c domain.Course) CourseListItem {
@@ -56,6 +71,7 @@ func CourseToListItem(c domain.Course) CourseListItem {
 		Category:     ToCategoryBrief(c.Category),
 		AdminName:    c.Admin.Name,
 		Mentor:       ToUserBriefPtr(&c.Mentor, c.MentorID),
+		Tools:        ParseTools(c.Tools),
 		Hours:        c.Hours,
 		Visibility:   c.Visibility,
 		SectionCount: len(c.Sections),

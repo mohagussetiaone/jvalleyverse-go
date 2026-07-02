@@ -45,6 +45,10 @@ func (r *CourseRepository) FindByIDWithSections(ctx context.Context, courseID st
 		}).
 		Preload("Sections.Lessons.Details").
 		Preload("Sections.Lessons.NextLesson").
+		Preload("Reviews", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC").Limit(10)
+		}).
+		Preload("Reviews.User").
 		First(course).Error; err != nil {
 		return nil, err
 	}

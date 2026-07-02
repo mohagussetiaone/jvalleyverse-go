@@ -432,7 +432,7 @@ func newMockCourseService() *mockCourseService {
 	}
 }
 
-func (m *mockCourseService) CreateCourse(_ context.Context, adminID, title, desc, thumbnail, categoryID, mentorID string, price float64, hours int, objectives datatypes.JSON) (*domain.Course, error) {
+func (m *mockCourseService) CreateCourse(_ context.Context, adminID, title, desc, thumbnail, categoryID, mentorID string, price float64, hours int, tools datatypes.JSON, objectives datatypes.JSON) (*domain.Course, error) {
 	if title == "" || categoryID == "" {
 		return nil, domain.ErrInvalidInput
 	}
@@ -454,7 +454,7 @@ func (m *mockCourseService) CreateCourse(_ context.Context, adminID, title, desc
 	return course, nil
 }
 
-func (m *mockCourseService) UpdateCourse(_ context.Context, courseID, adminID, title, desc string, price float64, visibility string, _ datatypes.JSON) error {
+func (m *mockCourseService) UpdateCourse(_ context.Context, courseID, adminID, title, desc string, price float64, visibility string, _ datatypes.JSON, _ datatypes.JSON) error {
 	course, ok := m.courses[courseID]
 	if !ok {
 		return domain.ErrCourseNotFound

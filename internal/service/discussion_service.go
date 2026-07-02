@@ -117,7 +117,7 @@ func (s *DiscussionService) ListDiscussions(ctx context.Context, page, limit int
 	return result, total, nil
 }
 
-// GetDiscussionWithReplies returns discussion with all threaded replies
+// GetDiscussionWithReplies returns discussion with all threaded replies (unlimited depth)
 func (s *DiscussionService) GetDiscussionWithReplies(ctx context.Context, discussionID string) (*dto.DiscussionDetail, error) {
 	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
 	if err != nil {
@@ -128,15 +128,45 @@ func (s *DiscussionService) GetDiscussionWithReplies(ctx context.Context, discus
 	discussion.ViewsCount++
 	s.discussionRepo.Update(ctx, discussion)
 
-	// Get all replies
-	replies, err := s.replyRepo.ListByDiscussionID(ctx, discussionID)
+	// Get ALL replies (not just top-level)
+	allReplies, err := s.replyRepo.ListAllByDiscussionID(ctx, discussionID)
 	if err != nil {
 		return nil, err
 	}
 
-	replyData := make([]dto.ReplyInDiscussion, len(replies))
-	for i, reply := range replies {
-		replyData[i] = dto.ToReplyInDiscussion(reply)
+	// Collect all reply IDs for batch reaction loading
+	replyIDs := make([]string, len(allReplies))
+	for i, r := range allReplies {
+		replyIDs[i] = r.ID
+	}
+
+	// Convert to DTOs first
+	replyMap := make(map[string]dto.ReplyInDiscussion, len(allReplies))
+	for _, r := range allReplies {
+		replyMap[r.ID] = dto.ToReplyInDiscussion(r)
+	}
+
+	// Fetch reactions for all replies (anonymous user — no "reacted" status)
+	if svc := GetReplyService(); svc != nil {
+		reactions, err := svc.GetReactionsForReplies(ctx, replyIDs, "")
+		if err == nil {
+			for replyID, rxn := range reactions {
+				if rdto, ok := replyMap[replyID]; ok {
+					rdto.Reactions = rxn
+					replyMap[replyID] = rdto
+				}
+			}
+		}
+	}
+
+	// Build tree: top-level replies (parent_id IS NULL)
+	var topLevel []dto.ReplyInDiscussion
+	for _, r := range allReplies {
+		if r.ParentID == nil || *r.ParentID == "" {
+			rdto := replyMap[r.ID]
+			rdto.Children = buildReplyTree(r.ID, allReplies, replyMap)
+			topLevel = append(topLevel, rdto)
+		}
 	}
 
 	return &dto.DiscussionDetail{
@@ -147,8 +177,21 @@ func (s *DiscussionService) GetDiscussionWithReplies(ctx context.Context, discus
 		Status:     discussion.Status,
 		ViewsCount: discussion.ViewsCount,
 		CreatedAt:  discussion.CreatedAt,
-		Replies:    replyData,
+		Replies:    topLevel,
 	}, nil
+}
+
+// buildReplyTree recursively builds nested reply tree for a parent reply
+func buildReplyTree(parentID string, allReplies []domain.Reply, replyMap map[string]dto.ReplyInDiscussion) []dto.ReplyInDiscussion {
+	var children []dto.ReplyInDiscussion
+	for _, r := range allReplies {
+		if r.ParentID != nil && *r.ParentID == parentID {
+			rdto := replyMap[r.ID]
+			rdto.Children = buildReplyTree(r.ID, allReplies, replyMap)
+			children = append(children, rdto)
+		}
+	}
+	return children
 }
 
 // UpdateDiscussion updates discussion (owner only)

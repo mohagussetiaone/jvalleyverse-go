@@ -40,12 +40,15 @@ type DiscussionDetail struct {
 }
 
 type ReplyInDiscussion struct {
-	ID        string    `json:"id"`
-	Content   string    `json:"content"`
-	User      UserBrief `json:"user"`
-	Likes     int       `json:"likes"`
-	IsBest    bool      `json:"is_best"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        string              `json:"id"`
+	Content   string              `json:"content"`
+	User      UserBrief           `json:"user"`
+	Likes     int                 `json:"likes"`
+	IsBest    bool                `json:"is_best"`
+	ParentID  *string             `json:"parent_id,omitempty"`
+	CreatedAt time.Time           `json:"created_at"`
+	Children  []ReplyInDiscussion `json:"children,omitempty"`
+	Reactions []ReactionSummary   `json:"reactions,omitempty"`
 }
 
 // ToDiscussionBrief converts a domain Discussion to DiscussionBrief
@@ -84,6 +87,7 @@ func ToReplyInDiscussion(r domain.Reply) ReplyInDiscussion {
 		User:      ToUserBrief(r.User),
 		Likes:     r.LikesCount,
 		IsBest:    r.IsMarkedBest,
+		ParentID:  r.ParentID,
 		CreatedAt: r.CreatedAt,
 	}
 }

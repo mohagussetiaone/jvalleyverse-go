@@ -124,6 +124,47 @@ func (h *ReplyHandler) LikeReply(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Reply liked"})
 }
 
+// ReactReply adds emoji reaction to a reply (POST /api/replies/:id/react)
+func (h *ReplyHandler) ReactReply(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	replyID := c.Params("id")
+	if replyID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid reply ID"})
+	}
+
+	var input struct {
+		Emoji string `json:"emoji"`
+	}
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+	if input.Emoji == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "emoji is required"})
+	}
+
+	if err := h.replySvc.ReactToReply(c.UserContext(), userID, replyID, input.Emoji); err != nil {
+		return safeError(c, mapServiceErrorToStatus(err), err)
+	}
+
+	return c.JSON(fiber.Map{"message": "Reaction added"})
+}
+
+// UnreactReply removes emoji reaction from a reply (DELETE /api/replies/:id/react/:emoji)
+func (h *ReplyHandler) UnreactReply(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(string)
+	replyID := c.Params("id")
+	emoji := c.Params("emoji")
+	if replyID == "" || emoji == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid reply ID or emoji"})
+	}
+
+	if err := h.replySvc.UnreactFromReply(c.UserContext(), userID, replyID, emoji); err != nil {
+		return safeError(c, mapServiceErrorToStatus(err), err)
+	}
+
+	return c.JSON(fiber.Map{"message": "Reaction removed"})
+}
+
 // MarkBestReply marks a reply as best answer (POST /api/replies/:id/best)
 func (h *ReplyHandler) MarkBestReply(c *fiber.Ctx) error {
 	userID := c.Locals("userID").(string)

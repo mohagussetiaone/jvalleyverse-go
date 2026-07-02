@@ -547,6 +547,7 @@ func InitServices(db *gorm.DB) {
 	classProgressRepo := repository.NewLessonProgressRepository(db)
 	discussionRepo := repository.NewDiscussionRepository(db)
 	replyRepo := repository.NewReplyRepository(db)
+	reactRepo := repository.NewReplyReactionRepository(db)
 	courseRepo := repository.NewCourseRepository(db)
 	sectionRepo := repository.NewSectionRepository(db)
 	enrollRepo := repository.NewEnrollmentRepository(db)
@@ -563,7 +564,7 @@ func InitServices(db *gorm.DB) {
 
 	lessonSvc = NewLessonService(lessonRepo, classDetailRepo, classProgressRepo, certificateRepo, userSvc, courseRepo, enrollRepo, sectionRepo, streakRepo)
 	discussionSvc = NewDiscussionService(discussionRepo, replyRepo, userRepo)
-	replySvc = NewReplyService(replyRepo, discussionRepo, userSvc)
+	replySvc = NewReplyService(replyRepo, reactRepo, discussionRepo, userSvc)
 	gamificationSvc = NewGamificationService(pointRepo, levelRepo, userRepo, showcaseRepo, userSvc)
 	courseSvc = NewCourseService(courseRepo, lessonRepo, userRepo, enrollRepo)
 	sectionSvc = NewSectionService(sectionRepo, courseRepo, enrollRepo) // StudyCase service

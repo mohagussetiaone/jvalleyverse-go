@@ -15,21 +15,27 @@ type IReplyService interface {
 	LikeReply(ctx context.Context, userID, replyID string) error
 	MarkBestReply(ctx context.Context, replyID, discussionID, userID string) error
 	ListRepliesByUser(ctx context.Context, userID string, page, limit int) ([]dto.ReplyListItem, int64, error)
+	ReactToReply(ctx context.Context, userID, replyID, emoji string) error
+	UnreactFromReply(ctx context.Context, userID, replyID, emoji string) error
+	GetReactionsForReplies(ctx context.Context, replyIDs []string, currentUserID string) (map[string][]dto.ReactionSummary, error)
 }
 
 type ReplyService struct {
 	replyRepo      *repository.ReplyRepository
+	reactRepo      *repository.ReplyReactionRepository
 	discussionRepo *repository.DiscussionRepository
 	userService    IUserService
 }
 
 func NewReplyService(
 	replyRepo *repository.ReplyRepository,
+	reactRepo *repository.ReplyReactionRepository,
 	discussionRepo *repository.DiscussionRepository,
 	userService IUserService,
 ) *ReplyService {
 	return &ReplyService{
 		replyRepo:      replyRepo,
+		reactRepo:      reactRepo,
 		discussionRepo: discussionRepo,
 		userService:    userService,
 	}
@@ -184,6 +190,114 @@ func (s *ReplyService) LikeReply(ctx context.Context, userID, replyID string) er
 	}
 
 	return nil
+}
+
+// allowedEmojis is the set of supported reaction emojis
+var allowedEmojis = map[string]bool{
+	"\U0001f44d": true, // 👍
+	"\u2764\ufe0f": true, // ❤️
+	"\U0001f602": true, // 😂
+	"\U0001f62e": true, // 😮
+	"\U0001f622": true, // 😢
+	"\U0001f621": true, // 😡
+}
+
+// ReactToReply adds an emoji reaction (validates emoji is allowed)
+func (s *ReplyService) ReactToReply(ctx context.Context, userID, replyID, emoji string) error {
+	if !allowedEmojis[emoji] {
+		return domain.ErrInvalidInput
+	}
+	// Verify reply exists
+	if _, err := s.replyRepo.FindByID(ctx, replyID); err != nil {
+		return domain.ErrNotFound
+	}
+	return s.reactRepo.React(ctx, userID, replyID, emoji)
+}
+
+// UnreactFromReply removes an emoji reaction
+func (s *ReplyService) UnreactFromReply(ctx context.Context, userID, replyID, emoji string) error {
+	if !allowedEmojis[emoji] {
+		return domain.ErrInvalidInput
+	}
+	// Verify reply exists
+	if _, err := s.replyRepo.FindByID(ctx, replyID); err != nil {
+		return domain.ErrNotFound
+	}
+	return s.reactRepo.Unreact(ctx, userID, replyID, emoji)
+}
+
+// GetReactionsForReplies returns reaction summaries for a set of reply IDs
+func (s *ReplyService) GetReactionsForReplies(ctx context.Context, replyIDs []string, currentUserID string) (map[string][]dto.ReactionSummary, error) {
+	if len(replyIDs) == 0 {
+		return nil, nil
+	}
+
+	// Get all reactions for these replies
+	reactions, err := s.reactRepo.GetAllReactionsByReplyIDs(ctx, replyIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get current user's reactions
+	userReactions, err := s.reactRepo.GetUserReactionsByReplyIDs(ctx, currentUserID, replyIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build user react set for quick lookup: map[replyID]map[emoji]bool
+	userReactMap := make(map[string]map[string]bool)
+	for _, ur := range userReactions {
+		if userReactMap[ur.ReplyID] == nil {
+			userReactMap[ur.ReplyID] = make(map[string]bool)
+		}
+		userReactMap[ur.ReplyID][ur.Emoji] = true
+	}
+
+	// Build reaction summaries per reply
+	// map[replyID]map[emoji]count
+	reactCounts := make(map[string]map[string]int)
+	for _, r := range reactions {
+		if reactCounts[r.ReplyID] == nil {
+			reactCounts[r.ReplyID] = make(map[string]int)
+		}
+		reactCounts[r.ReplyID][r.Emoji]++
+	}
+
+	result := make(map[string][]dto.ReactionSummary)
+	emojiOrder := []string{"\U0001f44d", "\u2764\ufe0f", "\U0001f602", "\U0001f62e", "\U0001f622", "\U0001f621"}
+
+	for replyID, emojis := range reactCounts {
+		summaries := make([]dto.ReactionSummary, 0)
+		for _, emoji := range emojiOrder {
+			if count, ok := emojis[emoji]; ok {
+				summaries = append(summaries, dto.ReactionSummary{
+					Emoji:   emoji,
+					Count:   count,
+					Reacted: userReactMap[replyID][emoji],
+				})
+			}
+		}
+		// Also include any emojis not in the predefined order
+		for emoji, count := range emojis {
+			found := false
+			for _, e := range emojiOrder {
+				if e == emoji {
+					found = true
+					break
+				}
+			}
+			if !found {
+				summaries = append(summaries, dto.ReactionSummary{
+					Emoji:   emoji,
+					Count:   count,
+					Reacted: userReactMap[replyID][emoji],
+				})
+			}
+		}
+		result[replyID] = summaries
+	}
+
+	return result, nil
 }
 
 // MarkBestReply marks reply as best answer (discussion owner only)

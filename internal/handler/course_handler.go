@@ -105,6 +105,7 @@ func (h *CourseHandler) CreateCourse(c *fiber.Ctx) error {
 		MentorID           string          `json:"mentor_id"`
 		Price              float64         `json:"price"`
 		Hours              int             `json:"hours"`
+		Tools              json.RawMessage `json:"tools"`
 		LearningObjectives json.RawMessage `json:"learning_objectives"`
 	}
 	if err := c.BodyParser(&input); err != nil {
@@ -117,7 +118,7 @@ func (h *CourseHandler) CreateCourse(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "price must be >= 0"})
 	}
 
-	course, err := h.courseSvc.CreateCourse(c.UserContext(), userID, input.Title, input.Description, input.Thumbnail, input.CategoryID, input.MentorID, input.Price, input.Hours, datatypes.JSON(input.LearningObjectives))
+	course, err := h.courseSvc.CreateCourse(c.UserContext(), userID, input.Title, input.Description, input.Thumbnail, input.CategoryID, input.MentorID, input.Price, input.Hours, datatypes.JSON(input.Tools), datatypes.JSON(input.LearningObjectives))
 	if err != nil {
 		return c.Status(mapServiceErrorToStatus(err)).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -138,6 +139,7 @@ func (h *CourseHandler) UpdateCourse(c *fiber.Ctx) error {
 		Description        string          `json:"description"`
 		Price              float64         `json:"price"`
 		Visibility         string          `json:"visibility"`
+		Tools              json.RawMessage `json:"tools"`
 		LearningObjectives json.RawMessage `json:"learning_objectives"`
 	}
 	if err := c.BodyParser(&input); err != nil {
@@ -147,7 +149,7 @@ func (h *CourseHandler) UpdateCourse(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "price must be >= 0"})
 	}
 
-	if err := h.courseSvc.UpdateCourse(c.UserContext(), courseID, adminID, input.Title, input.Description, input.Price, input.Visibility, datatypes.JSON(input.LearningObjectives)); err != nil {
+	if err := h.courseSvc.UpdateCourse(c.UserContext(), courseID, adminID, input.Title, input.Description, input.Price, input.Visibility, datatypes.JSON(input.Tools), datatypes.JSON(input.LearningObjectives)); err != nil {
 		return c.Status(mapServiceErrorToStatus(err)).JSON(fiber.Map{"error": err.Error()})
 	}
 
