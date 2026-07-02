@@ -85,8 +85,21 @@ func (s *ReplyService) CreateReply(ctx context.Context, userID, discussionID str
 		"reply_id":      reply.ID,
 	})
 
-	// Notify discussion owner (if replier is not the owner)
+	// Look up discussion for notification targets
 	discussion, err := s.discussionRepo.FindByID(ctx, discussionID)
+
+	// Self-notification as activity history
+	if err == nil {
+		if notifSvc := GetNotificationService(); notifSvc != nil {
+			notifSvc.CreateNotification(ctx, userID, "reply_created",
+				"Balasan Baru Dikirim",
+				"Anda membalas diskusi: "+discussion.Title,
+				"/discussions/"+discussionID,
+			)
+		}
+	}
+
+	// Notify discussion owner (if replier is not the owner)
 	if err == nil && discussion.UserID != userID {
 		if notifSvc := GetNotificationService(); notifSvc != nil {
 			notifSvc.CreateNotification(ctx, discussion.UserID, "new_reply",
@@ -98,7 +111,7 @@ func (s *ReplyService) CreateReply(ctx context.Context, userID, discussionID str
 	}
 
 	// Notify parent reply owner for nested replies
-	if parentID != nil && *parentID != "" {
+	if parentID != nil && *parentID != "" && discussion != nil {
 		parentReply, err := s.replyRepo.FindByID(ctx, *parentID)
 		if err == nil && parentReply.UserID != userID && parentReply.UserID != discussion.UserID {
 			if notifSvc := GetNotificationService(); notifSvc != nil {

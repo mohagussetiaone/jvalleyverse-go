@@ -198,7 +198,10 @@
           },
           "role": {
             "type": "string",
-            "enum": ["admin", "user"]
+            "enum": [
+              "admin",
+              "user"
+            ]
           },
           "level": {
             "type": "integer"
@@ -292,7 +295,10 @@
           },
           "visibility": {
             "type": "string",
-            "enum": ["public", "private"]
+            "enum": [
+              "public",
+              "private"
+            ]
           },
           "is_enrolled": {
             "type": "boolean"
@@ -376,7 +382,11 @@
           },
           "difficulty": {
             "type": "string",
-            "enum": ["beginner", "intermediate", "advanced"]
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ]
           },
           "course_id": {
             "type": "string",
@@ -391,7 +401,10 @@
           },
           "visibility": {
             "type": "string",
-            "enum": ["public", "private"]
+            "enum": [
+              "public",
+              "private"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -610,7 +623,12 @@
           },
           "status": {
             "type": "string",
-            "enum": ["not_started", "started", "in_progress", "completed"]
+            "enum": [
+              "not_started",
+              "started",
+              "in_progress",
+              "completed"
+            ]
           },
           "started_at": {
             "type": "string",
@@ -800,7 +818,11 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["all_operational", "partial_outage", "major_outage"]
+            "enum": [
+              "all_operational",
+              "partial_outage",
+              "major_outage"
+            ]
           },
           "uptime": {
             "type": "string",
@@ -838,7 +860,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["operational", "degraded", "down"]
+            "enum": [
+              "operational",
+              "degraded",
+              "down"
+            ]
           },
           "message": {
             "type": "string",
@@ -936,7 +962,11 @@
           },
           "type": {
             "type": "string",
-            "enum": ["certificate", "showcase", "study_case"]
+            "enum": [
+              "certificate",
+              "showcase",
+              "study_case"
+            ]
           },
           "url": {
             "type": "string",
@@ -1025,7 +1055,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["admin", "user", "mentor"]
+            "enum": [
+              "admin",
+              "user",
+              "mentor"
+            ]
           }
         }
       },
@@ -1085,7 +1119,10 @@
           },
           "visibility": {
             "type": "string",
-            "enum": ["public", "private"]
+            "enum": [
+              "public",
+              "private"
+            ]
           },
           "section_count": {
             "type": "integer"
@@ -1116,7 +1153,11 @@
           },
           "difficulty": {
             "type": "string",
-            "enum": ["beginner", "intermediate", "advanced"]
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ]
           },
           "duration": {
             "type": "integer"
@@ -1208,7 +1249,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["open", "closed"]
+            "enum": [
+              "open",
+              "closed"
+            ]
           },
           "view_count": {
             "type": "integer"
@@ -1306,7 +1350,10 @@
           },
           "visibility": {
             "type": "string",
-            "enum": ["public", "private"]
+            "enum": [
+              "public",
+              "private"
+            ]
           },
           "user": {
             "$ref": "#/components/schemas/UserBrief"
@@ -1440,7 +1487,10 @@
             "items": {
               "type": "string"
             },
-            "example": ["golang", "beginner"]
+            "example": [
+              "golang",
+              "beginner"
+            ]
           },
           "user": {
             "$ref": "#/components/schemas/UserBrief"
@@ -1694,743 +1744,14 @@
           }
         }
       }
-    },
-    "/api/auth/google": {
-      "post": {
-        "tags": ["Authentication"],
-        "summary": "Google One Tap Login",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["credential"],
-                "properties": {
-                  "credential": {
-                    "type": "string",
-                    "description": "Google ID token from One Tap"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid Google token"
-          }
-        }
-      }
-    },
-    "/api/faqs": {
-      "get": {
-        "tags": ["FAQs"],
-        "summary": "List active FAQs (public)",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Active FAQs list with pagination",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/FAQItem"
-                      }
-                    },
-                    "pagination": {
-                      "$ref": "#/components/schemas/Pagination"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/blogs": {
-      "get": {
-        "tags": ["Blogs"],
-        "summary": "List published blogs",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "category_id",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tag",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Blog posts list with pagination",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/BlogListItem"
-                      }
-                    },
-                    "pagination": {
-                      "$ref": "#/components/schemas/Pagination"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/blogs/{id}": {
-      "get": {
-        "tags": ["Blogs"],
-        "summary": "Get blog detail",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Blog detail",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BlogDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Blog not found"
-          }
-        }
-      }
-    },
-    "/api/company": {
-      "get": {
-        "tags": ["Company"],
-        "summary": "Get company profile",
-        "responses": {
-          "200": {
-            "description": "Company profile",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string"
-                    },
-                    "logo_url": {
-                      "type": "string"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/users/me/change-password": {
-      "post": {
-        "tags": ["Users"],
-        "summary": "Change current user password",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["current_password", "new_password"],
-                "properties": {
-                  "current_password": {
-                    "type": "string"
-                  },
-                  "new_password": {
-                    "type": "string",
-                    "minLength": 6
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password changed successfully"
-          },
-          "400": {
-            "description": "Invalid current password"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/users/me/avatar": {
-      "post": {
-        "tags": ["Users"],
-        "summary": "Update profile picture (multipart upload)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "avatar": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Avatar image file"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Avatar updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "url": {
-                      "type": "string",
-                      "format": "url"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/admin/company": {
-      "put": {
-        "tags": ["Admin"],
-        "summary": "Update company profile (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "logo_url": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Company profile updated"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          }
-        }
-      }
-    },
-    "/api/admin/faqs": {
-      "get": {
-        "tags": ["Admin - FAQs"],
-        "summary": "List all FAQs (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "All FAQs list with pagination"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          }
-        }
-      },
-      "post": {
-        "tags": ["Admin - FAQs"],
-        "summary": "Create FAQ (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["question", "answer"],
-                "properties": {
-                  "question": {
-                    "type": "string"
-                  },
-                  "answer": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "order_index": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "FAQ created"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          }
-        }
-      }
-    },
-    "/api/admin/faqs/{id}": {
-      "get": {
-        "tags": ["Admin - FAQs"],
-        "summary": "Get single FAQ (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "FAQ details"
-          },
-          "404": {
-            "description": "FAQ not found"
-          }
-        }
-      },
-      "put": {
-        "tags": ["Admin - FAQs"],
-        "summary": "Update FAQ (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "question": {
-                    "type": "string"
-                  },
-                  "answer": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "order_index": {
-                    "type": "integer"
-                  },
-                  "is_active": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "FAQ updated"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "FAQ not found"
-          }
-        }
-      },
-      "delete": {
-        "tags": ["Admin - FAQs"],
-        "summary": "Delete FAQ (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "FAQ deleted"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "FAQ not found"
-          }
-        }
-      }
-    },
-    "/api/admin/blogs": {
-      "get": {
-        "tags": ["Admin - Blogs"],
-        "summary": "List all blogs (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "All blogs list with pagination"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          }
-        }
-      },
-      "post": {
-        "tags": ["Admin - Blogs"],
-        "summary": "Create blog (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["title"],
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "content": {
-                    "type": "string"
-                  },
-                  "cover_img_url": {
-                    "type": "string"
-                  },
-                  "category_id": {
-                    "type": "string"
-                  },
-                  "tags": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": ["draft", "published"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Blog created"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          }
-        }
-      }
-    },
-    "/api/admin/blogs/{id}": {
-      "put": {
-        "tags": ["Admin - Blogs"],
-        "summary": "Update blog (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "content": {
-                    "type": "string"
-                  },
-                  "cover_img_url": {
-                    "type": "string"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": ["draft", "published"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Blog updated"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Blog not found"
-          }
-        }
-      },
-      "delete": {
-        "tags": ["Admin - Blogs"],
-        "summary": "Delete blog (Admin only)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Blog deleted"
-          },
-          "403": {
-            "description": "Forbidden - Admin only"
-          },
-          "404": {
-            "description": "Blog not found"
-          }
-        }
-      }
     }
   },
   "paths": {
     "/api/auth/register": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Register new user",
         "requestBody": {
           "required": true,
@@ -2438,7 +1759,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "email", "password"],
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -2481,7 +1806,9 @@
     },
     "/api/auth/login": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Login user",
         "requestBody": {
           "required": true,
@@ -2489,7 +1816,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password"],
+                "required": [
+                  "email",
+                  "password"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -2524,7 +1854,9 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Refresh access token",
         "requestBody": {
           "required": true,
@@ -2532,7 +1864,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["refresh_token"],
+                "required": [
+                  "refresh_token"
+                ],
                 "properties": {
                   "refresh_token": {
                     "type": "string"
@@ -2569,7 +1903,9 @@
     },
     "/api/auth/logout": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Logout user",
         "security": [
           {
@@ -2588,7 +1924,9 @@
     },
     "/api/health": {
       "get": {
-        "tags": ["Health"],
+        "tags": [
+          "Health"
+        ],
         "summary": "Health check",
         "responses": {
           "200": {
@@ -2612,7 +1950,10 @@
     },
     "/api/system/status": {
       "get": {
-        "tags": ["Health", "System"],
+        "tags": [
+          "Health",
+          "System"
+        ],
         "summary": "System operational status (public)",
         "description": "Returns real-time status of all system dependencies (Database, Redis, MinIO). No auth required. Frontend can auto-refresh every 30s to display operational dashboard.",
         "responses": {
@@ -2631,7 +1972,9 @@
     },
     "/api/health/detailed": {
       "get": {
-        "tags": ["Health"],
+        "tags": [
+          "Health"
+        ],
         "summary": "Detailed health check with system metrics",
         "responses": {
           "200": {
@@ -2699,7 +2042,9 @@
     },
     "/api/leaderboard": {
       "get": {
-        "tags": ["Gamification"],
+        "tags": [
+          "Gamification"
+        ],
         "summary": "Get top users by points",
         "parameters": [
           {
@@ -2746,7 +2091,9 @@
     },
     "/api/categories": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "List all categories",
         "responses": {
           "200": {
@@ -2767,7 +2114,9 @@
     },
     "/api/categories/{slug}": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Get category by slug",
         "parameters": [
           {
@@ -2799,7 +2148,9 @@
     },
     "/api/categories/{category_id}/courses": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "List courses in a category",
         "parameters": [
           {
@@ -2833,7 +2184,9 @@
     },
     "/api/courses": {
       "get": {
-        "tags": ["Courses"],
+        "tags": [
+          "Courses"
+        ],
         "summary": "List public courses",
         "parameters": [
           {
@@ -2904,7 +2257,9 @@
     },
     "/api/courses/{course_id}": {
       "get": {
-        "tags": ["Courses"],
+        "tags": [
+          "Courses"
+        ],
         "summary": "Get course with sections and lessons",
         "parameters": [
           {
@@ -2935,7 +2290,9 @@
     },
     "/api/courses/{course_id}/sections": {
       "get": {
-        "tags": ["Sections"],
+        "tags": [
+          "Sections"
+        ],
         "summary": "List sections in a course",
         "parameters": [
           {
@@ -2974,7 +2331,9 @@
     },
     "/api/courses/{course_id}/sections/{section_id}": {
       "get": {
-        "tags": ["Sections"],
+        "tags": [
+          "Sections"
+        ],
         "summary": "Get section with lessons",
         "parameters": [
           {
@@ -3013,7 +2372,9 @@
     },
     "/api/courses/{course_id}/lessons": {
       "get": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "List lessons in a course",
         "parameters": [
           {
@@ -3079,7 +2440,9 @@
     },
     "/api/courses/{course_id}/sections/{section_id}/lessons": {
       "get": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "List lessons in a section",
         "parameters": [
           {
@@ -3121,7 +2484,9 @@
     },
     "/api/courses/{course_id}/lessons/{slug}": {
       "get": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "Get lesson by course and slug",
         "parameters": [
           {
@@ -3181,7 +2546,9 @@
     },
     "/api/lessons/{id}": {
       "get": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "Get public lesson by ID",
         "parameters": [
           {
@@ -3232,7 +2599,9 @@
     },
     "/api/showcases": {
       "get": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "List showcases",
         "parameters": [
           {
@@ -3271,7 +2640,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["newest", "trending", "most_liked"]
+              "enum": [
+                "newest",
+                "trending",
+                "most_liked"
+              ]
             }
           }
         ],
@@ -3300,7 +2673,9 @@
         }
       },
       "post": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Create showcase",
         "security": [
           {
@@ -3313,7 +2688,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title", "category_id"],
+                "required": [
+                  "title",
+                  "category_id"
+                ],
                 "properties": {
                   "title": {
                     "type": "string"
@@ -3333,7 +2711,10 @@
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": ["public", "private"]
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   }
                 }
               }
@@ -3352,7 +2733,9 @@
     },
     "/api/showcases/{id}": {
       "get": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Get showcase details",
         "parameters": [
           {
@@ -3381,7 +2764,9 @@
         }
       },
       "put": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Update showcase (owner only)",
         "security": [
           {
@@ -3429,7 +2814,9 @@
         }
       },
       "delete": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Delete showcase",
         "security": [
           {
@@ -3458,7 +2845,9 @@
     },
     "/api/showcases/{id}/like": {
       "post": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Like showcase",
         "security": [
           {
@@ -3485,7 +2874,9 @@
         }
       },
       "delete": {
-        "tags": ["Showcases"],
+        "tags": [
+          "Showcases"
+        ],
         "summary": "Unlike showcase",
         "security": [
           {
@@ -3514,7 +2905,9 @@
     },
     "/api/discussions": {
       "get": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "List discussions",
         "parameters": [
           {
@@ -3560,7 +2953,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["newest", "oldest", "most_replies"]
+              "enum": [
+                "newest",
+                "oldest",
+                "most_replies"
+              ]
             }
           }
         ],
@@ -3589,7 +2986,9 @@
         }
       },
       "post": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "Create discussion",
         "security": [
           {
@@ -3602,7 +3001,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title", "content", "category_id"],
+                "required": [
+                  "title",
+                  "content",
+                  "category_id"
+                ],
                 "properties": {
                   "title": {
                     "type": "string"
@@ -3633,7 +3036,9 @@
     },
     "/api/discussions/{id}": {
       "get": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "Get discussion with replies",
         "parameters": [
           {
@@ -3662,7 +3067,9 @@
         }
       },
       "put": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "Update discussion (owner only)",
         "security": [
           {
@@ -3710,7 +3117,9 @@
         }
       },
       "delete": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "Delete discussion",
         "security": [
           {
@@ -3742,7 +3151,9 @@
     },
     "/api/discussions/{id}/close": {
       "post": {
-        "tags": ["Discussions"],
+        "tags": [
+          "Discussions"
+        ],
         "summary": "Close discussion (owner only)",
         "security": [
           {
@@ -3774,7 +3185,9 @@
     },
     "/api/discussions/{id}/replies": {
       "post": {
-        "tags": ["Replies"],
+        "tags": [
+          "Replies"
+        ],
         "summary": "Reply to discussion",
         "security": [
           {
@@ -3797,7 +3210,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["content"],
+                "required": [
+                  "content"
+                ],
                 "properties": {
                   "content": {
                     "type": "string"
@@ -3823,7 +3238,9 @@
     },
     "/api/replies/{id}": {
       "put": {
-        "tags": ["Replies"],
+        "tags": [
+          "Replies"
+        ],
         "summary": "Update reply",
         "security": [
           {
@@ -3846,7 +3263,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["content"],
+                "required": [
+                  "content"
+                ],
                 "properties": {
                   "content": {
                     "type": "string"
@@ -3869,7 +3288,9 @@
         }
       },
       "delete": {
-        "tags": ["Replies"],
+        "tags": [
+          "Replies"
+        ],
         "summary": "Delete reply",
         "security": [
           {
@@ -3901,7 +3322,9 @@
     },
     "/api/replies/{id}/like": {
       "post": {
-        "tags": ["Replies"],
+        "tags": [
+          "Replies"
+        ],
         "summary": "Like reply",
         "security": [
           {
@@ -3930,7 +3353,9 @@
     },
     "/api/replies/{id}/best": {
       "post": {
-        "tags": ["Replies"],
+        "tags": [
+          "Replies"
+        ],
         "summary": "Mark reply as best answer",
         "security": [
           {
@@ -3962,7 +3387,9 @@
     },
     "/api/levels": {
       "get": {
-        "tags": ["Gamification"],
+        "tags": [
+          "Gamification"
+        ],
         "summary": "Get level progression info",
         "responses": {
           "200": {
@@ -3983,7 +3410,9 @@
     },
     "/api/users/me": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Get current user profile",
         "security": [
           {
@@ -4007,7 +3436,9 @@
         }
       },
       "put": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Update user profile",
         "security": [
           {
@@ -4048,7 +3479,9 @@
     },
     "/api/users/me/streak": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Get my learning streak",
         "description": "Returns current learning streak count, longest streak, and last activity date. Streak auto-tracks when user completes lessons.",
         "security": [
@@ -4075,7 +3508,10 @@
     },
     "/api/users/{id}/portfolio": {
       "get": {
-        "tags": ["Portfolio", "Users"],
+        "tags": [
+          "Portfolio",
+          "Users"
+        ],
         "summary": "Get user portfolio (public)",
         "description": "Aggregates certificates, showcases, and study cases for a user into a shareable portfolio page. No auth required.",
         "parameters": [
@@ -4107,7 +3543,9 @@
     },
     "/api/certificates/{code}/verify": {
       "get": {
-        "tags": ["Certificates"],
+        "tags": [
+          "Certificates"
+        ],
         "summary": "Verify certificate (public)",
         "description": "Public endpoint to verify a certificate by its unique code. Returns certificate details including verification URL and QR code URL. No auth required.",
         "parameters": [
@@ -4139,7 +3577,9 @@
     },
     "/api/users/me/activity": {
       "get": {
-        "tags": ["Gamification"],
+        "tags": [
+          "Gamification"
+        ],
         "summary": "Get user activity log",
         "security": [
           {
@@ -4191,7 +3631,9 @@
     },
     "/api/users/{id}": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Get public user profile",
         "parameters": [
           {
@@ -4222,7 +3664,9 @@
     },
     "/api/users/{id}/points": {
       "get": {
-        "tags": ["Gamification"],
+        "tags": [
+          "Gamification"
+        ],
         "summary": "Get user points and level",
         "parameters": [
           {
@@ -4270,7 +3714,9 @@
     },
     "/api/lessons/{id}/start": {
       "post": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "Start a lesson",
         "security": [
           {
@@ -4318,7 +3764,9 @@
     },
     "/api/lessons/{id}/progress": {
       "put": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "Update lesson progress",
         "security": [
           {
@@ -4377,7 +3825,9 @@
     },
     "/api/lessons/{id}/complete": {
       "post": {
-        "tags": ["Lessons"],
+        "tags": [
+          "Lessons"
+        ],
         "summary": "Complete a lesson",
         "security": [
           {
@@ -4461,7 +3911,9 @@
     },
     "/api/admin/dashboard": {
       "get": {
-        "tags": ["Admin"],
+        "tags": [
+          "Admin"
+        ],
         "summary": "Admin dashboard",
         "security": [
           {
@@ -4487,7 +3939,9 @@
     },
     "/api/courses/{course_id}/reviews": {
       "get": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "List reviews for a course",
         "parameters": [
           {
@@ -4545,7 +3999,9 @@
     },
     "/api/lessons/{id}/reviews": {
       "get": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "List reviews for a lesson",
         "parameters": [
           {
@@ -4603,7 +4059,9 @@
     },
     "/api/reviews": {
       "post": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Create a review (authenticated)",
         "security": [
           {
@@ -4616,7 +4074,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["rating", "message"],
+                "required": [
+                  "rating",
+                  "message"
+                ],
                 "properties": {
                   "course_id": {
                     "type": "string",
@@ -4654,7 +4115,9 @@
     },
     "/api/reviews/{id}": {
       "put": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Update review (owner only)",
         "security": [
           {
@@ -4704,7 +4167,9 @@
         }
       },
       "delete": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Delete review (owner only)",
         "security": [
           {
@@ -4736,7 +4201,9 @@
     },
     "/api/admin/users": {
       "get": {
-        "tags": ["Admin - Users"],
+        "tags": [
+          "Admin - Users"
+        ],
         "summary": "List all users (Admin only)",
         "security": [
           {
@@ -4799,7 +4266,9 @@
     },
     "/api/admin/courses": {
       "post": {
-        "tags": ["Admin - Courses"],
+        "tags": [
+          "Admin - Courses"
+        ],
         "summary": "Create course (Admin only)",
         "security": [
           {
@@ -4812,7 +4281,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title", "category_id"],
+                "required": [
+                  "title",
+                  "category_id"
+                ],
                 "properties": {
                   "title": {
                     "type": "string"
@@ -4877,7 +4349,10 @@
                     },
                     "visibility": {
                       "type": "string",
-                      "enum": ["public", "private"]
+                      "enum": [
+                        "public",
+                        "private"
+                      ]
                     },
                     "price": {
                       "type": "number",
@@ -4907,7 +4382,9 @@
     },
     "/api/admin/courses/{id}": {
       "put": {
-        "tags": ["Admin - Courses"],
+        "tags": [
+          "Admin - Courses"
+        ],
         "summary": "Update course (Admin only)",
         "security": [
           {
@@ -4939,7 +4416,10 @@
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": ["public", "private"]
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   },
                   "learning_objectives": {
                     "type": "array",
@@ -4966,7 +4446,9 @@
         }
       },
       "delete": {
-        "tags": ["Admin - Courses"],
+        "tags": [
+          "Admin - Courses"
+        ],
         "summary": "Delete course (Admin only)",
         "security": [
           {
@@ -4998,7 +4480,9 @@
     },
     "/api/admin/courses/{course_id}/sections": {
       "post": {
-        "tags": ["Admin - Sections"],
+        "tags": [
+          "Admin - Sections"
+        ],
         "summary": "Create section (Admin only)",
         "security": [
           {
@@ -5021,7 +4505,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title"],
+                "required": [
+                  "title"
+                ],
                 "properties": {
                   "title": {
                     "type": "string"
@@ -5049,7 +4535,9 @@
     },
     "/api/admin/sections/{section_id}": {
       "put": {
-        "tags": ["Admin - Sections"],
+        "tags": [
+          "Admin - Sections"
+        ],
         "summary": "Update section (Admin only)",
         "security": [
           {
@@ -5097,7 +4585,9 @@
         }
       },
       "delete": {
-        "tags": ["Admin - Sections"],
+        "tags": [
+          "Admin - Sections"
+        ],
         "summary": "Delete section (Admin only)",
         "security": [
           {
@@ -5129,7 +4619,9 @@
     },
     "/api/admin/lessons": {
       "post": {
-        "tags": ["Admin - Lessons"],
+        "tags": [
+          "Admin - Lessons"
+        ],
         "summary": "Create lesson (Admin only)",
         "security": [
           {
@@ -5142,7 +4634,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["title", "course_id", "section_id"],
+                "required": [
+                  "title",
+                  "course_id",
+                  "section_id"
+                ],
                 "properties": {
                   "title": {
                     "type": "string"
@@ -5162,7 +4658,11 @@
                   },
                   "difficulty": {
                     "type": "string",
-                    "enum": ["beginner", "intermediate", "advanced"]
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced"
+                    ]
                   },
                   "course_id": {
                     "type": "string"
@@ -5175,7 +4675,10 @@
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": ["public", "private"]
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   }
                 }
               }
@@ -5197,7 +4700,9 @@
     },
     "/api/admin/lessons/{id}": {
       "put": {
-        "tags": ["Admin - Lessons"],
+        "tags": [
+          "Admin - Lessons"
+        ],
         "summary": "Update lesson (Admin only)",
         "security": [
           {
@@ -5235,11 +4740,18 @@
                   },
                   "difficulty": {
                     "type": "string",
-                    "enum": ["beginner", "intermediate", "advanced"]
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced"
+                    ]
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": ["public", "private"]
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   }
                 }
               }
@@ -5259,7 +4771,9 @@
         }
       },
       "delete": {
-        "tags": ["Admin - Lessons"],
+        "tags": [
+          "Admin - Lessons"
+        ],
         "summary": "Delete lesson (Admin only)",
         "security": [
           {
@@ -5291,7 +4805,9 @@
     },
     "/api/admin/lessons/{id}/details": {
       "post": {
-        "tags": ["Admin - Lessons"],
+        "tags": [
+          "Admin - Lessons"
+        ],
         "summary": "Create lesson detail (Admin only)",
         "security": [
           {
@@ -5353,7 +4869,9 @@
     },
     "/api/admin/categories": {
       "post": {
-        "tags": ["Admin - Categories"],
+        "tags": [
+          "Admin - Categories"
+        ],
         "summary": "Create category (Admin only)",
         "security": [
           {
@@ -5366,7 +4884,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "slug"],
+                "required": [
+                  "name",
+                  "slug"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -5392,11 +4913,69 @@
             "description": "Forbidden - Admin only"
           }
         }
+      },
+      "get": {
+        "tags": [
+          "Admin - Categories"
+        ],
+        "summary": "List all categories (Admin only)",
+        "description": "Returns all categories including inactive ones. Requires admin role.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
       }
     },
     "/api/admin/categories/{id}": {
       "put": {
-        "tags": ["Admin - Categories"],
+        "tags": [
+          "Admin - Categories"
+        ],
         "summary": "Update category (Admin only)",
         "security": [
           {
@@ -5447,7 +5026,9 @@
         }
       },
       "delete": {
-        "tags": ["Admin - Categories"],
+        "tags": [
+          "Admin - Categories"
+        ],
         "summary": "Delete category (Admin only)",
         "security": [
           {
@@ -5479,7 +5060,9 @@
     },
     "/api/study-cases": {
       "get": {
-        "tags": ["Study Cases"],
+        "tags": [
+          "Study Cases"
+        ],
         "summary": "List study cases",
         "parameters": [
           {
@@ -5534,7 +5117,9 @@
     },
     "/api/study-cases/{id}": {
       "get": {
-        "tags": ["Study Cases"],
+        "tags": [
+          "Study Cases"
+        ],
         "summary": "Get study case details",
         "parameters": [
           {
@@ -5565,7 +5150,9 @@
     },
     "/api/upload": {
       "post": {
-        "tags": ["Upload"],
+        "tags": [
+          "Upload"
+        ],
         "summary": "Upload file to MinIO",
         "security": [
           {
@@ -5578,7 +5165,10 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["file", "folder"],
+                "required": [
+                  "file",
+                  "folder"
+                ],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -5619,7 +5209,9 @@
     },
     "/api/users/me/dashboard": {
       "get": {
-        "tags": ["Dashboard"],
+        "tags": [
+          "Dashboard"
+        ],
         "summary": "Get user dashboard widgets",
         "security": [
           {
@@ -5645,7 +5237,9 @@
     },
     "/api/courses/{id}/enroll": {
       "post": {
-        "tags": ["Enrollment"],
+        "tags": [
+          "Enrollment"
+        ],
         "summary": "Enroll in a course",
         "security": [
           {
@@ -5677,7 +5271,9 @@
     },
     "/api/mentors": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "List all mentors",
         "responses": {
           "200": {
@@ -5706,7 +5302,9 @@
     },
     "/api/users/me/notifications": {
       "get": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "List user notifications",
         "security": [
           {
@@ -5769,7 +5367,9 @@
     },
     "/api/users/me/notifications/count": {
       "get": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Count unread notifications",
         "security": [
           {
@@ -5801,7 +5401,9 @@
     },
     "/api/users/me/notifications/{id}/read": {
       "put": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Mark notification as read",
         "security": [
           {
@@ -5833,7 +5435,9 @@
     },
     "/api/users/me/notifications/read-all": {
       "put": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Mark all notifications as read",
         "security": [
           {
@@ -5852,7 +5456,9 @@
     },
     "/api/users/me/notifications/{id}": {
       "delete": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Delete notification",
         "security": [
           {
@@ -5884,7 +5490,9 @@
     },
     "/api/admin/study-cases": {
       "post": {
-        "tags": ["Admin - Study Cases"],
+        "tags": [
+          "Admin - Study Cases"
+        ],
         "summary": "Create study case (Admin only)",
         "security": [
           {
@@ -5897,7 +5505,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
                     "type": "string"
@@ -5936,7 +5546,9 @@
     },
     "/api/admin/study-cases/{id}": {
       "put": {
-        "tags": ["Admin - Study Cases"],
+        "tags": [
+          "Admin - Study Cases"
+        ],
         "summary": "Update study case (Admin only)",
         "security": [
           {
@@ -5998,7 +5610,9 @@
         }
       },
       "delete": {
-        "tags": ["Admin - Study Cases"],
+        "tags": [
+          "Admin - Study Cases"
+        ],
         "summary": "Delete study case (Admin only)",
         "security": [
           {
@@ -6030,7 +5644,9 @@
     },
     "/api/users/me/certificates": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My certificates",
         "security": [
           {
@@ -6067,7 +5683,9 @@
     },
     "/api/users/me/certificates/{code}": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Certificate by code",
         "security": [
           {
@@ -6103,7 +5721,9 @@
     },
     "/api/users/me/courses": {
       "get": {
-        "tags": ["Enrollment"],
+        "tags": [
+          "Enrollment"
+        ],
         "summary": "My enrolled courses",
         "security": [
           {
@@ -6166,7 +5786,9 @@
     },
     "/api/users/me/discussions": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My discussions",
         "security": [
           {
@@ -6229,7 +5851,9 @@
     },
     "/api/users/me/showcases": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My showcases",
         "security": [
           {
@@ -6292,7 +5916,9 @@
     },
     "/api/users/me/study-cases": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My study cases",
         "security": [
           {
@@ -6355,7 +5981,9 @@
     },
     "/api/users/me/blogs": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My blogs",
         "security": [
           {
@@ -6384,7 +6012,10 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["draft", "published"]
+              "enum": [
+                "draft",
+                "published"
+              ]
             }
           }
         ],
@@ -6418,7 +6049,9 @@
     },
     "/api/users/me/replies": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "My replies",
         "security": [
           {
@@ -6481,7 +6114,9 @@
     },
     "/api/courses/{id}/last-lesson": {
       "put": {
-        "tags": ["Enrollment"],
+        "tags": [
+          "Enrollment"
+        ],
         "summary": "Update last lesson studied",
         "security": [
           {
@@ -6504,7 +6139,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["lesson_id"],
+                "required": [
+                  "lesson_id"
+                ],
                 "properties": {
                   "lesson_id": {
                     "type": "string"
@@ -6526,7 +6163,9 @@
     },
     "/api/notifications/stream": {
       "get": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "SSE real-time notification stream",
         "security": [
           {
@@ -6546,6 +6185,787 @@
           },
           "401": {
             "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Google One Tap Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "credential"
+                ],
+                "properties": {
+                  "credential": {
+                    "type": "string",
+                    "description": "Google ID token from One Tap"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid Google token"
+          }
+        }
+      }
+    },
+    "/api/faqs": {
+      "get": {
+        "tags": [
+          "FAQs"
+        ],
+        "summary": "List active FAQs (public)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active FAQs list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FAQItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blogs": {
+      "get": {
+        "tags": [
+          "Blogs"
+        ],
+        "summary": "List published blogs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog posts list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BlogListItem"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blogs/{id}": {
+      "get": {
+        "tags": [
+          "Blogs"
+        ],
+        "summary": "Get blog detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Blog not found"
+          }
+        }
+      }
+    },
+    "/api/company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Get company profile",
+        "responses": {
+          "200": {
+            "description": "Company profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "logo_url": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/change-password": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Change current user password",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "current_password",
+                  "new_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "minLength": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Invalid current password"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/users/me/avatar": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update profile picture (multipart upload)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Avatar image file"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "url"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/admin/company": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update company profile (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "logo_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Company profile updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/faqs": {
+      "get": {
+        "tags": [
+          "Admin - FAQs"
+        ],
+        "summary": "List all FAQs (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All FAQs list with pagination"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin - FAQs"
+        ],
+        "summary": "Create FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question",
+                  "answer"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "answer": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "FAQ created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/faqs/{id}": {
+      "get": {
+        "tags": [
+          "Admin - FAQs"
+        ],
+        "summary": "Get single FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ details"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin - FAQs"
+        ],
+        "summary": "Update FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "answer": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "order_index": {
+                    "type": "integer"
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FAQ updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - FAQs"
+        ],
+        "summary": "Delete FAQ (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      }
+    },
+    "/api/admin/blogs": {
+      "get": {
+        "tags": [
+          "Admin - Blogs"
+        ],
+        "summary": "List all blogs (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All blogs list with pagination"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin - Blogs"
+        ],
+        "summary": "Create blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "cover_img_url": {
+                    "type": "string"
+                  },
+                  "category_id": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "published"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Blog created"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          }
+        }
+      }
+    },
+    "/api/admin/blogs/{id}": {
+      "put": {
+        "tags": [
+          "Admin - Blogs"
+        ],
+        "summary": "Update blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "cover_img_url": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "published"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Blog updated"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Blog not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Blogs"
+        ],
+        "summary": "Delete blog (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blog deleted"
+          },
+          "403": {
+            "description": "Forbidden - Admin only"
+          },
+          "404": {
+            "description": "Blog not found"
           }
         }
       }

@@ -63,15 +63,16 @@ func ToDiscussionBrief(d domain.Discussion) DiscussionBrief {
 // ToDiscussionListItem converts a domain Discussion to DiscussionListItem
 func ToDiscussionListItem(d domain.Discussion) DiscussionListItem {
 	return DiscussionListItem{
-		ID:          d.ID,
-		Title:       d.Title,
-		Content:     d.Content,
-		User:        ToUserBrief(d.User),
-		LessonID:    d.LessonID,
-		StudyCaseID: d.StudyCaseID,
-		Status:      d.Status,
-		ViewsCount:  d.ViewsCount,
-		CreatedAt:   d.CreatedAt,
+		ID:           d.ID,
+		Title:        d.Title,
+		Content:      d.Content,
+		User:         ToUserBrief(d.User),
+		LessonID:     d.LessonID,
+		StudyCaseID:  d.StudyCaseID,
+		Status:       d.Status,
+		ViewsCount:   d.ViewsCount,
+		RepliesCount: len(d.Replies),
+		CreatedAt:    d.CreatedAt,
 	}
 }
 

@@ -52,14 +52,40 @@ func (s *DiscussionService) CreateDiscussion(ctx context.Context, userID string,
 		return nil, err
 	}
 
+	// Notify creator as activity history
+	if notifSvc := GetNotificationService(); notifSvc != nil {
+		notifSvc.CreateNotification(ctx, userID, "discussion_created",
+			"Diskusi Baru Dibuat",
+			"Anda membuat diskusi: "+title,
+			"/discussions/"+discussion.ID,
+		)
+	}
+
+	// Notify study case owner if discussion is related to a study case
+	if studyCaseID != nil && *studyCaseID != "" {
+		studyCase, err := s.discussionRepo.FindStudyCaseByID(ctx, *studyCaseID)
+		if err == nil && studyCase.UserID != userID {
+			if notifSvc := GetNotificationService(); notifSvc != nil {
+				notifSvc.CreateNotification(ctx, studyCase.UserID, "discussion_on_study_case",
+					"Diskusi Baru di Study Case",
+					"Ada diskusi baru di study case '"+studyCase.Name+"': "+title,
+					"/discussions/"+discussion.ID,
+				)
+			}
+		}
+	}
+
 	// Notify lesson admin if discussion is related to a lesson
 	if lessonID != nil && *lessonID != "" {
-		if notifSvc := GetNotificationService(); notifSvc != nil {
-			notifSvc.CreateNotification(ctx, userID, "discussion_created",
-				"Diskusi Baru Dibuat",
-				"Diskusi '"+title+"' telah dibuat.",
-				"/discussions/"+discussion.ID,
-			)
+		lesson, err := s.discussionRepo.FindLessonByID(ctx, *lessonID)
+		if err == nil && lesson.AdminID != userID {
+			if notifSvc := GetNotificationService(); notifSvc != nil {
+				notifSvc.CreateNotification(ctx, lesson.AdminID, "discussion_on_lesson",
+					"Diskusi Baru di Lesson",
+					"Ada diskusi baru di lesson '"+lesson.Title+"': "+title,
+					"/discussions/"+discussion.ID,
+				)
+			}
 		}
 	}
 

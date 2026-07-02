@@ -355,6 +355,15 @@ func (s *ShowcaseService) CreateShowcase(ctx context.Context, userID string, tit
 		"title":       title,
 	})
 
+	// Notify creator as activity history
+	if notifSvc := GetNotificationService(); notifSvc != nil {
+		notifSvc.CreateNotification(ctx, userID, "showcase_created",
+			"Showcase Baru Dibuat",
+			"Anda membuat showcase: "+title,
+			"/showcases/"+showcase.ID,
+		)
+	}
+
 	return showcase, nil
 }
 

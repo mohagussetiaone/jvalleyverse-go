@@ -157,3 +157,10 @@ func (ls *LearningStreak) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+func (ce *CourseEnrollment) BeforeCreate(tx *gorm.DB) error {
+	if ce.ID == "" {
+		ce.ID = cuid.New()
+	}
+	return nil
+}

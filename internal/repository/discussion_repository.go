@@ -96,6 +96,24 @@ func (r *DiscussionRepository) ListByUserID(ctx context.Context, userID string, 
 	return discussions, total, nil
 }
 
+// FindStudyCaseByID finds a study case by ID (for notification purposes)
+func (r *DiscussionRepository) FindStudyCaseByID(ctx context.Context, id string) (*domain.StudyCase, error) {
+	studyCase := &domain.StudyCase{}
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(studyCase).Error; err != nil {
+		return nil, err
+	}
+	return studyCase, nil
+}
+
+// FindLessonByID finds a lesson by ID (for notification purposes)
+func (r *DiscussionRepository) FindLessonByID(ctx context.Context, id string) (*domain.Lesson, error) {
+	lesson := &domain.Lesson{}
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(lesson).Error; err != nil {
+		return nil, err
+	}
+	return lesson, nil
+}
+
 // Update updates discussion
 func (r *DiscussionRepository) Update(ctx context.Context, discussion *domain.Discussion) error {
 	return r.db.WithContext(ctx).Model(discussion).Updates(discussion).Error

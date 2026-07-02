@@ -60,6 +60,16 @@ func (s *StudyCaseService) CreateStudyCase(ctx context.Context, userID, name, de
 	if err := s.studyCaseRepo.Create(ctx, studyCase); err != nil {
 		return nil, err
 	}
+
+	// Notify creator as activity history
+	if notifSvc := GetNotificationService(); notifSvc != nil {
+		notifSvc.CreateNotification(ctx, userID, "study_case_created",
+			"Study Case Baru Dibuat",
+			"Anda membuat study case: "+name,
+			"/study-case/"+studyCase.ID,
+		)
+	}
+
 	return studyCase, nil
 }
 
