@@ -97,6 +97,13 @@ func (r *ReplyRepository) DeleteByID(ctx context.Context, replyID string) error 
 }
 
 // IncrementLikes increments like count on reply
+
+// DecrementLikes atomically decrements likes count
+func (r *ReplyRepository) DecrementLikes(ctx context.Context, replyID string) error {
+	return r.db.WithContext(ctx).Model(&domain.Reply{}).Where("id = ?", replyID).
+		Update("likes_count", gorm.Expr("likes_count - 1")).Error
+}
+
 func (r *ReplyRepository) IncrementLikes(ctx context.Context, replyID string) error {
 	return r.db.WithContext(ctx).Model(&domain.Reply{}).Where("id = ?", replyID).
 		Update("likes_count", gorm.Expr("likes_count + 1")).Error

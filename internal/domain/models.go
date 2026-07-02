@@ -452,6 +452,15 @@ type ReplyReaction struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// ReplyLike represents a like on a reply by a user
+type ReplyLike struct {
+	UserID    string    `gorm:"primaryKey" json:"user_id"`
+	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	ReplyID   string    `gorm:"primaryKey" json:"reply_id"`
+	Reply     Reply     `gorm:"foreignKey:ReplyID;constraint:OnDelete:CASCADE" json:"-"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // LearningStreak tracks user's consecutive learning days
 type LearningStreak struct {
 	ID               string    `gorm:"primaryKey" json:"id"`
@@ -517,5 +526,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&Company{},
 		&LearningStreak{},
 		&ReplyReaction{},
+		&ReplyLike{},
 	)
 }

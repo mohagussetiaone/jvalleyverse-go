@@ -128,6 +128,7 @@ func makeReplySvc(db *gorm.DB, userSvc IUserService) *ReplyService {
 	return NewReplyService(
 		repository.NewReplyRepository(db),
 		repository.NewReplyReactionRepository(db),
+		repository.NewReplyLikeRepository(db),
 		repository.NewDiscussionRepository(db),
 		userSvc,
 	)

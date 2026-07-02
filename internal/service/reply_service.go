@@ -21,6 +21,7 @@ type IReplyService interface {
 }
 
 type ReplyService struct {
+	replyLikeRepo  *repository.ReplyLikeRepository
 	replyRepo      *repository.ReplyRepository
 	reactRepo      *repository.ReplyReactionRepository
 	discussionRepo *repository.DiscussionRepository
@@ -30,6 +31,7 @@ type ReplyService struct {
 func NewReplyService(
 	replyRepo *repository.ReplyRepository,
 	reactRepo *repository.ReplyReactionRepository,
+	replyLikeRepo *repository.ReplyLikeRepository,
 	discussionRepo *repository.DiscussionRepository,
 	userService IUserService,
 ) *ReplyService {
@@ -37,6 +39,7 @@ func NewReplyService(
 		replyRepo:      replyRepo,
 		reactRepo:      reactRepo,
 		discussionRepo: discussionRepo,
+		replyLikeRepo:  replyLikeRepo,
 		userService:    userService,
 	}
 }
